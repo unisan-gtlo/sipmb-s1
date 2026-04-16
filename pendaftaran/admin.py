@@ -27,8 +27,12 @@ class PendaftaranAdmin(admin.ModelAdmin):
 
 @admin.register(ProfilPendaftar)
 class ProfilPendaftarAdmin(admin.ModelAdmin):
-    list_display  = ['pendaftaran', 'nik', 'asal_sekolah', 'tahun_lulus', 'persen_lengkap']
+    list_display  = ['pendaftaran', 'nik', 'asal_sekolah', 'tahun_lulus', 'get_persen_lengkap']
     search_fields = ['nik', 'asal_sekolah', 'pendaftaran__no_pendaftaran']
+
+    def get_persen_lengkap(self, obj):
+        return f'{obj.persen_lengkap}%'
+    get_persen_lengkap.short_description = 'Kelengkapan'
 
 
 @admin.register(TokenAktivasi)

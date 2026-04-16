@@ -1,27 +1,79 @@
 {% extends 'pendaftaran/base_profil.html' %}
 {% block title %}Data Pendidikan — PMB UNISAN{% endblock %}
-{% block header_title %}Data Pendidikan Sebelumnya{% endblock %}
+{% block header_title %}Data Pendidikan{% endblock %}
 
 {% block form_content %}
 <form method="post" novalidate>
   {% csrf_token %}
 
-  <div class="d-flex align-items-center gap-2 mb-4">
+  <!-- ASAL SEKOLAH -->
+  <div class="d-flex align-items-center gap-2 mb-3">
     <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
-      <i class="bi bi-book-fill text-white" style="font-size:12px"></i>
+      <i class="bi bi-building text-white" style="font-size:12px"></i>
     </div>
-    <h6 class="mb-0 fw-600" style="font-weight:600">Riwayat Pendidikan Terakhir</h6>
+    <h6 class="mb-0" style="font-weight:600">Asal Sekolah</h6>
   </div>
 
-  <div class="row g-3">
-    <div class="col-12">
-      <label class="form-label">Nama Sekolah Asal <span class="text-danger">*</span></label>
-      {{ form.asal_sekolah }}
+  <div class="p-3 mb-3" style="background:#f8f9ff;border-radius:10px;border:1.5px solid #e2e8f0;font-size:.8rem;color:#64748b">
+    <i class="bi bi-info-circle me-1" style="color:#667eea"></i>
+    Asal sekolah bisa berbeda dengan alamat domisili. Pilih provinsi dan kab/kota lokasi sekolah untuk mempermudah pencarian.
+  </div>
+
+  {{ form.sekolah_id }}
+  {{ form.asal_sekolah }}
+  {{ form.npsn }}
+  {{ form.jurusan_sekolah }}
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Provinsi Lokasi Sekolah</label>
+      {{ form.sekolah_provinsi_id }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Kabupaten/Kota Lokasi Sekolah</label>
+      <select class="form-select" id="id_sekolah_kabupaten">
+        <option value="">-- Pilih Kabupaten/Kota --</option>
+      </select>
+    </div>
+    <div class="col-12" style="position:relative">
+      <label class="form-label">Nama Sekolah <span class="text-danger">*</span></label>
+      {{ form.sekolah_nama_input }}
+      <div id="sekolah_suggestions"
+           style="border:1px solid #e2e8f0;border-radius:8px;background:white;
+                  max-height:200px;overflow-y:auto;display:none;
+                  position:absolute;z-index:100;width:calc(100% - 24px);left:12px;top:68px;
+                  box-shadow:0 4px 12px rgba(0,0,0,.1)">
+      </div>
+      <div id="sekolah_terpilih" style="display:none;margin-top:6px;padding:8px 12px;
+           background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;font-size:.85rem;color:#065f46">
+        <i class="bi bi-check-circle-fill me-1"></i>
+        <span id="sekolah_terpilih_nama"></span>
+        <button type="button" onclick="resetSekolah()"
+                style="border:none;background:none;color:#ef4444;float:right;font-size:.8rem;cursor:pointer">
+          Ganti
+        </button>
+      </div>
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:4px">
+        Jika sekolah tidak ditemukan, ketik nama lengkap sekolah secara manual
+      </div>
     </div>
     <div class="col-md-6">
       <label class="form-label">Jurusan</label>
-      {{ form.jurusan_sekolah }}
+      {{ form.jurusan_id }}
     </div>
+  </div>
+
+  <hr style="border-color:#f0f0f0">
+
+  <!-- DATA AKADEMIK -->
+  <div class="d-flex align-items-center gap-2 mb-3 mt-3">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-mortarboard-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0" style="font-weight:600">Data Akademik</h6>
+  </div>
+
+  <div class="row g-3">
     <div class="col-md-6">
       <label class="form-label">Tahun Lulus <span class="text-danger">*</span></label>
       {{ form.tahun_lulus }}
@@ -35,7 +87,7 @@
       {{ form.nilai_rata_rata }}
     </div>
     <div class="col-12">
-      <label class="form-label">Prestasi</label>
+      <label class="form-label">Prestasi Akademik / Non-Akademik</label>
       {{ form.prestasi }}
     </div>
   </div>
@@ -50,4 +102,106 @@
   </div>
 
 </form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const API_KAB     = "{% url 'accounts:api_kabupaten_kota' %}";
+const API_SEKOLAH = "{% url 'accounts:api_sekolah' %}";
+
+// Provinsi sekolah → Kab/Kota sekolah
+document.getElementById('id_sekolah_provinsi').addEventListener('change', function() {
+  const provId = this.value;
+  resetSelect('id_sekolah_kabupaten', '-- Pilih Kabupaten/Kota --');
+  resetSekolah();
+  if (!provId) return;
+  fetch(API_KAB + '?provinsi_id=' + provId)
+    .then(r => r.json())
+    .then(data => {
+      const sel = document.getElementById('id_sekolah_kabupaten');
+      sel.innerHTML = '<option value="">-- Pilih Kabupaten/Kota --</option>';
+      data.data.forEach(k => {
+        sel.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+      });
+    });
+});
+
+document.getElementById('id_sekolah_kabupaten').addEventListener('change', function() {
+  resetSekolah();
+});
+
+// Autocomplete sekolah
+let timeout;
+document.getElementById('id_sekolah_nama_input').addEventListener('input', function() {
+  const q      = this.value;
+  const provId = document.getElementById('id_sekolah_provinsi').value;
+  const kabId  = document.getElementById('id_sekolah_kabupaten').value;
+  clearTimeout(timeout);
+  const div = document.getElementById('sekolah_suggestions');
+  if (q.length < 3) { div.style.display = 'none'; return; }
+  timeout = setTimeout(() => {
+    let url = API_SEKOLAH + '?q=' + encodeURIComponent(q);
+    if (kabId)       url += '&kabupaten_kota_id=' + kabId;
+    else if (provId) url += '&provinsi_id=' + provId;
+    fetch(url).then(r => r.json()).then(data => {
+      if (!data.data.length) {
+        div.innerHTML = `<div style="padding:10px 14px;font-size:.85rem;color:#94a3b8">
+          Tidak ditemukan — nama akan disimpan manual</div>`;
+        document.querySelector('[name=asal_sekolah]').value = q;
+        document.querySelector('[name=sekolah_id]').value   = '';
+        document.querySelector('[name=npsn]').value         = '';
+      } else {
+        div.innerHTML = data.data.map(s => `
+          <div onclick="pilihSekolah(${s.id},'${s.nama_sekolah.replace(/'/g,"\\'")}','${s.npsn}')"
+               style="padding:10px 14px;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9"
+               onmouseover="this.style.background='#f8f9ff'"
+               onmouseout="this.style.background='white'">
+            <div style="font-weight:500">${s.nama_sekolah}</div>
+            <div style="font-size:.75rem;color:#94a3b8">NPSN: ${s.npsn}</div>
+          </div>`).join('');
+      }
+      div.style.display = 'block';
+    });
+  }, 400);
+});
+
+function pilihSekolah(id, nama, npsn) {
+  document.querySelector('[name=sekolah_id]').value   = id;
+  document.querySelector('[name=asal_sekolah]').value = nama;
+  document.querySelector('[name=npsn]').value         = npsn;
+  document.getElementById('id_sekolah_nama_input').value       = nama;
+  document.getElementById('sekolah_suggestions').style.display = 'none';
+  document.getElementById('sekolah_terpilih').style.display    = 'block';
+  document.getElementById('sekolah_terpilih_nama').textContent = nama;
+  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+}
+
+function resetSekolah() {
+  document.querySelector('[name=sekolah_id]').value   = '';
+  document.querySelector('[name=asal_sekolah]').value = '';
+  document.querySelector('[name=npsn]').value         = '';
+  document.getElementById('id_sekolah_nama_input').value          = '';
+  document.getElementById('id_sekolah_nama_input').style.display  = 'block';
+  document.getElementById('sekolah_suggestions').style.display    = 'none';
+  document.getElementById('sekolah_terpilih').style.display       = 'none';
+}
+
+// Jurusan → simpan nama
+document.getElementById('id_jurusan').addEventListener('change', function() {
+  document.querySelector('[name=jurusan_sekolah]').value =
+    this.value ? this.options[this.selectedIndex].text : '';
+});
+
+function resetSelect(id, label) {
+  document.getElementById(id).innerHTML = `<option value="">${label}</option>`;
+}
+
+// Cek jika sekolah sudah dipilih
+const existingSekolah = document.querySelector('[name=asal_sekolah]').value;
+if (existingSekolah) {
+  document.getElementById('sekolah_terpilih').style.display    = 'block';
+  document.getElementById('sekolah_terpilih_nama').textContent = existingSekolah;
+  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+}
+</script>
 {% endblock %}

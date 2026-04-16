@@ -111,19 +111,22 @@ class ProfilPendaftar(models.Model):
     tempat_lahir    = models.CharField(max_length=100, blank=True)
     tgl_lahir       = models.DateField(null=True, blank=True)
     jenis_kelamin   = models.CharField(max_length=1, choices=JENIS_KELAMIN_CHOICES, blank=True)
-    agama           = models.CharField(max_length=10, choices=AGAMA_CHOICES, blank=True)
     kewarganegaraan = models.CharField(max_length=3, choices=KEWARGANEGARAAN_CHOICES, default='WNI')
     status_nikah    = models.CharField(max_length=15, choices=STATUS_NIKAH_CHOICES, default='belum_menikah')
     kebutuhan_khusus= models.CharField(max_length=100, blank=True, help_text='Isi jika difabel')
     foto            = models.ImageField(upload_to='foto_pendaftar/', blank=True, null=True)
 
-    # Alamat
-    alamat_lengkap  = models.TextField(blank=True)
-    provinsi        = models.CharField(max_length=100, blank=True)
-    kabupaten_kota  = models.CharField(max_length=100, blank=True)
-    kecamatan       = models.CharField(max_length=100, blank=True)
-    kelurahan       = models.CharField(max_length=100, blank=True)
-    kode_pos        = models.CharField(max_length=10, blank=True)
+    
+    # Alamat — referensi ke SIMDA via ID
+    alamat_lengkap      = models.TextField(blank=True)
+    provinsi_id         = models.BigIntegerField(null=True, blank=True)
+    provinsi_nama       = models.CharField(max_length=100, blank=True)
+    kabupaten_kota_id   = models.BigIntegerField(null=True, blank=True)
+    kabupaten_kota_nama = models.CharField(max_length=100, blank=True)
+    kecamatan_id        = models.BigIntegerField(null=True, blank=True)
+    kecamatan_nama      = models.CharField(max_length=100, blank=True)
+    kelurahan           = models.CharField(max_length=100, blank=True)
+    kode_pos            = models.CharField(max_length=10, blank=True)
 
     # Data orang tua
     nama_ayah       = models.CharField(max_length=200, blank=True)
@@ -136,14 +139,40 @@ class ProfilPendaftar(models.Model):
     no_hp_ortu      = models.CharField(max_length=20, blank=True)
     alamat_ortu     = models.TextField(blank=True)
 
-    # Data pendidikan
-    asal_sekolah    = models.CharField(max_length=200, blank=True)
-    jurusan_sekolah = models.CharField(max_length=100, blank=True)
+  
+    # Data pendidikan — referensi ke SIMDA
+    sekolah_id      = models.BigIntegerField(null=True, blank=True)
+    asal_sekolah    = models.CharField(max_length=200, blank=True)  # nama manual jika tidak ada di master
+    npsn            = models.CharField(max_length=10, blank=True)
+    jurusan_id      = models.CharField(max_length=20, blank=True)   # id dari master jurusan
+    jurusan_sekolah = models.CharField(max_length=200, blank=True)  # nama jurusan
     tahun_lulus     = models.IntegerField(null=True, blank=True)
     no_ijazah       = models.CharField(max_length=100, blank=True)
     nilai_rata_rata = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     prestasi        = models.TextField(blank=True)
 
+    # Agama — referensi ke SIMDA
+    agama_id        = models.BigIntegerField(null=True, blank=True)
+    agama_nama      = models.CharField(max_length=20, blank=True)
+
+    # Sumber informasi PMB
+    SUMBER_INFO_CHOICES = [
+        ('website',   'Website PMB UNISAN'),
+        ('instagram', 'Instagram'),
+        ('facebook',  'Facebook'),
+        ('tiktok',    'TikTok'),
+        ('youtube',   'YouTube'),
+        ('whatsapp',  'WhatsApp / Grup WA'),
+        ('teman',     'Info dari Teman / Keluarga'),
+        ('guru',      'Info dari Guru / Sekolah'),
+        ('panitia',   'Konseling Langsung Panitia'),
+        ('brosur',    'Brosur / Flyer'),
+        ('spanduk',   'Spanduk / Banner'),
+        ('recruiter', 'Recruiter / Referral'),
+        ('lainnya',   'Lainnya'),
+    ]
+    sumber_informasi      = models.CharField(max_length=20, choices=SUMBER_INFO_CHOICES, blank=True)
+    sumber_informasi_lain = models.CharField(max_length=200, blank=True)
     tgl_diupdate    = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -154,31 +183,31 @@ class ProfilPendaftar(models.Model):
     def __str__(self):
         return f'Profil — {self.pendaftaran.no_pendaftaran}'
 
-    @property
-    def is_lengkap(self):
-        """Cek kelengkapan profil dasar"""
-        wajib = [
-            self.nik, self.tempat_lahir, self.tgl_lahir,
-            self.jenis_kelamin, self.agama, self.alamat_lengkap,
-            self.nama_ayah, self.nama_ibu, self.asal_sekolah,
-            self.tahun_lulus,
-        ]
-        return all(wajib)
+@property
+def is_lengkap(self):
+    """Cek kelengkapan profil dasar"""
+    wajib = [
+        self.nik, self.tempat_lahir, self.tgl_lahir,
+        self.jenis_kelamin, self.agama_nama, self.alamat_lengkap,
+        self.nama_ayah, self.nama_ibu, self.asal_sekolah,
+        self.tahun_lulus,
+    ]
+    return all(wajib)
 
-    @property
-    def persen_lengkap(self):
-        """Hitung persentase kelengkapan profil"""
-        semua = [
-            self.nik, self.tempat_lahir, self.tgl_lahir,
-            self.jenis_kelamin, self.agama, self.alamat_lengkap,
-            self.provinsi, self.kabupaten_kota, self.kode_pos,
-            self.nama_ayah, self.pekerjaan_ayah, self.nama_ibu,
-            self.pekerjaan_ibu, self.no_hp_ortu, self.asal_sekolah,
-            self.jurusan_sekolah, self.tahun_lulus, self.no_ijazah,
-            self.nilai_rata_rata, self.foto,
-        ]
-        terisi = sum(1 for f in semua if f)
-        return int((terisi / len(semua)) * 100)
+@property
+def persen_lengkap(self):
+    """Hitung persentase kelengkapan profil"""
+    semua = [
+        self.nik, self.tempat_lahir, self.tgl_lahir,
+        self.jenis_kelamin, self.agama_nama, self.alamat_lengkap,
+        self.provinsi_nama, self.kabupaten_kota_nama, self.kode_pos,
+        self.nama_ayah, self.pekerjaan_ayah, self.nama_ibu,
+        self.pekerjaan_ibu, self.no_hp_ortu, self.asal_sekolah,
+        self.jurusan_sekolah, self.tahun_lulus, self.no_ijazah,
+        self.nilai_rata_rata, self.foto,
+    ]
+    terisi = sum(1 for f in semua if f)
+    return int((terisi / len(semua)) * 100)
 
 class TokenAktivasi(models.Model):
     user       = models.OneToOneField(User, on_delete=models.CASCADE, related_name='token_aktivasi')

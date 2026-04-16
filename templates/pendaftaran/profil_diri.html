@@ -3,14 +3,15 @@
 {% block header_title %}Data Diri{% endblock %}
 
 {% block form_content %}
-<form method="post" novalidate>
+<form method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
 
-  <div class="d-flex align-items-center gap-2 mb-4">
+  <!-- IDENTITAS DIRI -->
+  <div class="d-flex align-items-center gap-2 mb-3">
     <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
       <i class="bi bi-person-fill text-white" style="font-size:12px"></i>
     </div>
-    <h6 class="mb-0 fw-600" style="font-weight:600">Identitas Diri</h6>
+    <h6 class="mb-0" style="font-weight:600">Identitas Diri</h6>
   </div>
 
   <div class="row g-3 mb-4">
@@ -33,7 +34,8 @@
     </div>
     <div class="col-md-6">
       <label class="form-label">Agama <span class="text-danger">*</span></label>
-      {{ form.agama }}
+      {{ form.agama_id }}
+      {{ form.agama_nama }}
     </div>
     <div class="col-md-6">
       <label class="form-label">Status Pernikahan</label>
@@ -48,33 +50,46 @@
       {{ form.kebutuhan_khusus }}
       <div style="font-size:.75rem;color:#94a3b8;margin-top:3px">Kosongkan jika tidak ada</div>
     </div>
+    <div class="col-md-6">
+      <label class="form-label">Foto Profil</label>
+      {% if profil.foto %}
+        <div class="mb-2">
+          <img src="{{ profil.foto.url }}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #ede9fe">
+        </div>
+      {% endif %}
+      {{ form.foto }}
+    </div>
   </div>
 
   <hr style="border-color:#f0f0f0">
 
+  <!-- ALAMAT DOMISILI -->
   <div class="d-flex align-items-center gap-2 mb-3 mt-3">
     <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
       <i class="bi bi-geo-alt-fill text-white" style="font-size:12px"></i>
     </div>
-    <h6 class="mb-0 fw-600" style="font-weight:600">Alamat Domisili</h6>
+    <h6 class="mb-0" style="font-weight:600">Alamat Domisili</h6>
   </div>
 
-  <div class="row g-3">
+  <div class="row g-3 mb-4">
     <div class="col-12">
       <label class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
       {{ form.alamat_lengkap }}
     </div>
     <div class="col-md-6">
       <label class="form-label">Provinsi <span class="text-danger">*</span></label>
-      {{ form.provinsi }}
+      {{ form.provinsi_id }}
+      {{ form.provinsi_nama }}
     </div>
     <div class="col-md-6">
       <label class="form-label">Kabupaten / Kota <span class="text-danger">*</span></label>
-      {{ form.kabupaten_kota }}
+      {{ form.kabupaten_kota_id }}
+      {{ form.kabupaten_kota_nama }}
     </div>
     <div class="col-md-6">
       <label class="form-label">Kecamatan</label>
-      {{ form.kecamatan }}
+      {{ form.kecamatan_id }}
+      {{ form.kecamatan_nama }}
     </div>
     <div class="col-md-6">
       <label class="form-label">Kelurahan / Desa</label>
@@ -86,6 +101,31 @@
     </div>
   </div>
 
+  <hr style="border-color:#f0f0f0">
+
+  <!-- SUMBER INFORMASI -->
+  <div class="d-flex align-items-center gap-2 mb-3 mt-3">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-megaphone-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0" style="font-weight:600">Sumber Informasi PMB</h6>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Dari mana Anda tahu tentang PMB UNISAN?</label>
+      {{ form.sumber_informasi }}
+    </div>
+    <div class="col-md-6" id="div_sumber_lain" style="display:none">
+      <label class="form-label">Sebutkan sumbernya</label>
+      {{ form.sumber_informasi_lain }}
+    </div>
+  </div>
+
+  <hr style="border-color:#f0f0f0">
+
+  
+
   <div class="d-flex justify-content-between align-items-center mt-4">
     <a href="{% url 'dashboard:calon_maba' %}" class="btn btn-link text-secondary" style="font-size:.875rem">
       <i class="bi bi-arrow-left me-1"></i>Kembali
@@ -96,4 +136,165 @@
   </div>
 
 </form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const API_KAB     = "{% url 'accounts:api_kabupaten_kota' %}";
+const API_KEC     = "{% url 'accounts:api_kecamatan' %}";
+const API_SEKOLAH = "{% url 'accounts:api_sekolah' %}";
+
+// ===== WILAYAH DOMISILI =====
+document.getElementById('id_provinsi').addEventListener('change', function() {
+  const provId   = this.value;
+  const provNama = this.options[this.selectedIndex].text;
+  document.querySelector('[name=provinsi_nama]').value = provId ? provNama : '';
+  resetSelect('id_kabupaten_kota', '-- Pilih Kabupaten/Kota --');
+  resetSelect('id_kecamatan', '-- Pilih Kecamatan --');
+  document.querySelector('[name=kabupaten_kota_nama]').value = '';
+  document.querySelector('[name=kecamatan_nama]').value = '';
+  if (!provId) return;
+  fetchOptions(API_KAB + '?provinsi_id=' + provId, 'id_kabupaten_kota', '-- Pilih Kabupaten/Kota --');
+});
+
+document.getElementById('id_kabupaten_kota').addEventListener('change', function() {
+  const kabId   = this.value;
+  const kabNama = this.options[this.selectedIndex].text;
+  document.querySelector('[name=kabupaten_kota_nama]').value = kabId ? kabNama : '';
+  resetSelect('id_kecamatan', '-- Pilih Kecamatan --');
+  document.querySelector('[name=kecamatan_nama]').value = '';
+  if (!kabId) return;
+  fetchOptions(API_KEC + '?kabupaten_kota_id=' + kabId, 'id_kecamatan', '-- Pilih Kecamatan --');
+});
+
+document.getElementById('id_kecamatan').addEventListener('change', function() {
+  document.querySelector('[name=kecamatan_nama]').value =
+    this.value ? this.options[this.selectedIndex].text : '';
+});
+
+// ===== WILAYAH SEKOLAH =====
+document.getElementById('id_sekolah_provinsi').addEventListener('change', function() {
+  const provId = this.value;
+  resetSelect('id_sekolah_kabupaten', '-- Pilih Kabupaten/Kota --');
+  resetSekolah();
+  if (!provId) return;
+  fetch(API_KAB + '?provinsi_id=' + provId)
+    .then(r => r.json())
+    .then(data => {
+      const sel = document.getElementById('id_sekolah_kabupaten');
+      sel.innerHTML = '<option value="">-- Pilih Kabupaten/Kota --</option>';
+      data.data.forEach(k => {
+        sel.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+      });
+    });
+});
+
+document.getElementById('id_sekolah_kabupaten').addEventListener('change', function() {
+  resetSekolah();
+});
+
+// ===== AUTOCOMPLETE SEKOLAH =====
+let sekolahTimeout;
+document.getElementById('id_sekolah_nama_input').addEventListener('input', function() {
+  const q       = this.value;
+  const provId  = document.getElementById('id_sekolah_provinsi').value;
+  const kabId   = document.getElementById('id_sekolah_kabupaten').value;
+  clearTimeout(sekolahTimeout);
+  if (q.length < 3) {
+    document.getElementById('sekolah_suggestions').style.display = 'none';
+    return;
+  }
+  sekolahTimeout = setTimeout(() => {
+    let url = API_SEKOLAH + '?q=' + encodeURIComponent(q);
+    if (kabId)  url += '&kabupaten_kota_id=' + kabId;
+    else if (provId) url += '&provinsi_id=' + provId;
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const div = document.getElementById('sekolah_suggestions');
+        if (!data.data.length) {
+          div.innerHTML = `<div style="padding:10px 14px;font-size:.85rem;color:#94a3b8">
+            Sekolah tidak ditemukan — nama akan disimpan manual</div>`;
+          // Simpan input manual
+          document.querySelector('[name=asal_sekolah]').value = q;
+          document.querySelector('[name=sekolah_id]').value   = '';
+          document.querySelector('[name=npsn]').value          = '';
+        } else {
+          div.innerHTML = data.data.map(s => `
+            <div onclick="pilihSekolah(${s.id}, '${s.nama_sekolah.replace(/'/g,"\\'")}', '${s.npsn}')"
+                 style="padding:10px 14px;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9"
+                 onmouseover="this.style.background='#f8f9ff'"
+                 onmouseout="this.style.background='white'">
+              <div style="font-weight:500">${s.nama_sekolah}</div>
+              <div style="font-size:.75rem;color:#94a3b8">NPSN: ${s.npsn}</div>
+            </div>
+          `).join('');
+        }
+        div.style.display = 'block';
+      });
+  }, 400);
+});
+
+function pilihSekolah(id, nama, npsn) {
+  document.querySelector('[name=sekolah_id]').value   = id;
+  document.querySelector('[name=asal_sekolah]').value = nama;
+  document.querySelector('[name=npsn]').value          = npsn;
+  document.getElementById('id_sekolah_nama_input').value = nama;
+  document.getElementById('sekolah_suggestions').style.display = 'none';
+  document.getElementById('sekolah_terpilih').style.display    = 'block';
+  document.getElementById('sekolah_terpilih_nama').textContent = nama;
+  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+}
+
+function resetSekolah() {
+  document.querySelector('[name=sekolah_id]').value   = '';
+  document.querySelector('[name=asal_sekolah]').value = '';
+  document.querySelector('[name=npsn]').value          = '';
+  document.getElementById('id_sekolah_nama_input').value = '';
+  document.getElementById('id_sekolah_nama_input').style.display = 'block';
+  document.getElementById('sekolah_suggestions').style.display   = 'none';
+  document.getElementById('sekolah_terpilih').style.display      = 'none';
+}
+
+// ===== JURUSAN → simpan nama =====
+document.getElementById('id_jurusan').addEventListener('change', function() {
+  document.querySelector('[name=jurusan_sekolah]').value =
+    this.value ? this.options[this.selectedIndex].text : '';
+});
+
+// ===== SUMBER INFORMASI =====
+document.querySelector('[name=sumber_informasi]').addEventListener('change', function() {
+  document.getElementById('div_sumber_lain').style.display =
+    this.value === 'lainnya' ? 'block' : 'none';
+});
+if (document.querySelector('[name=sumber_informasi]').value === 'lainnya') {
+  document.getElementById('div_sumber_lain').style.display = 'block';
+}
+
+// ===== HELPERS =====
+function fetchOptions(url, selectId, placeholder) {
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      const sel = document.getElementById(selectId);
+      sel.innerHTML = `<option value="">${placeholder}</option>`;
+      data.data.forEach(k => {
+        sel.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+      });
+    });
+}
+
+function resetSelect(id, label) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = `<option value="">${label}</option>`;
+}
+
+// Cek jika sekolah sudah dipilih sebelumnya
+const existingSekolah = document.querySelector('[name=asal_sekolah]').value;
+if (existingSekolah) {
+  document.getElementById('sekolah_terpilih').style.display    = 'block';
+  document.getElementById('sekolah_terpilih_nama').textContent = existingSekolah;
+  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+}
+</script>
 {% endblock %}
