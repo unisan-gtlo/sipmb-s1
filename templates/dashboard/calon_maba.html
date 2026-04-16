@@ -1,21 +1,288 @@
 {% extends 'base_publik.html' %}
-{% block title %}Dashboard — PMB UNISAN{% endblock %}
+{% block title %}Dashboard Saya — PMB UNISAN{% endblock %}
+
 {% block content %}
+
+<!-- HEADER -->
 <div class="section-gradient">
-  <div class="container" style="position:relative;z-index:1;padding:30px 0 60px">
-    <h1 style="font-size:1.5rem;font-weight:700;color:white">
-      Halo, {{ user.first_name }}! 👋
-    </h1>
-    <p style="opacity:.85;color:white">Selamat datang di dashboard pendaftaran Anda</p>
+  <div class="container" style="position:relative;z-index:1;padding:28px 0 64px">
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:white;flex-shrink:0">
+        {{ user.first_name|first|upper }}
+      </div>
+      <div>
+        <div style="font-size:1.3rem;font-weight:700;color:white">Halo, {{ user.first_name }}! 👋</div>
+        <div style="opacity:.8;font-size:.875rem;color:white">
+          {% if pendaftaran %}
+            No. Pendaftaran: <strong>{{ pendaftaran.no_pendaftaran }}</strong>
+          {% else %}
+            Akun calon mahasiswa baru
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-<div class="container" style="margin-top:-30px;padding-bottom:60px">
-  <div class="card-modern p-4">
-    <h5 class="fw-600 mb-3" style="font-weight:600">Dashboard Calon Maba</h5>
-    <p class="text-muted">Halaman dashboard lengkap sedang dalam pengembangan.</p>
-    <a href="{% url 'accounts:logout' %}" class="btn-outline-gradient btn mt-2">
-      <i class="bi bi-box-arrow-right me-2"></i>Logout
-    </a>
+
+<div class="container" style="margin-top:-36px;padding-bottom:60px">
+  <div class="row g-4">
+
+    <!-- KOLOM KIRI -->
+    <div class="col-lg-8">
+
+      <!-- STATUS PENDAFTARAN -->
+      {% if pendaftaran %}
+      <div class="card-modern p-4 mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="mb-0 fw-600" style="font-weight:600">Status Pendaftaran</h6>
+          <span class="badge-gradient">{{ pendaftaran.get_status_display }}</span>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="d-flex align-items-center gap-1 mb-3" style="overflow-x:auto;padding-bottom:4px">
+          {% with s=pendaftaran.status %}
+          <div class="text-center" style="min-width:80px">
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+              {% if s == 'DRAFT' %}background:linear-gradient(135deg,#667eea,#764ba2);color:white
+              {% else %}background:#10b981;color:white{% endif %}">
+              {% if s != 'DRAFT' %}<i class="bi bi-check"></i>{% else %}1{% endif %}
+            </div>
+            <div style="font-size:10px;color:{% if s == 'DRAFT' %}#667eea{% else %}#10b981{% endif %};font-weight:500">Daftar</div>
+          </div>
+          <div style="flex:1;height:2px;background:{% if s != 'DRAFT' %}#10b981{% else %}#e2e8f0{% endif %};border-radius:2px;min-width:20px"></div>
+
+          <div class="text-center" style="min-width:80px">
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+              {% if s in 'LENGKAP,DIVERIFIKASI,LULUS_ADM,TERJADWAL,LULUS_SELEKSI,DAFTAR_ULANG,AKTIF' %}background:#10b981;color:white
+              {% elif s == 'DRAFT' %}background:#e2e8f0;color:#94a3b8
+              {% else %}background:#e2e8f0;color:#94a3b8{% endif %}">
+              {% if s in 'LENGKAP,DIVERIFIKASI,LULUS_ADM,TERJADWAL,LULUS_SELEKSI,DAFTAR_ULANG,AKTIF' %}<i class="bi bi-check"></i>{% else %}2{% endif %}
+            </div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:500">Lengkap</div>
+          </div>
+          <div style="flex:1;height:2px;background:#e2e8f0;border-radius:2px;min-width:20px"></div>
+
+          <div class="text-center" style="min-width:80px">
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:#e2e8f0;color:#94a3b8">3</div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:500">Verifikasi</div>
+          </div>
+          <div style="flex:1;height:2px;background:#e2e8f0;border-radius:2px;min-width:20px"></div>
+
+          <div class="text-center" style="min-width:80px">
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:#e2e8f0;color:#94a3b8">4</div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:500">Seleksi</div>
+          </div>
+          <div style="flex:1;height:2px;background:#e2e8f0;border-radius:2px;min-width:20px"></div>
+
+          <div class="text-center" style="min-width:80px">
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:#e2e8f0;color:#94a3b8">5</div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:500">Daftar Ulang</div>
+          </div>
+          {% endwith %}
+        </div>
+
+        <!-- Info Pendaftaran -->
+        <div class="row g-2" style="font-size:.875rem">
+          <div class="col-6 col-md-3">
+            <div style="background:#f8f9ff;border-radius:10px;padding:10px 12px">
+              <div style="color:#94a3b8;font-size:.75rem;margin-bottom:2px">Jalur</div>
+              <div style="font-weight:600">{{ pendaftaran.jalur.nama_jalur }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div style="background:#f8f9ff;border-radius:10px;padding:10px 12px">
+              <div style="color:#94a3b8;font-size:.75rem;margin-bottom:2px">Gelombang</div>
+              <div style="font-weight:600">{{ pendaftaran.gelombang.nama_gelombang }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div style="background:#f8f9ff;border-radius:10px;padding:10px 12px">
+              <div style="color:#94a3b8;font-size:.75rem;margin-bottom:2px">Prodi Pilihan 1</div>
+              <div style="font-weight:600;font-size:.8rem">{{ pendaftaran.prodi_pilihan_1.nama_prodi }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div style="background:#f8f9ff;border-radius:10px;padding:10px 12px">
+              <div style="color:#94a3b8;font-size:.75rem;margin-bottom:2px">Biaya Daftar</div>
+              <div style="font-weight:600;color:#10b981">
+                {% if pendaftaran.gelombang.jenis_biaya == 'gratis' %}
+                  Gratis
+                {% else %}
+                  Rp {{ pendaftaran.gelombang.biaya_akhir|floatformat:0 }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- KELENGKAPAN PROFIL -->
+      <div class="card-modern p-4 mb-4">
+        <h6 class="mb-3 fw-600" style="font-weight:600">
+          <i class="bi bi-person-check me-2" style="color:#667eea"></i>Kelengkapan Profil
+        </h6>
+        {% if profil %}
+          {% with pct=profil.persen_lengkap %}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="font-size:.875rem;color:#64748b">Progress profil</span>
+            <span style="font-size:.875rem;font-weight:600;color:
+              {% if pct == 100 %}#10b981{% elif pct >= 60 %}#f59e0b{% else %}#ef4444{% endif %}">
+              {{ pct }}%
+            </span>
+          </div>
+          <div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-bottom:16px">
+            <div style="height:100%;border-radius:4px;width:{{ pct }}%;background:
+              {% if pct == 100 %}#10b981{% elif pct >= 60 %}#f59e0b{% else %}linear-gradient(135deg,#667eea,#764ba2){% endif %};
+              transition:width .3s"></div>
+          </div>
+          {% endwith %}
+        {% endif %}
+
+        <div class="row g-2">
+          <div class="col-md-6">
+            <a href="#" class="d-flex align-items-center gap-3 p-3 text-decoration-none"
+               style="border:1.5px solid #e2e8f0;border-radius:10px;transition:all .2s"
+               onmouseover="this.style.borderColor='#667eea'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="width:36px;height:36px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="bi bi-person-fill" style="color:#667eea"></i>
+              </div>
+              <div>
+                <div style="font-size:.875rem;font-weight:600;color:#1e1e2e">Data Diri</div>
+                <div style="font-size:.75rem;color:#94a3b8">Lengkapi data pribadi</div>
+              </div>
+              <i class="bi bi-chevron-right ms-auto" style="color:#94a3b8"></i>
+            </a>
+          </div>
+          <div class="col-md-6">
+            <a href="#" class="d-flex align-items-center gap-3 p-3 text-decoration-none"
+               style="border:1.5px solid #e2e8f0;border-radius:10px;transition:all .2s"
+               onmouseover="this.style.borderColor='#667eea'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="width:36px;height:36px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="bi bi-people-fill" style="color:#667eea"></i>
+              </div>
+              <div>
+                <div style="font-size:.875rem;font-weight:600;color:#1e1e2e">Data Orang Tua</div>
+                <div style="font-size:.75rem;color:#94a3b8">Lengkapi data keluarga</div>
+              </div>
+              <i class="bi bi-chevron-right ms-auto" style="color:#94a3b8"></i>
+            </a>
+          </div>
+          <div class="col-md-6">
+            <a href="#" class="d-flex align-items-center gap-3 p-3 text-decoration-none"
+               style="border:1.5px solid #e2e8f0;border-radius:10px;transition:all .2s"
+               onmouseover="this.style.borderColor='#667eea'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="width:36px;height:36px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="bi bi-book-fill" style="color:#667eea"></i>
+              </div>
+              <div>
+                <div style="font-size:.875rem;font-weight:600;color:#1e1e2e">Data Pendidikan</div>
+                <div style="font-size:.75rem;color:#94a3b8">Asal sekolah & nilai</div>
+              </div>
+              <i class="bi bi-chevron-right ms-auto" style="color:#94a3b8"></i>
+            </a>
+          </div>
+          <div class="col-md-6">
+            <a href="#" class="d-flex align-items-center gap-3 p-3 text-decoration-none"
+               style="border:1.5px solid #e2e8f0;border-radius:10px;transition:all .2s"
+               onmouseover="this.style.borderColor='#667eea'" onmouseout="this.style.borderColor='#e2e8f0'">
+              <div style="width:36px;height:36px;border-radius:8px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="bi bi-file-earmark-arrow-up-fill" style="color:#f59e0b"></i>
+              </div>
+              <div>
+                <div style="font-size:.875rem;font-weight:600;color:#1e1e2e">Upload Dokumen</div>
+                <div style="font-size:.75rem;color:#94a3b8">Ijazah, KTP, foto dll</div>
+              </div>
+              <i class="bi bi-chevron-right ms-auto" style="color:#94a3b8"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KOLOM KANAN -->
+    <div class="col-lg-4">
+
+      <!-- INFO PENDAFTARAN -->
+      {% if pendaftaran %}
+      <div class="card-modern p-4 mb-4">
+        <h6 class="mb-3 fw-600" style="font-weight:600">
+          <i class="bi bi-calendar3 me-2" style="color:#667eea"></i>Timeline PMB
+        </h6>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:.85rem">
+          <div class="d-flex justify-content-between">
+            <span style="color:#64748b">Penutupan daftar</span>
+            <span style="font-weight:600">{{ pendaftaran.gelombang.tgl_tutup }}</span>
+          </div>
+          {% if pendaftaran.gelombang.tgl_seleksi %}
+          <div class="d-flex justify-content-between">
+            <span style="color:#64748b">Pelaksanaan seleksi</span>
+            <span style="font-weight:600">{{ pendaftaran.gelombang.tgl_seleksi }}</span>
+          </div>
+          {% endif %}
+          {% if pendaftaran.gelombang.tgl_pengumuman %}
+          <div class="d-flex justify-content-between">
+            <span style="color:#64748b">Pengumuman hasil</span>
+            <span style="font-weight:600">{{ pendaftaran.gelombang.tgl_pengumuman }}</span>
+          </div>
+          {% endif %}
+          {% if pendaftaran.gelombang.tgl_daftar_ulang %}
+          <div class="d-flex justify-content-between">
+            <span style="color:#64748b">Batas daftar ulang</span>
+            <span style="font-weight:600;color:#ef4444">{{ pendaftaran.gelombang.tgl_daftar_ulang }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- WHATSAPP GROUP -->
+      {% if pengaturan.tampilkan_wa and pengaturan.link_wa_group %}
+      <div class="card-modern p-4 mb-4">
+        <h6 class="mb-2 fw-600" style="font-weight:600">
+          <i class="bi bi-whatsapp me-2" style="color:#25d366"></i>WhatsApp Group PMB
+        </h6>
+        <p style="font-size:.8rem;color:#64748b;margin-bottom:12px">
+          {{ pengaturan.deskripsi_wa_group|default:"Bergabung untuk info terbaru dari panitia PMB UNISAN" }}
+        </p>
+        <a href="{{ pengaturan.link_wa_group }}" target="_blank"
+           class="btn btn-success w-100" style="border-radius:10px;font-weight:600;font-size:.875rem">
+          <i class="bi bi-whatsapp me-2"></i>Join Grup WA
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- CHATBOT SINTA -->
+      <div class="card-modern p-4 mb-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="bi bi-robot text-white"></i>
+          </div>
+          <div>
+            <div style="font-size:.875rem;font-weight:600">SINTA</div>
+            <div style="font-size:.75rem;color:#10b981">
+              <i class="bi bi-circle-fill" style="font-size:8px"></i> Online 24 jam
+            </div>
+          </div>
+        </div>
+        <p style="font-size:.8rem;color:#64748b;margin-bottom:12px">
+          Ada pertanyaan seputar PMB? Tanya SINTA sekarang!
+        </p>
+        <button class="btn w-100 btn-outline-gradient" style="font-size:.875rem">
+          <i class="bi bi-chat-dots-fill me-2"></i>Chat dengan SINTA
+        </button>
+      </div>
+
+      <!-- LOGOUT -->
+      <div class="text-center">
+        <a href="{% url 'accounts:logout' %}" class="btn btn-link text-danger" style="font-size:.875rem">
+          <i class="bi bi-box-arrow-right me-1"></i>Keluar
+        </a>
+      </div>
+
+    </div>
   </div>
 </div>
+
 {% endblock %}
