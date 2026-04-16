@@ -9,6 +9,7 @@ urlpatterns = [
     path('dashboard/',  include('dashboard.urls',   namespace='dashboard')),
     path('profil/',     include('pendaftaran.urls', namespace='pendaftaran')),
     path('dokumen/',    include('dokumen.urls',     namespace='dokumen')),
+    path('sinta/',      include('chatbot.urls',     namespace='chatbot')),
 ]
 
 if settings.DEBUG:

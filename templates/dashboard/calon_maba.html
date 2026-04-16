@@ -269,8 +269,8 @@
         <p style="font-size:.8rem;color:#64748b;margin-bottom:12px">
           Ada pertanyaan seputar PMB? Tanya SINTA sekarang!
         </p>
-        <button class="btn w-100 btn-outline-gradient" style="font-size:.875rem">
-          <i class="bi bi-chat-dots-fill me-2"></i>Chat dengan SINTA
+        <button onclick="toggleSinta()" class="btn w-100 btn-outline-gradient" style="font-size:.875rem">
+         <i class="bi bi-chat-dots-fill me-2"></i>Chat dengan SINTA
         </button>
       </div>
 
@@ -283,6 +283,16 @@
 
     </div>
   </div>
+</div>
+
+<!-- Test chatbot langsung -->
+<div style="position:fixed;bottom:24px;right:24px;z-index:9999">
+  <button style="width:56px;height:56px;border-radius:50%;border:none;
+                 background:linear-gradient(135deg,#667eea,#764ba2);
+                 cursor:pointer;box-shadow:0 4px 20px rgba(102,126,234,0.4)"
+          onclick="alert('SINTA widget test!')">
+    <i class="bi bi-chat-dots-fill text-white" style="font-size:22px"></i>
+  </button>
 </div>
 
 {% endblock %}
