@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'laporan',
     'notifikasi',
     'dashboard',
+    'admin_pmb',
    
 ]
 

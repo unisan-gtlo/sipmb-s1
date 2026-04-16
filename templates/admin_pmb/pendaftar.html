@@ -1,0 +1,123 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Daftar Pendaftar{% endblock %}
+{% block nav_pendaftar %}active{% endblock %}
+{% block page_title %}Daftar Pendaftar{% endblock %}
+{% block page_sub %}Kelola semua data pendaftar PMB{% endblock %}
+
+{% block content %}
+
+<!-- FILTER -->
+<div class="content-card mb-4">
+  <div class="content-card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;margin-bottom:4px;display:block">Cari</label>
+        <input type="text" name="q" value="{{ filter_cari }}"
+               placeholder="Nama, email, no. pendaftaran..."
+               style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                      padding:8px 12px;font-size:.875rem;outline:none">
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;margin-bottom:4px;display:block">Status</label>
+        <select name="status" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Status</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;margin-bottom:4px;display:block">Jalur</label>
+        <select name="jalur" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Jalur</option>
+          {% for j in jalur_list %}
+            <option value="{{ j.id }}" {% if filter_jalur == j.id|stringformat:"s" %}selected{% endif %}>{{ j.nama_jalur }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;margin-bottom:4px;display:block">Gelombang</label>
+        <select name="gelombang" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Gelombang</option>
+          {% for g in gelombang_list %}
+            <option value="{{ g.id }}" {% if filter_gelombang == g.id|stringformat:"s" %}selected{% endif %}>{{ g.nama_gelombang }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn-primary-custom">
+          <i class="bi bi-search"></i> Filter
+        </button>
+        <a href="{% url 'admin_pmb:pendaftar' %}" class="btn-outline-custom">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TABEL -->
+<div class="content-card">
+  <div class="content-card-header">
+    <div class="content-card-title">
+      {{ pendaftar_list.count }} pendaftar ditemukan
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>No. Pendaftaran</th>
+          <th>Nama Lengkap</th>
+          <th>Email / HP</th>
+          <th>Jalur</th>
+          <th>Prodi Pilihan 1</th>
+          <th>Status</th>
+          <th>Tgl Daftar</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pendaftar_list %}
+        <tr>
+          <td style="font-family:monospace;font-size:.8rem;color:#667eea">
+            {{ p.no_pendaftaran }}
+          </td>
+          <td>
+            <div style="font-weight:500">{{ p.user.get_full_name }}</div>
+          </td>
+          <td>
+            <div style="font-size:.8rem">{{ p.user.email }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ p.user.no_hp }}</div>
+          </td>
+          <td style="font-size:.85rem">{{ p.jalur.nama_jalur }}</td>
+          <td style="font-size:.85rem">{{ p.prodi_pilihan_1.nama_prodi }}</td>
+          <td>
+            <span class="badge-status badge-{{ p.status|lower }}">
+              {{ p.get_status_display }}
+            </span>
+          </td>
+          <td style="font-size:.8rem;color:#94a3b8">
+            {{ p.tgl_daftar|date:"d M Y" }}
+          </td>
+          <td>
+            <a href="{% url 'admin_pmb:detail_pendaftar' p.pk %}"
+               class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+              Detail
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;color:#94a3b8;padding:40px">
+            Tidak ada pendaftar yang sesuai filter
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

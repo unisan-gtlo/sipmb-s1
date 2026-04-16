@@ -1,0 +1,49 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Chatbot SINTA{% endblock %}
+{% block nav_chatbot %}active{% endblock %}
+{% block page_title %}Knowledge Base SINTA{% endblock %}
+{% block page_sub %}Kelola pertanyaan & jawaban chatbot{% endblock %}
+
+{% block content %}
+<div class="content-card">
+  <div class="content-card-header">
+    <div class="content-card-title">{{ kb_list.count }} entri knowledge base</div>
+    <a href="/admin/chatbot/knowledgebase/add/" class="btn-primary-custom">
+      <i class="bi bi-plus-lg"></i> Tambah KB
+    </a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr><th>Kategori</th><th>Pertanyaan</th><th>Kata Kunci</th><th>Status</th><th>Aksi</th></tr>
+      </thead>
+      <tbody>
+        {% for kb in kb_list %}
+        <tr>
+          <td><span class="badge-status badge-lengkap">{{ kb.get_kategori_display }}</span></td>
+          <td style="max-width:250px">{{ kb.pertanyaan|truncatechars:80 }}</td>
+          <td style="font-size:.75rem;color:#94a3b8;max-width:150px">{{ kb.kata_kunci|truncatechars:50 }}</td>
+          <td>
+            {% if kb.status == 'aktif' %}
+              <span class="badge-status badge-lulus">Aktif</span>
+            {% else %}
+              <span class="badge-status badge-draft">Nonaktif</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/admin/chatbot/knowledgebase/{{ kb.id }}/change/"
+               class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center;color:#94a3b8;padding:40px">
+            Knowledge base masih kosong. <a href="/admin/chatbot/knowledgebase/add/" style="color:#667eea">Tambah sekarang</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

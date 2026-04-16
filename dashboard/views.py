@@ -82,3 +82,7 @@ def recruiter_dashboard(request):
         'pengaturan': pengaturan,
     }
     return render(request, 'dashboard/recruiter.html', context)
+
+@login_required
+def admin_pmb(request):
+    return redirect('admin_pmb:dashboard')

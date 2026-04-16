@@ -4,12 +4,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/',      admin.site.urls),
-    path('accounts/',   include('accounts.urls',    namespace='accounts')),
-    path('dashboard/',  include('dashboard.urls',   namespace='dashboard')),
-    path('profil/',     include('pendaftaran.urls', namespace='pendaftaran')),
-    path('dokumen/',    include('dokumen.urls',     namespace='dokumen')),
-    path('sinta/',      include('chatbot.urls',     namespace='chatbot')),
+    path('admin/',        admin.site.urls),
+    path('accounts/',     include('accounts.urls',    namespace='accounts')),
+    path('dashboard/',    include('dashboard.urls',   namespace='dashboard')),
+    path('profil/',       include('pendaftaran.urls', namespace='pendaftaran')),
+    path('dokumen/',      include('dokumen.urls',     namespace='dokumen')),
+    path('sinta/',        include('chatbot.urls',     namespace='chatbot')),
+    path('admin-pmb/',    include('admin_pmb.urls',   namespace='admin_pmb')),
 ]
 
 if settings.DEBUG:

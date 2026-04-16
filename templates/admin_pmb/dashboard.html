@@ -1,0 +1,189 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Dashboard Admin PMB{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block page_title %}Dashboard PMB{% endblock %}
+{% block page_sub %}Ringkasan aktivitas pendaftaran mahasiswa baru{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS ROW 1 -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#ede9fe">
+        <i class="bi bi-people-fill" style="color:#7c3aed"></i>
+      </div>
+      <div class="stat-value" style="color:#7c3aed">{{ total }}</div>
+      <div class="stat-label">Total Pendaftar</div>
+      <div class="stat-change" style="color:#10b981">
+        <i class="bi bi-arrow-up"></i> {{ hari_ini }} hari ini
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7">
+        <i class="bi bi-hourglass-split" style="color:#d97706"></i>
+      </div>
+      <div class="stat-value" style="color:#d97706">{{ perlu_verif }}</div>
+      <div class="stat-label">Perlu Diverifikasi</div>
+      <div class="stat-change" style="color:#94a3b8">
+        <i class="bi bi-file-earmark"></i> {{ dok_pending }} dokumen pending
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5">
+        <i class="bi bi-trophy-fill" style="color:#059669"></i>
+      </div>
+      <div class="stat-value" style="color:#059669">{{ lulus }}</div>
+      <div class="stat-label">Lulus Seleksi</div>
+      <div class="stat-change" style="color:#10b981">
+        <i class="bi bi-check-circle"></i> {{ daftar_ulang }} daftar ulang
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe">
+        <i class="bi bi-clipboard-data" style="color:#2563eb"></i>
+      </div>
+      <div class="stat-value" style="color:#2563eb">{{ draft }}</div>
+      <div class="stat-label">Masih Draft</div>
+      <div class="stat-change" style="color:#ef4444">
+        <i class="bi bi-x-circle"></i> {{ tidak_lulus }} tidak lulus
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS + TABEL -->
+<div class="row g-3 mb-4">
+  <!-- Chart per prodi -->
+  <div class="col-md-7">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Pendaftar per Program Studi</div>
+      </div>
+      <div style="padding:16px">
+        <canvas id="chartProdi" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart per jalur -->
+  <div class="col-md-5">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Distribusi per Jalur</div>
+      </div>
+      <div style="padding:16px">
+        <canvas id="chartJalur" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABEL PENDAFTAR TERBARU -->
+<div class="content-card mb-4">
+  <div class="content-card-header">
+    <div class="content-card-title">10 Pendaftar Terbaru</div>
+    <a href="{% url 'admin_pmb:pendaftar' %}" class="btn-outline-custom">
+      Lihat semua →
+    </a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>No. Pendaftaran</th>
+          <th>Nama</th>
+          <th>Jalur</th>
+          <th>Prodi Pilihan 1</th>
+          <th>Gelombang</th>
+          <th>Status</th>
+          <th>Tanggal</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in terbaru %}
+        <tr>
+          <td style="font-family:monospace;font-size:.8rem">{{ p.no_pendaftaran }}</td>
+          <td>
+            <div style="font-weight:500">{{ p.user.get_full_name }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ p.user.email }}</div>
+          </td>
+          <td>{{ p.jalur.nama_jalur }}</td>
+          <td>{{ p.prodi_pilihan_1.nama_prodi }}</td>
+          <td>{{ p.gelombang.nama_gelombang }}</td>
+          <td>
+            <span class="badge-status badge-{{ p.status|lower }}">
+              {{ p.get_status_display }}
+            </span>
+          </td>
+          <td style="font-size:.8rem;color:#94a3b8">
+            {{ p.tgl_daftar|date:"d M Y" }}
+          </td>
+          <td>
+            <a href="{% url 'admin_pmb:detail_pendaftar' p.pk %}"
+               style="color:#667eea;font-size:.8rem">Detail</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;color:#94a3b8;padding:30px">
+            Belum ada pendaftar
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart per prodi
+const prodiData = {
+  labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+  datasets: [{
+    label: 'Pendaftar',
+    data: [{% for p in per_prodi %}{{ p.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+    backgroundColor: [
+      '#667eea','#764ba2','#10b981','#f59e0b',
+      '#ef4444','#3b82f6','#8b5cf6','#06b6d4'
+    ],
+    borderRadius: 6,
+  }]
+};
+new Chart(document.getElementById('chartProdi'), {
+  type: 'bar',
+  data: prodiData,
+  options: {
+    responsive:true, plugins:{legend:{display:false}},
+    scales:{ y:{beginAtZero:true, ticks:{stepSize:1}} }
+  }
+});
+
+// Chart per jalur
+const jalurData = {
+  labels: [{% for j in per_jalur %}'{{ j.jalur__nama_jalur }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+  datasets: [{
+    data: [{% for j in per_jalur %}{{ j.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+    backgroundColor: ['#667eea','#10b981','#f59e0b','#ef4444','#3b82f6'],
+  }]
+};
+new Chart(document.getElementById('chartJalur'), {
+  type: 'doughnut',
+  data: jalurData,
+  options: {
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{font:{size:12}} } }
+  }
+});
+</script>
+{% endblock %}

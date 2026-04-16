@@ -1,0 +1,272 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Detail Pendaftar{% endblock %}
+{% block nav_pendaftar %}active{% endblock %}
+{% block page_title %}Detail Pendaftar{% endblock %}
+{% block page_sub %}{{ pendaftaran.no_pendaftaran }}{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- KOLOM KIRI -->
+  <div class="col-md-8">
+
+    <!-- INFO PENDAFTARAN -->
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Info Pendaftaran</div>
+        <span class="badge-status badge-{{ pendaftaran.status|lower }}">
+          {{ pendaftaran.get_status_display }}
+        </span>
+      </div>
+      <div class="content-card-body">
+        <div class="row g-3" style="font-size:.875rem">
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">No. Pendaftaran</div>
+            <div style="font-weight:600;font-family:monospace">{{ pendaftaran.no_pendaftaran }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Tanggal Daftar</div>
+            <div style="font-weight:500">{{ pendaftaran.tgl_daftar|date:"d M Y H:i" }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Jalur</div>
+            <div style="font-weight:500">{{ pendaftaran.jalur.nama_jalur }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Gelombang</div>
+            <div style="font-weight:500">{{ pendaftaran.gelombang.nama_gelombang }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Prodi Pilihan 1</div>
+            <div style="font-weight:500">{{ pendaftaran.prodi_pilihan_1.nama_prodi }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Prodi Pilihan 2</div>
+            <div style="font-weight:500">{{ pendaftaran.prodi_pilihan_2.nama_prodi|default:"-" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFIL PENDAFTAR -->
+    {% if profil %}
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Data Diri</div>
+        <span style="font-size:.8rem;color:#667eea">{{ profil.persen_lengkap }}% lengkap</span>
+      </div>
+      <div class="content-card-body">
+        <div class="row g-3" style="font-size:.875rem">
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">NIK</div>
+            <div>{{ profil.nik|default:"-" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Tempat Lahir</div>
+            <div>{{ profil.tempat_lahir|default:"-" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Tanggal Lahir</div>
+            <div>{{ profil.tgl_lahir|default:"-" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Jenis Kelamin</div>
+            <div>{{ profil.get_jenis_kelamin_display|default:"-" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Agama</div>
+            <div>{{ profil.agama_nama|default:"-" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Asal Sekolah</div>
+            <div>{{ profil.asal_sekolah|default:"-" }}</div>
+          </div>
+          <div class="col-12">
+            <div style="color:#94a3b8;margin-bottom:2px">Alamat</div>
+            <div>{{ profil.alamat_lengkap|default:"-" }}, {{ profil.kabupaten_kota_nama }} {{ profil.provinsi_nama }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- DOKUMEN -->
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Dokumen Persyaratan</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr><th>Dokumen</th><th>File</th><th>Status</th><th>Aksi</th></tr>
+          </thead>
+          <tbody>
+            {% for dok in dokumen_list %}
+            <tr>
+              <td>
+                {{ dok.nama_dokumen }}
+                {% if dok.wajib %}<span style="font-size:.7rem;background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:10px;margin-left:4px">Wajib</span>{% endif %}
+              </td>
+              <td>
+                {% if dok.file %}
+                  <a href="{{ dok.file.url }}" target="_blank" style="color:#667eea;font-size:.85rem">
+                    <i class="bi bi-file-earmark"></i> Lihat
+                  </a>
+                {% elif dok.link_drive %}
+                  <a href="{{ dok.link_drive }}" target="_blank" style="color:#667eea;font-size:.85rem">
+                    <i class="bi bi-google"></i> Drive
+                  </a>
+                {% else %}
+                  <span style="color:#94a3b8;font-size:.85rem">Belum upload</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge-status
+                  {% if dok.status_verifikasi == 'terverifikasi' %}badge-lulus
+                  {% elif dok.status_verifikasi == 'ditolak' %}badge-tolak
+                  {% elif dok.sudah_upload %}badge-lengkap
+                  {% else %}badge-draft{% endif %}">
+                  {{ dok.get_status_verifikasi_display }}
+                </span>
+              </td>
+              <td>
+                {% if dok.status_verifikasi == 'menunggu' %}
+                  <div style="display:flex;gap:4px">
+                    <form method="post" action="{% url 'admin_pmb:verif_acc' dok.id %}">
+                      {% csrf_token %}
+                      <button type="submit" style="padding:3px 8px;border-radius:6px;border:none;
+                              background:#10b981;color:white;font-size:.75rem;cursor:pointer">ACC</button>
+                    </form>
+                    <button onclick="showTolak({{ dok.id }})"
+                            style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;
+                                   color:#ef4444;background:white;font-size:.75rem;cursor:pointer">Tolak</button>
+                  </div>
+                {% endif %}
+                {% if dok.catatan_verifikasi %}
+                  <div style="font-size:.75rem;color:#94a3b8;margin-top:2px">{{ dok.catatan_verifikasi }}</div>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">Belum ada dokumen</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KOLOM KANAN -->
+  <div class="col-md-4">
+
+    <!-- FOTO & KONTAK -->
+    <div class="content-card mb-3">
+      <div class="content-card-body" style="text-align:center">
+        {% if profil and profil.foto %}
+          <img src="{{ profil.foto.url }}"
+               style="width:80px;height:80px;border-radius:50%;object-fit:cover;
+                      border:3px solid #ede9fe;margin-bottom:12px">
+        {% else %}
+          <div style="width:80px;height:80px;border-radius:50%;
+                      background:linear-gradient(135deg,#667eea,#764ba2);
+                      display:flex;align-items:center;justify-content:center;
+                      margin:0 auto 12px;font-size:28px;font-weight:700;color:white">
+            {{ pendaftaran.user.first_name|first|upper }}
+          </div>
+        {% endif %}
+        <div style="font-size:1rem;font-weight:600">{{ pendaftaran.user.get_full_name }}</div>
+        <div style="font-size:.8rem;color:#94a3b8;margin-top:4px">{{ pendaftaran.user.email }}</div>
+        <div style="font-size:.8rem;color:#94a3b8">{{ pendaftaran.user.no_hp }}</div>
+      </div>
+    </div>
+
+    <!-- UBAH STATUS -->
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Ubah Status</div>
+      </div>
+      <div class="content-card-body">
+        <form method="post" action="{% url 'admin_pmb:ubah_status' pendaftaran.pk %}">
+          {% csrf_token %}
+          <select name="status_baru"
+                  style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                         padding:8px 10px;font-size:.875rem;outline:none;margin-bottom:8px">
+            {% for val, label in status_choices %}
+              <option value="{{ val }}" {% if pendaftaran.status == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+          <textarea name="keterangan" rows="2" placeholder="Catatan (opsional)..."
+                    style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                           padding:8px 10px;font-size:.875rem;outline:none;
+                           resize:none;margin-bottom:8px"></textarea>
+          <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center">
+            <i class="bi bi-arrow-repeat"></i> Ubah Status
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- LOG STATUS -->
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Riwayat Status</div>
+      </div>
+      <div style="padding:12px 16px;max-height:250px;overflow-y:auto">
+        {% for log in log_list %}
+        <div style="display:flex;gap:10px;margin-bottom:12px;font-size:.8rem">
+          <div style="width:8px;height:8px;border-radius:50%;background:#667eea;
+                      flex-shrink:0;margin-top:4px"></div>
+          <div>
+            <div><strong>{{ log.status_lama|default:"—" }}</strong> → <strong>{{ log.status_baru }}</strong></div>
+            {% if log.keterangan %}<div style="color:#64748b">{{ log.keterangan }}</div>{% endif %}
+            <div style="color:#94a3b8">{{ log.tgl_perubahan|date:"d M Y H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="color:#94a3b8;font-size:.8rem;text-align:center;padding:10px">
+          Belum ada riwayat
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Tolak -->
+<div id="modal-tolak" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);
+     z-index:999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:400px">
+    <h6 style="font-weight:600;margin-bottom:16px">Alasan Penolakan</h6>
+    <form method="post" id="form-tolak">
+      {% csrf_token %}
+      <textarea name="catatan" rows="3" placeholder="Tuliskan alasan penolakan..."
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:10px;font-size:.875rem;outline:none;resize:none"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button type="submit" style="flex:1;padding:10px;border-radius:8px;border:none;
+                background:#ef4444;color:white;font-weight:500;cursor:pointer">Tolak</button>
+        <button type="button" onclick="hideTolak()"
+                style="flex:1;padding:10px;border-radius:8px;border:1px solid #e2e8f0;
+                       background:white;cursor:pointer">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showTolak(dokId) {
+  document.getElementById('form-tolak').action = `/admin-pmb/verifikasi/${dokId}/tolak/`;
+  document.getElementById('modal-tolak').style.display = 'flex';
+}
+function hideTolak() {
+  document.getElementById('modal-tolak').style.display = 'none';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Verifikasi Dokumen{% endblock %}
+{% block nav_verifikasi %}active{% endblock %}
+{% block page_title %}Verifikasi Dokumen{% endblock %}
+{% block page_sub %}Dokumen yang menunggu verifikasi dari pendaftar{% endblock %}
+
+{% block content %}
+<div class="content-card">
+  <div class="content-card-header">
+    <div class="content-card-title">{{ dok_list.count }} dokumen menunggu verifikasi</div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Pendaftar</th>
+          <th>Dokumen</th>
+          <th>File</th>
+          <th>Tgl Upload</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dok in dok_list %}
+        <tr>
+          <td>
+            <div style="font-weight:500">{{ dok.pendaftaran.user.get_full_name }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ dok.pendaftaran.no_pendaftaran }}</div>
+          </td>
+          <td>
+            <div style="font-weight:500">{{ dok.nama_dokumen }}</div>
+            {% if dok.persyaratan.wajib %}
+              <span style="font-size:.7rem;background:#fee2e2;color:#dc2626;
+                           padding:1px 6px;border-radius:10px">Wajib</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if dok.file %}
+              <a href="{{ dok.file.url }}" target="_blank"
+                 style="color:#667eea;font-size:.85rem;display:flex;align-items:center;gap:4px">
+                <i class="bi bi-file-earmark-arrow-down"></i> Lihat file
+              </a>
+            {% elif dok.link_drive %}
+              <a href="{{ dok.link_drive }}" target="_blank"
+                 style="color:#667eea;font-size:.85rem;display:flex;align-items:center;gap:4px">
+                <i class="bi bi-google"></i> Google Drive
+              </a>
+            {% endif %}
+          </td>
+          <td style="font-size:.8rem;color:#94a3b8">
+            {{ dok.tgl_upload|date:"d M Y H:i" }}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <!-- Verifikasi -->
+              <form method="post" action="{% url 'admin_pmb:verif_acc' dok.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-primary-custom"
+                        style="padding:5px 12px;font-size:.8rem;background:#10b981">
+                  <i class="bi bi-check-lg"></i> ACC
+                </button>
+              </form>
+              <!-- Tolak -->
+              <button onclick="showTolak({{ dok.id }})"
+                      style="padding:5px 12px;font-size:.8rem;border-radius:8px;
+                             border:1px solid #ef4444;color:#ef4444;background:white;cursor:pointer">
+                <i class="bi bi-x-lg"></i> Tolak
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center;color:#94a3b8;padding:40px">
+            <i class="bi bi-check-circle" style="font-size:32px;color:#10b981;display:block;margin-bottom:8px"></i>
+            Tidak ada dokumen yang menunggu verifikasi
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Tolak -->
+<div id="modal-tolak" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);
+     z-index:999;display:flex;align-items:center;justify-content:center;display:none">
+  <div style="background:white;border-radius:16px;padding:24px;width:400px;
+              box-shadow:0 8px 40px rgba(0,0,0,.15)">
+    <h6 style="font-weight:600;margin-bottom:16px">Alasan Penolakan</h6>
+    <form method="post" id="form-tolak">
+      {% csrf_token %}
+      <textarea name="catatan" rows="3" placeholder="Tuliskan alasan penolakan dokumen..."
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:10px;font-size:.875rem;outline:none;resize:none"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button type="submit" style="flex:1;padding:10px;border-radius:8px;border:none;
+                background:#ef4444;color:white;font-weight:500;cursor:pointer">
+          Tolak Dokumen
+        </button>
+        <button type="button" onclick="hideTolak()"
+                style="flex:1;padding:10px;border-radius:8px;border:1px solid #e2e8f0;
+                background:white;cursor:pointer">
+          Batal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showTolak(dokId) {
+  document.getElementById('form-tolak').action = `/admin-pmb/verifikasi/${dokId}/tolak/`;
+  document.getElementById('modal-tolak').style.display = 'flex';
+}
+function hideTolak() {
+  document.getElementById('modal-tolak').style.display = 'none';
+}
+</script>
+{% endblock %}
