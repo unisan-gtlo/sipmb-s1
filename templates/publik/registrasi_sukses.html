@@ -1,0 +1,41 @@
+{% extends 'base_publik.html' %}
+{% block title %}Registrasi Berhasil — PMB UNISAN{% endblock %}
+{% block content %}
+<div class="section-gradient">
+  <div class="container text-center" style="position:relative;z-index:1;padding:40px 0 70px">
+    <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+      <i class="bi bi-envelope-check-fill text-white" style="font-size:32px"></i>
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:700;margin-bottom:8px">Registrasi Berhasil!</h1>
+    <p style="opacity:.85">Cek email Anda untuk mengaktifkan akun</p>
+  </div>
+</div>
+<div class="container" style="margin-top:-30px;padding-bottom:60px">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card-modern p-4 text-center">
+        <div style="font-size:3rem;margin-bottom:16px">📧</div>
+        <h5 class="fw-600" style="font-weight:600;margin-bottom:12px">Cek Inbox Email Anda</h5>
+        {% if email %}
+        <p style="font-size:.9rem;color:#64748b;margin-bottom:20px">
+          Kami telah mengirim link aktivasi ke<br>
+          <strong style="color:#667eea">{{ email }}</strong>
+        </p>
+        {% endif %}
+        <div class="alert-gradient p-3 mb-4 text-start" style="font-size:.85rem">
+          <i class="bi bi-info-circle-fill me-2"></i>
+          Link aktivasi berlaku selama <strong>24 jam</strong>. Cek folder <strong>Spam/Junk</strong> jika tidak ada di inbox.
+        </div>
+        <div class="d-grid gap-2">
+          <a href="{% url 'accounts:login' %}" class="btn-outline-gradient btn">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sudah aktifkan? Masuk
+          </a>
+          <a href="{% url 'accounts:registrasi' %}" class="btn btn-link text-secondary" style="font-size:.85rem">
+            Daftar dengan email lain
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

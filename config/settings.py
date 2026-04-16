@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'chatbot',
     'laporan',
     'notifikasi',
+    'dashboard',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,45 @@
+{% extends 'base_publik.html' %}
+{% block title %}Akun Aktif — PMB UNISAN{% endblock %}
+{% block content %}
+<div class="section-gradient">
+  <div class="container text-center" style="position:relative;z-index:1;padding:40px 0 70px">
+    <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+      <i class="bi bi-patch-check-fill text-white" style="font-size:32px"></i>
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:700;margin-bottom:8px">Akun Berhasil Diaktifkan!</h1>
+    <p style="opacity:.85">Selamat datang di PMB Universitas Ichsan Gorontalo</p>
+  </div>
+</div>
+<div class="container" style="margin-top:-30px;padding-bottom:60px">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card-modern p-4 text-center">
+        <div style="font-size:3rem;margin-bottom:16px">🎉</div>
+        <h5 class="fw-600" style="font-weight:600;margin-bottom:8px">Akun Anda Sudah Aktif</h5>
+        <p style="font-size:.9rem;color:#64748b;margin-bottom:24px">
+          Langkah selanjutnya: lengkapi profil dan upload dokumen persyaratan di dashboard Anda.
+        </p>
+
+        {% if pengaturan.tampilkan_wa and pengaturan.link_wa_group %}
+        <div class="p-3 mb-4" style="background:#d1fae5;border-radius:12px;border:1.5px solid #6ee7b7">
+          <div style="font-size:.875rem;color:#065f46;margin-bottom:10px">
+            <i class="bi bi-whatsapp me-2"></i>
+            Bergabung ke <strong>{{ pengaturan.nama_wa_group|default:"Group WA PMB UNISAN" }}</strong> untuk info terbaru dari panitia!
+          </div>
+          <a href="{{ pengaturan.link_wa_group }}" target="_blank"
+             class="btn btn-success btn-sm px-4" style="border-radius:8px;font-weight:600">
+            <i class="bi bi-whatsapp me-2"></i>Join WhatsApp Group
+          </a>
+        </div>
+        {% endif %}
+
+        <div class="d-grid">
+          <a href="{% url 'dashboard:index' %}" class="btn-gradient btn">
+            <i class="bi bi-speedometer2 me-2"></i>Buka Dashboard Saya
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
