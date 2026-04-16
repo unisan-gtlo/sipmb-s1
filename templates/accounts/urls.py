@@ -1,0 +1,1 @@
+path('', views.beranda, name='beranda'),

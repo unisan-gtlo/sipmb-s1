@@ -15,4 +15,5 @@ urlpatterns = [
     path('api/kabupaten-kota/',        api.api_kabupaten_kota,  name='api_kabupaten_kota'),
     path('api/kecamatan/',             api.api_kecamatan,       name='api_kecamatan'),
     path('api/sekolah/',               api.api_sekolah,         name='api_sekolah'),
+    path('pengumuman/<int:pk>/', views.pengumuman_detail, name='pengumuman_detail'),
 ]

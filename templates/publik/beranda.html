@@ -1,0 +1,871 @@
+{% extends 'base_publik.html' %}
+{% block title %}PMB UNISAN 2025/2026 — Universitas Ichsan Gorontalo{% endblock %}
+
+{% block content %}
+
+<!-- RUNNING TEXT -->
+{% if pengumuman_penting %}
+<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:10px 0;overflow:hidden">
+  <div style="white-space:nowrap;animation:marquee 30s linear infinite;
+              display:inline-block;color:white;font-size:.85rem">
+    {% for p in pengumuman_penting %}
+      📢 &nbsp;{{ p.judul }}&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- HERO SECTION -->
+<div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            padding:60px 0 80px;position:relative;overflow:hidden">
+  <!-- Background decoration -->
+  <div style="position:absolute;top:-50px;right:-50px;width:300px;height:300px;
+              border-radius:50%;background:rgba(255,255,255,.05)"></div>
+  <div style="position:absolute;bottom:-80px;left:-30px;width:200px;height:200px;
+              border-radius:50%;background:rgba(255,255,255,.05)"></div>
+
+  <div class="container" style="position:relative;z-index:1">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        {% if pengaturan.tahun_akademik_aktif %}
+        <div style="display:inline-flex;align-items:center;gap:8px;
+                    background:rgba(255,255,255,.15);padding:6px 16px;
+                    border-radius:20px;margin-bottom:20px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;
+                      animation:pulse 2s infinite"></div>
+          <span style="color:white;font-size:.85rem;font-weight:500">
+            Pendaftaran {{ pengaturan.tahun_akademik_aktif }} Dibuka
+          </span>
+        </div>
+        {% endif %}
+
+        <h1 style="font-size:2.4rem;font-weight:800;color:white;line-height:1.2;margin-bottom:16px">
+          Wujudkan Masa Depanmu<br>
+          <span style="color:#fbbf24">Bersama UNISAN Gorontalo</span>
+        </h1>
+        <p style="font-size:1rem;color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:28px;max-width:540px">
+        Universitas Ichsan Gorontalo membuka pendaftaran mahasiswa baru.
+        {{ total_fakultas }} Fakultas, {{ total_prodi }} Program Studi, jenjang Sarjana (S1)
+        dengan {{ total_jalur }} jalur penerimaan tersedia untuk kamu.
+        Ayo segera daftar, kuota terbatas!
+        </p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a href="{% url 'accounts:registrasi' %}"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    background:white;color:#667eea;padding:13px 28px;
+                    border-radius:10px;font-weight:700;font-size:.95rem;
+                    text-decoration:none;transition:all .2s;
+                    box-shadow:0 4px 20px rgba(0,0,0,.15)">
+            <i class="bi bi-pencil-square"></i> Daftar Sekarang
+          </a>
+          <a href="#jalur"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    background:rgba(255,255,255,.15);color:white;
+                    padding:13px 24px;border-radius:10px;font-weight:500;
+                    font-size:.95rem;text-decoration:none;border:1.5px solid rgba(255,255,255,.3)">
+            Lihat Jalur Masuk <i class="bi bi-arrow-down"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="col-lg-5">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:20px;
+                      border:1px solid rgba(255,255,255,.2);text-align:center">
+            <div style="font-size:2rem;font-weight:800;color:white">{{ total_fakultas }}</div>
+<div        style="font-size:.8rem;color:rgba(255,255,255,.8);margin-top:4px">Fakultas</div>
+          </div>
+          <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:20px;
+                      border:1px solid rgba(255,255,255,.2);text-align:center">
+            <div style="font-size:2rem;font-weight:800;color:white">{{ total_prodi }}</div>
+            <div style="font-size:.8rem;color:rgba(255,255,255,.8);margin-top:4px">Program Studi S1</div>
+          </div>
+          <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:20px;
+                      border:1px solid rgba(255,255,255,.2);text-align:center">
+            <div style="font-size:2rem;font-weight:800;color:white">{{ total_jalur }}</div>
+            <div style="font-size:.8rem;color:rgba(255,255,255,.8);margin-top:4px">Jalur Masuk</div>
+          </div>
+          <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:20px;
+                      border:1px solid rgba(255,255,255,.2);text-align:center">
+            <div style="font-size:2rem;font-weight:800;color:#4ade80">{{ status_pmb }}</div>
+            <div style="font-size:.8rem;color:rgba(255,255,255,.8);margin-top:4px">Status PMB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GELOMBANG AKTIF -->
+{% if gelombang_aktif %}
+<div id="jadwal" style="background:#f8f9ff;padding:40px 0">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Sedang Berjalan</div>
+      <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:4px">Gelombang Pendaftaran Aktif</h2>
+    </div>
+    <div class="row g-3 justify-content-center">
+      {% for g in gelombang_aktif %}
+      <div class="col-md-4">
+        <div style="background:white;border-radius:14px;padding:24px;
+                    border:2px solid #667eea;box-shadow:0 4px 20px rgba(102,126,234,.15)">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px">
+            <div>
+              <div style="font-size:1rem;font-weight:700">{{ g.nama_gelombang }}</div>
+              <div style="font-size:.8rem;color:#94a3b8">{{ g.jalur.nama_jalur }}</div>
+            </div>
+            <span style="background:#d1fae5;color:#065f46;padding:3px 10px;
+                         border-radius:20px;font-size:.75rem;font-weight:600">Buka</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:.85rem;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:#94a3b8">Penutupan</span>
+              <span style="font-weight:600">{{ g.tgl_tutup|date:"d M Y" }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:#94a3b8">Biaya</span>
+              <span style="font-weight:700;color:
+                {% if g.jenis_biaya == 'gratis' %}#10b981{% else %}#667eea{% endif %}">
+                {% if g.jenis_biaya == 'gratis' %}GRATIS
+                {% else %}Rp {{ g.biaya_akhir|floatformat:0 }}{% endif %}
+              </span>
+            </div>
+          </div>
+          <a href="{% url 'accounts:registrasi' %}"
+             style="display:block;text-align:center;background:linear-gradient(135deg,#667eea,#764ba2);
+                    color:white;padding:10px;border-radius:8px;font-weight:600;
+                    font-size:.875rem;text-decoration:none">
+            Daftar Gelombang Ini →
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<<!-- JALUR PENERIMAAN -->
+<div id="jalur" style="padding:60px 0;background:white">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Cara Masuk</div>
+      <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">Jalur Penerimaan</h2>
+      <p style="color:#64748b;font-size:.95rem">Pilih jalur yang sesuai dengan kondisi dan prestasi kamu</p>
+    </div>
+
+    <div class="row g-3 justify-content-center">
+      {% for jalur in jalur_list %}
+      <div class="col-md-3 col-sm-6">
+        <a href="{% url 'accounts:registrasi' %}"
+           style="display:block;text-decoration:none;
+                  border:1.5px solid #e2e8f0;border-radius:16px;padding:28px 20px;
+                  text-align:center;height:100%;transition:all .2s;background:white"
+           onmouseover="this.style.borderColor='#667eea';this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(102,126,234,.15)'"
+           onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='translateY(0)';this.style.boxShadow='none'">
+
+          <!-- Icon -->
+          <div style="width:60px;height:60px;border-radius:16px;
+                      background:linear-gradient(135deg,#667eea,#764ba2);
+                      display:flex;align-items:center;justify-content:center;
+                      margin:0 auto 16px">
+            <i class="bi bi-{% if jalur.kode_jalur == 'REG' %}pencil-square
+                {% elif jalur.kode_jalur == 'BIUS' %}award-fill
+                {% elif jalur.kode_jalur == 'PRES' %}trophy-fill
+                {% elif jalur.kode_jalur == 'MITRA' %}building
+                {% elif jalur.kode_jalur == 'UND' %}envelope-open-fill
+                {% else %}mortarboard-fill{% endif %} text-white"
+               style="font-size:24px"></i>
+          </div>
+
+          <!-- Nama Jalur -->
+          <div style="font-size:1rem;font-weight:700;color:#1e1e2e;margin-bottom:8px">
+            {{ jalur.nama_jalur }}
+          </div>
+
+          <!-- Deskripsi -->
+          <div style="font-size:.8rem;color:#64748b;line-height:1.6;margin-bottom:14px">
+            {{ jalur.deskripsi|truncatechars:80|default:"Jalur penerimaan mahasiswa baru UNISAN" }}
+          </div>
+
+          <!-- Badge -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:16px">
+            {% if jalur.ada_tes %}
+              <span style="font-size:.7rem;background:#fef3c7;color:#92400e;
+                           padding:3px 10px;border-radius:10px;font-weight:500">
+                <i class="bi bi-pencil me-1"></i>Ada tes
+              </span>
+            {% endif %}
+            {% if jalur.ada_wawancara %}
+              <span style="font-size:.7rem;background:#dbeafe;color:#1d4ed8;
+                           padding:3px 10px;border-radius:10px;font-weight:500">
+                <i class="bi bi-mic me-1"></i>Wawancara
+              </span>
+            {% endif %}
+            {% if not jalur.ada_tes and not jalur.ada_wawancara %}
+              <span style="font-size:.7rem;background:#d1fae5;color:#065f46;
+                           padding:3px 10px;border-radius:10px;font-weight:500">
+                <i class="bi bi-check-circle me-1"></i>Tanpa tes
+              </span>
+            {% endif %}
+          </div>
+
+          <!-- Tombol -->
+          <div style="background:linear-gradient(135deg,#667eea,#764ba2);
+                      color:white;padding:8px 20px;border-radius:8px;
+                      font-size:.8rem;font-weight:600;display:inline-block">
+            Daftar Jalur Ini →
+          </div>
+
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+<!-- FAKULTAS & PRODI -->
+<div id="prodi" style="padding:60px 0;background:#f8f9ff">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Program Studi</div>
+      <h2 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">Fakultas & Program Studi</h2>
+      <p style="color:#64748b;font-size:.95rem">Klik fakultas untuk melihat program studi dan brosurnya</p>
+    </div>
+
+<div class="row g-3" id="fak-headers">
+  {% for fak in fakultas_list %}
+  <div class="col-md-6">
+    <div style="background:white;border-radius:16px;
+                overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);
+                border:1.5px solid #f1f5f9;cursor:pointer"
+         onclick="bukaFak('{{ fak.kode_fakultas }}')">
+      <div style="padding:18px 20px;display:flex;align-items:center;
+                  justify-content:space-between;
+                  border-left:8px solid {{ fak.warna.text }}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:10px;
+                      background:{{ fak.warna.gradient }};
+                      display:flex;align-items:center;justify-content:center;
+                      flex-shrink:0">
+            {% if fak.kode_fakultas == 'FH' %}
+            <i class="bi bi-briefcase-fill text-white" style="font-size:16px"></i>
+            {% else %}
+            <i class="bi bi-{{ fak.warna.icon }} text-white" style="font-size:18px"></i>
+            {% endif %}
+          </div>
+          <div>
+            <div style="font-size:.95rem;font-weight:700;color:#1e1e2e">
+              {{ fak.nama_fakultas }}
+            </div>
+            <div style="font-size:.78rem;color:#94a3b8;margin-top:2px">
+              {{ fak.prodi_count }} Program Studi S1
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          {% if fak.brosur and fak.brosur.link_video %}
+          <a href="{{ fak.brosur.link_video }}" target="_blank"
+             onclick="event.stopPropagation()"
+             style="background:#fee2e2;color:#dc2626;padding:5px 10px;
+                    border-radius:7px;text-decoration:none;font-size:.75rem;
+                    font-weight:500;display:flex;align-items:center;gap:4px">
+            <i class="bi bi-youtube"></i> Video
+          </a>
+          {% endif %}
+          {% if fak.brosur and fak.brosur.file_pdf %}
+          <a href="{{ fak.brosur.file_pdf.url }}" target="_blank"
+             onclick="event.stopPropagation()"
+             style="background:{{ fak.warna.light }};color:{{ fak.warna.text }};
+                    padding:5px 10px;border-radius:7px;text-decoration:none;
+                    font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:4px">
+            <i class="bi bi-file-earmark-pdf-fill"></i> Brosur
+          </a>
+          {% endif %}
+          <div style="width:28px;height:28px;border-radius:50%;background:#f1f5f9;
+                      display:flex;align-items:center;justify-content:center">
+            <i class="bi bi-chevron-down"
+               id="icon-fak-{{ fak.kode_fakultas }}"
+               style="font-size:12px;color:#94a3b8;transition:transform .2s"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- KONTEN PRODI — FULL WIDTH, MUNCUL DI BAWAH SEMUA HEADER -->
+{% for fak in fakultas_list %}
+<div id="fak-{{ fak.kode_fakultas }}"
+     style="display:none;margin-top:12px;background:white;border-radius:16px;
+            padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06);
+            border:1.5px solid {{ fak.warna.light }};
+            border-top:4px solid {{ fak.warna.text }}">
+
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <div style="width:32px;height:32px;border-radius:8px;
+                background:{{ fak.warna.gradient }};
+                display:flex;align-items:center;justify-content:center">
+      {% if fak.kode_fakultas == 'FH' %}
+        <i class="fa-solid fa-scale-balanced text-white" style="font-size:13px"></i>
+      {% else %}
+        <i class="bi bi-{{ fak.warna.icon }} text-white" style="font-size:14px"></i>
+      {% endif %}
+    </div>
+    <div style="font-size:.95rem;font-weight:700;color:{{ fak.warna.text }}">
+      {{ fak.nama_fakultas }}
+    </div>
+  </div>
+
+  {% if fak.brosur and fak.brosur.deskripsi %}
+  <div style="font-size:.85rem;color:#64748b;line-height:1.7;
+              margin-bottom:16px;padding:10px 14px;background:#fafafa;
+              border-radius:8px;border-left:3px solid {{ fak.warna.text }}">
+    {{ fak.brosur.deskripsi }}
+  </div>
+  {% endif %}
+
+  <div class="row g-2 mb-3">
+    {% for prodi in fak.prodi_list %}
+    <div class="col-md-3 col-6">
+      <div style="padding:12px;border-radius:10px;height:100%;
+                  background:#fafafa;border:1.5px solid #f1f5f9;
+                  transition:all .2s"
+           onmouseover="this.style.borderColor='{{ fak.warna.text }}';this.style.background='white'"
+           onmouseout="this.style.borderColor='#f1f5f9';this.style.background='#fafafa'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <div style="width:5px;height:5px;border-radius:50%;
+                      background:{{ fak.warna.text }};flex-shrink:0"></div>
+          <div style="font-size:.82rem;font-weight:600;color:#1e1e2e;line-height:1.3">
+            {{ prodi.nama_prodi }}
+          </div>
+        </div>
+        <div style="padding-left:11px;display:flex;gap:4px;flex-wrap:wrap">
+          <span style="font-size:.68rem;background:{{ fak.warna.light }};
+                       color:{{ fak.warna.text }};padding:1px 7px;
+                       border-radius:6px;font-weight:500">S1</span>
+          {% if prodi.akreditasi %}
+          <span style="font-size:.68rem;background:#f0fdf4;color:#15803d;
+                       padding:1px 7px;border-radius:6px;font-weight:500">
+            Akr. {{ prodi.akreditasi }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="text-align:right">
+    <a href="{% url 'accounts:registrasi' %}"
+       style="display:inline-flex;align-items:center;gap:6px;
+              background:{{ fak.warna.gradient }};color:white;
+              padding:8px 18px;border-radius:8px;
+              text-decoration:none;font-size:.85rem;font-weight:600">
+      <i class="bi bi-pencil-square"></i> Daftar ke Fakultas Ini
+    </a>
+  </div>
+</div>
+{% endfor %}
+
+  </div>
+</div>
+
+<!-- ALUR PENDAFTARAN -->
+<div style="padding:60px 0;background:white">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:40px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Cara Daftar</div>
+      <h2 style="font-size:1.6rem;font-weight:700">Alur Pendaftaran Online</h2>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:0;position:relative">
+      <!-- Line -->
+      <div style="position:absolute;top:24px;left:calc(10% + 24px);
+                  right:calc(10% + 24px);height:2px;background:#e2e8f0;z-index:0"></div>
+
+      {% for step in steps %}
+      <div style="flex:1;text-align:center;position:relative;z-index:1;padding:0 8px">
+        <div style="width:48px;height:48px;border-radius:50%;
+                    background:linear-gradient(135deg,#667eea,#764ba2);
+                    display:flex;align-items:center;justify-content:center;
+                    margin:0 auto 12px;font-size:16px;font-weight:700;color:white">
+          {{ forloop.counter }}
+        </div>
+        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px">{{ step.judul }}</div>
+        <div style="font-size:.75rem;color:#94a3b8">{{ step.sub }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="text-align:center;margin-top:36px">
+      <a href="{% url 'accounts:registrasi' %}"
+         style="display:inline-flex;align-items:center;gap:8px;
+                background:linear-gradient(135deg,#667eea,#764ba2);
+                color:white;padding:14px 32px;border-radius:10px;
+                font-weight:700;font-size:.95rem;text-decoration:none">
+        <i class="bi bi-pencil-square"></i> Mulai Pendaftaran Sekarang
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- PENGUMUMAN -->
+{% if pengumuman_list %}
+<div style="padding:60px 0;background:#f8f9ff">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px">
+      <div>
+        <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                    text-transform:uppercase;color:#667eea;margin-bottom:4px">Info Terbaru</div>
+        <h2 style="font-size:1.4rem;font-weight:700;margin:0">Pengumuman PMB</h2>
+      </div>
+      <a href="#" style="font-size:.85rem;color:#667eea;text-decoration:none">
+        Lihat semua →
+      </a>
+    </div>
+    <div class="row g-3">
+        {% for p in pengumuman_list %}
+        <div class="col-md-4">
+        <a href="{% url 'accounts:pengumuman_detail' p.pk %}"
+            style="display:block;text-decoration:none;
+                    background:white;border-radius:12px;padding:20px;
+                    border:1.5px solid #e2e8f0;height:100%;
+                    transition:all .2s"
+            onmouseover="this.style.borderColor='#667eea';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(102,126,234,.15)'"
+            onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='translateY(0)';this.style.boxShadow='none'">
+            {% if p.penting %}
+            <span style="font-size:.7rem;background:#fee2e2;color:#dc2626;
+                        padding:2px 8px;border-radius:10px;font-weight:600;
+                        display:inline-block;margin-bottom:10px">Penting</span>
+            {% endif %}
+            <div style="font-size:.95rem;font-weight:600;margin-bottom:8px;color:#1e1e2e">
+            {{ p.judul }}
+            </div>
+            <div style="font-size:.8rem;color:#64748b;line-height:1.6;margin-bottom:12px">
+            {{ p.isi|truncatechars:100 }}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:.75rem;color:#94a3b8">
+                <i class="bi bi-calendar3 me-1"></i>{{ p.tgl_tayang|date:"d M Y" }}
+            </div>
+            {% if p.file_lampiran %}
+            <span style="font-size:.72rem;background:#ede9fe;color:#667eea;
+                        padding:2px 8px;border-radius:8px">
+                <i class="bi bi-paperclip"></i> Ada lampiran
+            </span>
+            {% endif %}
+            </div>
+        </a>
+        </div>
+        {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- DOWNLOAD FORMULIR -->
+{% if dokumen_list %}
+<div style="padding:40px 0;background:white">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:24px">
+      <h2 style="font-size:1.4rem;font-weight:700">Unduh Formulir & Dokumen</h2>
+    </div>
+    <div class="row g-3 justify-content-center">
+      {% for dok in dokumen_list %}
+      <div class="col-md-4">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;
+                    border:1.5px solid #e2e8f0;border-radius:10px">
+          <div style="width:40px;height:40px;border-radius:8px;background:#fee2e2;
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="bi bi-file-earmark-pdf-fill" style="color:#dc2626;font-size:18px"></i>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:.875rem;font-weight:600">{{ dok.judul }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ dok.ukuran }}</div>
+          </div>
+          <a href="{{ dok.file.url }}" download
+             style="color:#667eea;font-size:18px">
+            <i class="bi bi-download"></i>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- TESTIMONI -->
+{% if testimoni_list %}
+<div style="padding:60px 0;background:#f8f9ff">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Kata Mereka</div>
+      <h2 style="font-size:1.6rem;font-weight:700">Testimoni Mahasiswa & Alumni</h2>
+    </div>
+
+    <div id="carouselTestimoni" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+      <div class="carousel-inner">
+
+        {% with testimoni_list|length as total %}
+        {% for t in testimoni_list %}
+          {% if forloop.counter0|divisibleby:3 %}
+          <div class="carousel-item {% if forloop.first %}active{% endif %}">
+            <div class="row g-3">
+          {% endif %}
+
+            <div class="col-md-4">
+            <div style="background:white;border-radius:14px;padding:22px;
+                        border:1.5px solid #e2e8f0;height:100%;
+                        border-bottom:4px solid {% if forloop.counter|divisibleby:2 %}#667eea{% else %}#764ba2{% endif %}">
+                <div style="font-size:2rem;color:#667eea;line-height:1;margin-bottom:10px">"</div>
+                <div style="font-size:.875rem;color:#374151;line-height:1.7;
+                            font-style:italic;margin-bottom:16px">
+                {{ t.isi_testimoni|truncatechars:150 }}
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;
+                            border-top:1px solid #f1f5f9;padding-top:14px">
+                {% if t.foto %}
+                    <img src="{{ t.foto.url }}"
+                        style="width:40px;height:40px;border-radius:50%;
+                                object-fit:cover;flex-shrink:0">
+                {% else %}
+                    <div style="width:40px;height:40px;border-radius:50%;
+                                background:linear-gradient(135deg,#667eea,#764ba2);
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:14px;font-weight:700;color:white;flex-shrink:0">
+                    {{ t.nama|first|upper }}
+                    </div>
+                {% endif %}
+                <div>
+                    <div style="font-size:.875rem;font-weight:600;color:#1e1e2e">{{ t.nama }}</div>
+                    <div style="font-size:.75rem;color:#94a3b8">{{ t.prodi }}, {{ t.angkatan }}</div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+          {% if forloop.counter|divisibleby:3 or forloop.last %}
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+        {% endwith %}
+
+      </div>
+
+      <!-- Navigasi -->
+      <div style="display:flex;justify-content:center;align-items:center;
+                  gap:10px;margin-top:24px">
+        <button class="carousel-control-prev" type="button"
+                data-bs-target="#carouselTestimoni" data-bs-slide="prev"
+                style="position:static;width:36px;height:36px;border-radius:50%;
+                       background:white;border:1.5px solid #e2e8f0;opacity:1;
+                       display:flex;align-items:center;justify-content:center">
+          <i class="bi bi-chevron-left" style="color:#667eea;font-size:14px"></i>
+        </button>
+        <div class="carousel-indicators" style="position:static;margin:0;
+             display:flex;align-items:center;gap:6px">
+          {% for t in testimoni_list %}
+            {% if forloop.counter0|divisibleby:3 %}
+            <button type="button"
+                    data-bs-target="#carouselTestimoni"
+                    data-bs-slide-to="{{ forloop.counter0|divisibleby:3|add:0 }}"
+                    style="width:8px;height:8px;border-radius:50%;border:none;
+                           background:{% if forloop.first %}#667eea{% else %}#e2e8f0{% endif %}">
+            </button>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <button class="carousel-control-next" type="button"
+                data-bs-target="#carouselTestimoni" data-bs-slide="next"
+                style="position:static;width:36px;height:36px;border-radius:50%;
+                       background:white;border:1.5px solid #e2e8f0;opacity:1;
+                       display:flex;align-items:center;justify-content:center">
+          <i class="bi bi-chevron-right" style="color:#667eea;font-size:14px"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- MITRA -->
+{% if mitra_list %}
+<div style="padding:40px 0;background:white;overflow:hidden">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:24px">
+      <h2 style="font-size:1.2rem;font-weight:700;color:#94a3b8">Mitra Kerja Sama UNISAN</h2>
+    </div>
+
+    <div style="position:relative;overflow:hidden">
+      <div id="mitra-track"
+           style="display:flex;gap:16px;animation:scrollMitra 25s linear infinite;width:max-content">
+
+        {% for m in mitra_list %}
+        <a href="{% if m.website %}{{ m.website }}{% else %}#{% endif %}"
+           {% if m.website %}target="_blank"{% endif %}
+           style="border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 20px;
+                  display:flex;flex-direction:column;align-items:center;gap:10px;
+                  min-width:150px;background:white;flex-shrink:0;
+                  text-decoration:none;transition:all .2s"
+           onmouseover="this.style.borderColor='#667eea';this.style.boxShadow='0 4px 16px rgba(102,126,234,.2)';this.style.transform='translateY(-3px)'"
+           onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.transform='translateY(0)'">
+          {% if m.logo %}
+            <img src="{{ m.logo.url }}"
+                 style="width:70px;height:70px;object-fit:contain;flex-shrink:0">
+          {% else %}
+            <div style="width:70px;height:70px;border-radius:12px;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:24px;font-weight:700;color:white;flex-shrink:0">
+              {{ m.nama_mitra|first|upper }}
+            </div>
+          {% endif %}
+          <span style="font-size:.8rem;font-weight:600;color:#374151;
+                       text-align:center;line-height:1.4">{{ m.nama_mitra }}</span>
+        </a>
+        {% endfor %}
+
+        <!-- Duplikat untuk infinite scroll -->
+        {% for m in mitra_list %}
+        <a href="{% if m.website %}{{ m.website }}{% else %}#{% endif %}"
+           {% if m.website %}target="_blank"{% endif %}
+           style="border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 20px;
+                  display:flex;flex-direction:column;align-items:center;gap:10px;
+                  min-width:150px;background:white;flex-shrink:0;
+                  text-decoration:none;transition:all .2s"
+           onmouseover="this.style.borderColor='#667eea';this.style.boxShadow='0 4px 16px rgba(102,126,234,.2)';this.style.transform='translateY(-3px)'"
+           onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';this.style.transform='translateY(0)'">
+          {% if m.logo %}
+            <img src="{{ m.logo.url }}"
+                 style="width:70px;height:70px;object-fit:contain;flex-shrink:0">
+          {% else %}
+            <div style="width:70px;height:70px;border-radius:12px;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:24px;font-weight:700;color:white;flex-shrink:0">
+              {{ m.nama_mitra|first|upper }}
+            </div>
+          {% endif %}
+          <span style="font-size:.8rem;font-weight:600;color:#374151;
+                       text-align:center;line-height:1.4">{{ m.nama_mitra }}</span>
+        </a>
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+<!-- FAQ -->
+<div id="faq" style="padding:60px 0;background:white">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Pertanyaan Umum</div>
+      <h2 style="font-size:1.6rem;font-weight:700">FAQ — Sering Ditanyakan</h2>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        {% for item in faq_list %}
+        <div style="border:1.5px solid #e2e8f0;border-radius:12px;
+                    margin-bottom:10px;overflow:hidden">
+          <div style="padding:16px 20px;cursor:pointer;background:white;
+                      display:flex;justify-content:space-between;align-items:center;
+                      font-weight:600;font-size:.9rem;color:#1e1e2e"
+               onclick="document.getElementById('jwb-{{ item.id }}').style.display=
+                        document.getElementById('jwb-{{ item.id }}').style.display==='none'?'block':'none'">
+            {{ item.pertanyaan }}
+            <i class="bi bi-chevron-down"
+               style="color:#94a3b8;font-size:13px;flex-shrink:0;margin-left:12px"></i>
+          </div>
+          <div id="jwb-{{ item.id }}"
+               style="display:none;padding:14px 20px;
+                      background:#f8f9ff;border-top:1px solid #f1f5f9;
+                      font-size:.875rem;color:#64748b;line-height:1.8">
+            {{ item.jawaban }}
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:#94a3b8">Belum ada FAQ.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<!-- KONTAK & LOKASI -->
+<div id="kontak" style="padding:60px 0;background:#f8f9ff">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;
+                  text-transform:uppercase;color:#667eea;margin-bottom:6px">Hubungi Kami</div>
+      <h2 style="font-size:1.6rem;font-weight:700">Kontak & Lokasi PMB</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <!-- Google Maps placeholder -->
+        <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.6306680649855!2d123.05398887515992!3d0.5556990994388784!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x32792b6ab3b97db7%3A0x9818b0dd21d4b3c8!2sUniversitas%20Ichsan%20Gorontalo!5e0!3m2!1sid!2sid!4v1776341850385!5m2!1sid!2sid"
+            width="100%" 
+            height="220" 
+            style="border:0;border-radius:14px;display:block" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+        {% if pengaturan.alamat_kampus %}
+        <div style="font-size:.875rem;color:#374151;line-height:1.8">
+          <i class="bi bi-geo-alt-fill me-2" style="color:#667eea"></i>{{ pengaturan.alamat_kampus }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          {% if pengaturan.no_telepon_pmb %}
+          <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                      background:white;border-radius:12px;border:1.5px solid #e2e8f0">
+            <div style="width:40px;height:40px;border-radius:10px;background:#ede9fe;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="bi bi-telephone-fill" style="color:#667eea"></i>
+            </div>
+            <div>
+              <div style="font-size:.75rem;color:#94a3b8">Telepon PMB</div>
+              <div style="font-weight:600">{{ pengaturan.no_telepon_pmb }}</div>
+            </div>
+          </div>
+          {% endif %}
+          {% if pengaturan.whatsapp_pmb %}
+          <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                      background:white;border-radius:12px;border:1.5px solid #e2e8f0">
+            <div style="width:40px;height:40px;border-radius:10px;background:#d1fae5;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="bi bi-whatsapp" style="color:#10b981;font-size:18px"></i>
+            </div>
+            <div>
+              <div style="font-size:.75rem;color:#94a3b8">WhatsApp PMB</div>
+              <div style="font-weight:600">{{ pengaturan.whatsapp_pmb }}</div>
+            </div>
+          </div>
+          {% endif %}
+          {% if pengaturan.email_pmb %}
+          <div style="display:flex;align-items:center;gap:12px;padding:16px;
+                      background:white;border-radius:12px;border:1.5px solid #e2e8f0">
+            <div style="width:40px;height:40px;border-radius:10px;background:#dbeafe;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="bi bi-envelope-fill" style="color:#3b82f6"></i>
+            </div>
+            <div>
+              <div style="font-size:.75rem;color:#94a3b8">Email PMB</div>
+              <div style="font-weight:600">{{ pengaturan.email_pmb }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Media Sosial -->
+          {% if medsos_list %}
+          <div style="padding:16px;background:white;border-radius:12px;border:1.5px solid #e2e8f0">
+            <div style="font-size:.8rem;font-weight:600;margin-bottom:12px;color:#374151">
+              Media Sosial UNISAN Gorontalo :
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              {% for m in medsos_list %}
+              <a href="{{ m.url }}" target="_blank"
+                 style="width:36px;height:36px;border-radius:8px;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        display:flex;align-items:center;justify-content:center;
+                        text-decoration:none;color:white;font-size:16px">
+                <i class="bi bi-{{ m.platform }}"></i>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA BOTTOM -->
+<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:60px 0;text-align:center">
+  <div class="container">
+    <h2 style="font-size:1.8rem;font-weight:800;color:white;margin-bottom:12px">
+      Siap Bergabung dengan UNISAN Gorontalo?
+    </h2>
+    <p style="color:rgba(255,255,255,.85);font-size:.95rem;margin-bottom:28px">
+      Daftar sekarang dan mulai perjalanan akademikmu bersama kami
+    </p>
+    <a href="{% url 'accounts:registrasi' %}"
+       style="display:inline-flex;align-items:center;gap:8px;
+              background:white;color:#667eea;padding:14px 36px;
+              border-radius:10px;font-weight:700;font-size:1rem;
+              text-decoration:none;box-shadow:0 4px 20px rgba(0,0,0,.15)">
+      <i class="bi bi-pencil-square"></i> Daftar Sekarang — Gratis!
+    </a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function bukaFak(kode) {
+    const konten = document.getElementById('fak-' + kode);
+    const icon   = document.getElementById('icon-fak-' + kode);
+    const sudahBuka = konten.style.display === 'block';
+
+    // Tambahkan di sini, setelah function bukaFak:
+    function toggleFaq(id) {
+        const el   = document.getElementById(id);
+        const icon = document.getElementById('icon-' + id);
+        if (!el) return;
+        if (el.style.display === 'none' || el.style.display === '') {
+            el.style.display = 'block';
+            if (icon) icon.style.transform = 'rotate(180deg)';
+        } else {
+            el.style.display = 'none';
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+        }
+
+    // Sembunyikan semua konten
+    {% for fak in fakultas_list %}
+    document.getElementById('fak-{{ fak.kode_fakultas }}').style.display = 'none';
+    document.getElementById('icon-fak-{{ fak.kode_fakultas }}').style.transform = 'rotate(0deg)';
+    {% endfor %}
+
+    // Jika belum buka, tampilkan
+    if (!sudahBuka) {
+        konten.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+        setTimeout(() => {
+        konten.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    }
+    }
+</script>
+<style>
+@keyframes marquee { 0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes marquee { 0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes scrollMitra {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+#mitra-track:hover { animation-play-state: paused; }
+</style>
+{% endblock %}

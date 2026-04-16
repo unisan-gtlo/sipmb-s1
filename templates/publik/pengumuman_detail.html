@@ -1,0 +1,63 @@
+{% extends 'base_publik.html' %}
+{% block title %}{{ p.judul }} — PMB UNISAN{% endblock %}
+
+{% block content %}
+<div class="section-gradient" style="padding:30px 0 50px">
+  <div class="container">
+    <div style="font-size:.8rem;color:rgba(255,255,255,.7)">
+      <a href="{% url 'beranda' %}#pengumuman" style="color:rgba(255,255,255,.7);text-decoration:none">
+        ← Kembali ke Beranda
+      </a>
+    </div>
+    <h1 style="font-size:1.6rem;font-weight:700;color:white;margin-top:12px">
+      {{ p.judul }}
+    </h1>
+    <div style="font-size:.8rem;color:rgba(255,255,255,.7);margin-top:8px">
+      {{ p.tgl_tayang|date:"d M Y" }}
+      {% if p.penting %}
+        <span style="background:#ef4444;color:white;padding:2px 8px;
+                     border-radius:10px;font-size:.7rem;margin-left:8px">Penting</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding:40px 0 60px">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card-modern p-4">
+        <div style="font-size:.95rem;color:#374151;line-height:1.9">
+          {{ p.isi|linebreaks }}
+        </div>
+
+        {% if p.file_lampiran %}
+        <div style="margin-top:24px;padding:16px;background:#f8f9ff;
+                    border-radius:10px;border:1.5px solid #e2e8f0">
+          <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:#374151">
+            <i class="bi bi-paperclip me-1"></i>Lampiran
+          </div>
+          <a href="{{ p.file_lampiran.url }}" target="_blank"
+             style="display:inline-flex;align-items:center;gap:8px;
+                    background:linear-gradient(135deg,#667eea,#764ba2);
+                    color:white;padding:8px 16px;border-radius:8px;
+                    text-decoration:none;font-size:.85rem;font-weight:500">
+            <i class="bi bi-file-earmark-arrow-down"></i> Unduh Lampiran
+          </a>
+        </div>
+        {% endif %}
+
+        {% if p.link_terkait %}
+        <div style="margin-top:16px">
+          <a href="{{ p.link_terkait }}" target="_blank"
+             style="color:#667eea;font-size:.875rem;
+                    display:flex;align-items:center;gap:6px">
+            <i class="bi bi-link-45deg"></i> {{ p.link_terkait }}
+          </a>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
