@@ -1,0 +1,52 @@
+{% extends 'pendaftaran/base_profil.html' %}
+{% block title %}Upload Foto — PMB UNISAN{% endblock %}
+{% block header_title %}Upload Foto Resmi{% endblock %}
+
+{% block form_content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  <div class="text-center mb-4">
+    {% if profil.foto %}
+    <img src="{{ profil.foto.url }}" alt="Foto"
+         style="width:140px;height:140px;border-radius:50%;object-fit:cover;border:4px solid #ede9fe;margin-bottom:12px">
+    <div style="font-size:.8rem;color:#10b981"><i class="bi bi-check-circle-fill me-1"></i>Foto sudah diunggah</div>
+    {% else %}
+    <div style="width:140px;height:140px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:3px dashed #cbd5e1">
+      <i class="bi bi-person-fill" style="font-size:48px;color:#cbd5e1"></i>
+    </div>
+    <div style="font-size:.8rem;color:#94a3b8">Belum ada foto</div>
+    {% endif %}
+  </div>
+
+  <div class="p-3 mb-4" style="background:#f8f9ff;border-radius:12px;border:1.5px solid #e2e8f0">
+    <div style="font-size:.8rem;color:#64748b;margin-bottom:8px;font-weight:500">
+      <i class="bi bi-info-circle me-1" style="color:#667eea"></i>Ketentuan foto:
+    </div>
+    <ul style="font-size:.8rem;color:#64748b;margin:0;padding-left:16px;line-height:1.8">
+      <li>Foto formal terbaru (bukan selfie)</li>
+      <li>Berpakaian rapi, latar polos (merah/biru)</li>
+      <li>Format JPG atau PNG, maksimal 2MB</li>
+      <li>Ukuran minimal 400×400 pixel</li>
+    </ul>
+  </div>
+
+  <div class="mb-4">
+    <label class="form-label">Pilih File Foto <span class="text-danger">*</span></label>
+    {{ form.foto }}
+    {% if form.foto.errors %}
+      <div class="text-danger mt-1" style="font-size:.8rem">{{ form.foto.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center">
+    <a href="{% url 'pendaftaran:profil_pendidikan' %}" class="btn btn-link text-secondary" style="font-size:.875rem">
+      <i class="bi bi-arrow-left me-1"></i>Kembali
+    </a>
+    <button type="submit" class="btn-gradient btn">
+      <i class="bi bi-cloud-upload-fill me-2"></i>Upload & Selesai
+    </button>
+  </div>
+
+</form>
+{% endblock %}

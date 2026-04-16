@@ -1,0 +1,99 @@
+{% extends 'pendaftaran/base_profil.html' %}
+{% block title %}Data Diri — PMB UNISAN{% endblock %}
+{% block header_title %}Data Diri{% endblock %}
+
+{% block form_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-person-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0 fw-600" style="font-weight:600">Identitas Diri</h6>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">NIK <span class="text-danger">*</span></label>
+      {{ form.nik }}
+      {% if form.nik.errors %}<div class="text-danger mt-1" style="font-size:.8rem">{{ form.nik.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+      {{ form.jenis_kelamin }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Tempat Lahir <span class="text-danger">*</span></label>
+      {{ form.tempat_lahir }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+      {{ form.tgl_lahir }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Agama <span class="text-danger">*</span></label>
+      {{ form.agama }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Status Pernikahan</label>
+      {{ form.status_nikah }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Kewarganegaraan</label>
+      {{ form.kewarganegaraan }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Kebutuhan Khusus</label>
+      {{ form.kebutuhan_khusus }}
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:3px">Kosongkan jika tidak ada</div>
+    </div>
+  </div>
+
+  <hr style="border-color:#f0f0f0">
+
+  <div class="d-flex align-items-center gap-2 mb-3 mt-3">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-geo-alt-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0 fw-600" style="font-weight:600">Alamat Domisili</h6>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
+      {{ form.alamat_lengkap }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Provinsi <span class="text-danger">*</span></label>
+      {{ form.provinsi }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Kabupaten / Kota <span class="text-danger">*</span></label>
+      {{ form.kabupaten_kota }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Kecamatan</label>
+      {{ form.kecamatan }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Kelurahan / Desa</label>
+      {{ form.kelurahan }}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Kode Pos</label>
+      {{ form.kode_pos }}
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mt-4">
+    <a href="{% url 'dashboard:calon_maba' %}" class="btn btn-link text-secondary" style="font-size:.875rem">
+      <i class="bi bi-arrow-left me-1"></i>Kembali
+    </a>
+    <button type="submit" class="btn-gradient btn">
+      Simpan & Lanjut <i class="bi bi-arrow-right ms-2"></i>
+    </button>
+  </div>
+
+</form>
+{% endblock %}

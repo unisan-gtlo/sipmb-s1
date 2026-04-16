@@ -1,0 +1,91 @@
+{% extends 'pendaftaran/base_profil.html' %}
+{% block title %}Data Orang Tua — PMB UNISAN{% endblock %}
+{% block header_title %}Data Orang Tua / Wali{% endblock %}
+
+{% block form_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-people-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0 fw-600" style="font-weight:600">Data Ayah</h6>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Nama Ayah <span class="text-danger">*</span></label>
+      {{ form.nama_ayah }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Pekerjaan Ayah</label>
+      {{ form.pekerjaan_ayah }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Penghasilan Ayah</label>
+      {{ form.penghasilan_ayah }}
+    </div>
+  </div>
+
+  <hr style="border-color:#f0f0f0">
+
+  <div class="d-flex align-items-center gap-2 mb-3 mt-3">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-people-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0 fw-600" style="font-weight:600">Data Ibu</h6>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label">Nama Ibu <span class="text-danger">*</span></label>
+      {{ form.nama_ibu }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Pekerjaan Ibu</label>
+      {{ form.pekerjaan_ibu }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Penghasilan Ibu</label>
+      {{ form.penghasilan_ibu }}
+    </div>
+  </div>
+
+  <hr style="border-color:#f0f0f0">
+
+  <div class="d-flex align-items-center gap-2 mb-3 mt-3">
+    <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-telephone-fill text-white" style="font-size:12px"></i>
+    </div>
+    <h6 class="mb-0 fw-600" style="font-weight:600">Kontak & Wali</h6>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">No HP Orang Tua / Wali <span class="text-danger">*</span></label>
+      {{ form.no_hp_ortu }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Nama Wali</label>
+      {{ form.nama_wali }}
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:3px">Isi jika bukan orang tua</div>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Alamat Orang Tua / Wali</label>
+      {{ form.alamat_ortu }}
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:3px">Kosongkan jika sama dengan alamat Anda</div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mt-4">
+    <a href="{% url 'pendaftaran:profil_diri' %}" class="btn btn-link text-secondary" style="font-size:.875rem">
+      <i class="bi bi-arrow-left me-1"></i>Kembali
+    </a>
+    <button type="submit" class="btn-gradient btn">
+      Simpan & Lanjut <i class="bi bi-arrow-right ms-2"></i>
+    </button>
+  </div>
+
+</form>
+{% endblock %}
