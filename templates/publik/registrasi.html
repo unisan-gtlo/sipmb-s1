@@ -4,16 +4,15 @@
 
 {% block content %}
 
-<!-- HEADER -->
 <div class="section-gradient">
-  <div class="container text-center" style="position:relative;z-index:1">
+  <div class="container text-center" style="position:relative;z-index:1;padding:28px 0 60px">
     <span class="badge-gradient mb-3 d-inline-block">Pendaftaran Online</span>
     <h1 style="font-size:1.8rem;font-weight:700;margin-bottom:8px">Daftar Mahasiswa Baru</h1>
     <p style="opacity:.85;font-size:.95rem">Isi data berikut untuk mendapatkan akun pendaftaran</p>
   </div>
 </div>
 
-<div class="container" style="margin-top:-20px;padding-bottom:60px">
+<div class="container" style="margin-top:8px;padding-bottom:60px">
   <div class="row justify-content-center">
     <div class="col-lg-8">
 
@@ -126,9 +125,6 @@
               <div class="col-12">
                 <label class="form-label">Program Studi Pilihan 2 <span class="text-muted" style="font-size:.8rem">(opsional)</span></label>
                 {{ form.prodi_pilihan_2 }}
-                {% if form.prodi_pilihan_2.errors %}
-                  <div class="text-danger mt-1" style="font-size:.8rem">{{ form.prodi_pilihan_2.errors.0 }}</div>
-                {% endif %}
               </div>
             </div>
           </div>

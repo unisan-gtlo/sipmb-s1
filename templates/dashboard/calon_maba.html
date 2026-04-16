@@ -124,18 +124,27 @@
         </h6>
         {% if profil %}
           {% with pct=profil.persen_lengkap %}
-          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
             <span style="font-size:.875rem;color:#64748b">Progress profil</span>
             <span style="font-size:.875rem;font-weight:600;color:
-              {% if pct == 100 %}#10b981{% elif pct >= 60 %}#f59e0b{% else %}#ef4444{% endif %}">
-              {{ pct }}%
+                {% if profil %}
+                {% if profil.persen_lengkap == 100 %}#10b981
+                {% elif profil.persen_lengkap >= 60 %}#f59e0b
+                {% else %}#ef4444{% endif %}
+                {% else %}#ef4444{% endif %}">
+                {% if profil %}{{ profil.persen_lengkap }}{% else %}0{% endif %}%
             </span>
-          </div>
-          <div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-bottom:16px">
-            <div style="height:100%;border-radius:4px;width:{{ pct }}%;background:
-              {% if pct == 100 %}#10b981{% elif pct >= 60 %}#f59e0b{% else %}linear-gradient(135deg,#667eea,#764ba2){% endif %};
-              transition:width .3s"></div>
-          </div>
+            </div>
+            <div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-bottom:16px">
+            <div style="height:100%;border-radius:4px;
+                width:{% if profil %}{{ profil.persen_lengkap }}{% else %}0{% endif %}%;
+                background:{% if profil %}
+                {% if profil.persen_lengkap == 100 %}#10b981
+                {% elif profil.persen_lengkap >= 60 %}#f59e0b
+                {% else %}linear-gradient(135deg,#667eea,#764ba2){% endif %}
+                {% else %}linear-gradient(135deg,#667eea,#764ba2){% endif %};
+                transition:width .3s"></div>
+            </div>
           {% endwith %}
         {% endif %}
 
