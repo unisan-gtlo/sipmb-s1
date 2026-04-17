@@ -1,11 +1,36 @@
- venv/
+# Virtual environment
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Environment variables
 .env
-media/
-logs/
-staticfiles/
+
+# Django
+*.sqlite3
 db.sqlite3
+
+# Media & static
+media/
+staticfiles/
+
+# Logs
+logs/
 *.log
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Cache
+.pytest_cache/
+.coverage
