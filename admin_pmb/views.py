@@ -267,10 +267,39 @@ def konten(request):
 def afiliasi(request):
     if not cek_admin(request.user):
         return redirect('dashboard:index')
-    return render(request, 'admin_pmb/placeholder.html', {
-        'page_title': 'Afiliasi / Recruiter',
-        **get_sidebar_counts()
-    })
+
+    from afiliasi.models import Recruiter, KomisiReferral, PencairanKomisi
+    from django.db.models import Sum
+
+    status_filter = request.GET.get('status', 'menunggu')
+    status_tabs = [
+        ('menunggu',  'Menunggu Verifikasi', '#f59e0b'),
+        ('aktif',     'Aktif',               '#10b981'),
+        ('nonaktif',  'Ditolak',             '#ef4444'),
+        ('suspend',   'Suspend',             '#94a3b8'),
+    ]
+
+    recruiter_list = Recruiter.objects.filter(
+        status=status_filter
+    ).select_related('user').order_by('-tgl_bergabung')
+
+    total_menunggu  = Recruiter.objects.filter(status='menunggu').count()
+    total_aktif     = Recruiter.objects.filter(status='aktif').count()
+    total_komisi    = KomisiReferral.objects.filter(status='approved').aggregate(
+        total=Sum('jumlah_komisi'))['total'] or 0
+    total_pencairan = PencairanKomisi.objects.filter(status='pending').count()
+
+    context = {
+        'recruiter_list':  recruiter_list,
+        'status_filter':   status_filter,
+        'status_tabs':     status_tabs,
+        'total_menunggu':  total_menunggu,
+        'total_aktif':     total_aktif,
+        'total_komisi':    total_komisi,
+        'total_pencairan': total_pencairan,
+        **get_sidebar_counts(),
+    }
+    return render(request, 'admin_pmb/afiliasi.html', context)
 
 
 @login_required
@@ -292,3 +321,78 @@ def chatbot_kb(request):
         **get_sidebar_counts()
     })
 
+@login_required
+def afiliasi(request):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from afiliasi.models import Recruiter, KomisiReferral, PencairanKomisi
+    from django.db.models import Sum
+
+    status_filter = request.GET.get('status', 'menunggu')
+
+    recruiter_list = Recruiter.objects.filter(
+        status=status_filter
+    ).select_related('user').order_by('-tgl_bergabung')
+
+    # Statistik
+    total_menunggu  = Recruiter.objects.filter(status='menunggu').count()
+    total_aktif     = Recruiter.objects.filter(status='aktif').count()
+    total_komisi    = KomisiReferral.objects.filter(status='approved').aggregate(
+        total=Sum('jumlah_komisi'))['total'] or 0
+    total_pencairan = PencairanKomisi.objects.filter(status='pending').count()
+
+    context = {
+        'recruiter_list':  recruiter_list,
+        'status_filter':   status_filter,
+        'total_menunggu':  total_menunggu,
+        'total_aktif':     total_aktif,
+        'total_komisi':    total_komisi,
+        'total_pencairan': total_pencairan,
+        **get_sidebar_counts(),
+    }
+    return render(request, 'admin_pmb/afiliasi.html', context)
+
+
+@login_required
+def afiliasi_approve(request, pk):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+    if request.method == 'POST':
+        from afiliasi.models import Recruiter
+        rec = get_object_or_404(Recruiter, pk=pk)
+        rec.status = 'aktif'
+        rec.save()
+        messages.success(request, f'Recruiter {rec.user.get_full_name()} berhasil diaktifkan!')
+    return redirect('admin_pmb:afiliasi')
+
+
+@login_required
+def afiliasi_tolak(request, pk):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+    if request.method == 'POST':
+        from afiliasi.models import Recruiter
+        rec = get_object_or_404(Recruiter, pk=pk)
+        alasan = request.POST.get('alasan', '')
+        rec.status  = 'nonaktif'
+        rec.catatan = f'DITOLAK: {alasan}'
+        rec.save()
+        messages.warning(request, f'Recruiter {rec.user.get_full_name()} ditolak.')
+    return redirect('admin_pmb:afiliasi')
+
+
+@login_required
+def afiliasi_detail(request, pk):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+    from afiliasi.models import Recruiter, KomisiReferral
+    rec = get_object_or_404(Recruiter.objects.select_related('user'), pk=pk)
+    komisi_list = KomisiReferral.objects.filter(
+        recruiter=rec).select_related('pendaftaran__user').order_by('-tgl_komisi')
+    context = {
+        'rec': rec,
+        'komisi_list': komisi_list,
+        **get_sidebar_counts(),
+    }
+    return render(request, 'admin_pmb/afiliasi_detail.html', context)

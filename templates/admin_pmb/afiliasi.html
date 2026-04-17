@@ -1,0 +1,250 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Afiliasi / Recruiter{% endblock %}
+{% block nav_afiliasi %}active{% endblock %}
+{% block page_title %}Afiliasi / Recruiter{% endblock %}
+{% block page_sub %}Kelola pendaftaran dan verifikasi recruiter PMB{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7">
+        <i class="bi bi-hourglass-split" style="color:#d97706"></i>
+      </div>
+      <div class="stat-value" style="color:#d97706">{{ total_menunggu }}</div>
+      <div class="stat-label">Menunggu Verifikasi</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5">
+        <i class="bi bi-person-check-fill" style="color:#059669"></i>
+      </div>
+      <div class="stat-value" style="color:#059669">{{ total_aktif }}</div>
+      <div class="stat-label">Recruiter Aktif</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe">
+        <i class="bi bi-cash-coin" style="color:#2563eb"></i>
+      </div>
+      <div class="stat-value" style="color:#2563eb;font-size:1.2rem">
+        Rp {{ total_komisi|floatformat:0 }}
+      </div>
+      <div class="stat-label">Total Komisi Disetujui</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#ede9fe">
+        <i class="bi bi-credit-card" style="color:#7c3aed"></i>
+      </div>
+      <div class="stat-value" style="color:#7c3aed">{{ total_pencairan }}</div>
+      <div class="stat-label">Request Pencairan Pending</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER STATUS -->
+<div class="content-card mb-4">
+  <div class="content-card-body" style="padding:12px 20px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      {% for val, label, warna in status_tabs %}
+      <a href="?status={{ val }}"
+         style="padding:6px 16px;border-radius:20px;font-size:.85rem;font-weight:500;
+                text-decoration:none;transition:all .15s;
+                {% if status_filter == val %}
+                  background:linear-gradient(135deg,#667eea,#764ba2);color:white
+                {% else %}
+                  background:#f1f5f9;color:#64748b
+                {% endif %}">
+        {{ label }}
+        {% if val == 'menunggu' and total_menunggu > 0 %}
+          <span style="background:#ef4444;color:white;border-radius:10px;
+                       padding:0 6px;font-size:.7rem;margin-left:4px">
+            {{ total_menunggu }}
+          </span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- TABEL RECRUITER -->
+<div class="content-card">
+  <div class="content-card-header">
+    <div class="content-card-title">
+      {{ recruiter_list.count }} recruiter
+      {% if status_filter == 'menunggu' %}menunggu verifikasi
+      {% elif status_filter == 'aktif' %}aktif
+      {% else %}{{ status_filter }}{% endif %}
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Kontak</th>
+          <th>Pekerjaan</th>
+          <th>Bank / Rekening</th>
+          <th>Foto & KTP</th>
+          <th>Tgl Daftar</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recruiter_list %}
+        <tr>
+          <td>
+            <div style="font-weight:600">{{ r.user.get_full_name }}</div>
+            <div style="font-size:.75rem;color:#94a3b8;font-family:monospace">
+              {{ r.kode_referral }}
+            </div>
+          </td>
+          <td>
+            <div style="font-size:.85rem">{{ r.user.email }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ r.user.no_hp }}</div>
+          </td>
+          <td style="font-size:.85rem;color:#64748b">
+            {{ r.pekerjaan|default:"-" }}
+          </td>
+          <td style="font-size:.85rem">
+            <div style="font-weight:500">{{ r.bank }}</div>
+            <div style="color:#94a3b8;font-size:.75rem">{{ r.no_rekening }}</div>
+            <div style="color:#94a3b8;font-size:.75rem">a.n. {{ r.nama_rekening }}</div>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px">
+              {% if r.foto_selfie %}
+              <a href="{{ r.foto_selfie.url }}" target="_blank"
+                 style="font-size:.75rem;color:#667eea;text-decoration:none;
+                        background:#ede9fe;padding:3px 8px;border-radius:6px">
+                <i class="bi bi-person-circle"></i> Selfie
+              </a>
+              {% endif %}
+              {% if r.foto_ktp %}
+              <a href="{{ r.foto_ktp.url }}" target="_blank"
+                 style="font-size:.75rem;color:#059669;text-decoration:none;
+                        background:#d1fae5;padding:3px 8px;border-radius:6px">
+                <i class="bi bi-card-text"></i> KTP
+              </a>
+              {% endif %}
+            </div>
+          </td>
+          <td style="font-size:.8rem;color:#94a3b8">
+            {{ r.tgl_bergabung|date:"d M Y H:i" }}
+          </td>
+          <td>
+            <span class="badge-status
+              {% if r.status == 'aktif' %}badge-lulus
+              {% elif r.status == 'menunggu' %}badge-lengkap
+              {% elif r.status == 'suspend' %}badge-tolak
+              {% else %}badge-draft{% endif %}">
+              {{ r.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <a href="{% url 'admin_pmb:afiliasi_detail' r.pk %}"
+                 style="padding:4px 10px;border-radius:6px;font-size:.75rem;
+                        border:1px solid #e2e8f0;color:#64748b;text-decoration:none">
+                Detail
+              </a>
+              {% if r.status == 'menunggu' %}
+              <form method="post" action="{% url 'admin_pmb:afiliasi_approve' r.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        style="padding:4px 10px;border-radius:6px;font-size:.75rem;
+                               border:none;background:#10b981;color:white;cursor:pointer">
+                  ✅ Approve
+                </button>
+              </form>
+              <button onclick="showTolak({{ r.pk }}, '{{ r.user.get_full_name }}')"
+                      style="padding:4px 10px;border-radius:6px;font-size:.75rem;
+                             border:1px solid #ef4444;color:#ef4444;
+                             background:white;cursor:pointer">
+                ❌ Tolak
+              </button>
+              {% elif r.status == 'aktif' %}
+              <form method="post" action="{% url 'admin_pmb:afiliasi_tolak' r.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="alasan" value="Disuspend oleh admin">
+                <button type="submit"
+                        style="padding:4px 10px;border-radius:6px;font-size:.75rem;
+                               border:none;background:#ef4444;color:white;cursor:pointer">
+                  Suspend
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;color:#94a3b8;padding:40px">
+            {% if status_filter == 'menunggu' %}
+            Tidak ada recruiter yang menunggu verifikasi ✅
+            {% else %}
+            Tidak ada data recruiter
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Tolak -->
+<div id="modal-tolak" style="display:none;position:fixed;inset:0;
+     background:rgba(0,0,0,.4);z-index:999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:420px;
+              box-shadow:0 8px 40px rgba(0,0,0,.15)">
+    <h6 style="font-weight:600;margin-bottom:4px">Tolak Pendaftaran Recruiter</h6>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:16px" id="modal-nama"></p>
+    <form method="post" id="form-tolak">
+      {% csrf_token %}
+      <label style="font-size:.85rem;font-weight:500;margin-bottom:6px;display:block">
+        Alasan Penolakan
+      </label>
+      <textarea name="alasan" rows="3"
+                placeholder="Tuliskan alasan penolakan..."
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:10px;font-size:.875rem;outline:none;
+                       resize:none;margin-bottom:12px"></textarea>
+      <div style="display:flex;gap:8px">
+        <button type="submit"
+                style="flex:1;padding:10px;border-radius:8px;border:none;
+                       background:#ef4444;color:white;font-weight:500;cursor:pointer">
+          Tolak Pendaftaran
+        </button>
+        <button type="button" onclick="hideTolak()"
+                style="flex:1;padding:10px;border-radius:8px;
+                       border:1px solid #e2e8f0;background:white;cursor:pointer">
+          Batal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showTolak(pk, nama) {
+  document.getElementById('form-tolak').action = `/admin-pmb/afiliasi/${pk}/tolak/`;
+  document.getElementById('modal-nama').textContent = nama;
+  document.getElementById('modal-tolak').style.display = 'flex';
+}
+function hideTolak() {
+  document.getElementById('modal-tolak').style.display = 'none';
+}
+</script>
+{% endblock %}

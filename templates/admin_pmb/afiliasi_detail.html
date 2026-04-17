@@ -1,0 +1,268 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Detail Recruiter{% endblock %}
+{% block nav_afiliasi %}active{% endblock %}
+{% block page_title %}Detail Recruiter{% endblock %}
+{% block page_sub %}{{ rec.user.get_full_name }} — {{ rec.kode_referral }}{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-8">
+
+    <!-- INFO RECRUITER -->
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Data Recruiter</div>
+        <span class="badge-status
+          {% if rec.status == 'aktif' %}badge-lulus
+          {% elif rec.status == 'menunggu' %}badge-lengkap
+          {% else %}badge-tolak{% endif %}">
+          {{ rec.get_status_display }}
+        </span>
+      </div>
+      <div class="content-card-body">
+        <div class="row g-3" style="font-size:.875rem">
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Nama Lengkap</div>
+            <div style="font-weight:600">{{ rec.user.get_full_name }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Kode Referral</div>
+            <div style="font-weight:600;font-family:monospace;color:#667eea">
+              {{ rec.kode_referral }}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Email</div>
+            <div>{{ rec.user.email }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">No. HP</div>
+            <div>{{ rec.user.no_hp }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Pekerjaan</div>
+            <div>{{ rec.pekerjaan|default:"-" }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Level</div>
+            <div>{{ rec.get_level_display }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Bank</div>
+            <div>{{ rec.bank }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">No. Rekening</div>
+            <div>{{ rec.no_rekening }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8;margin-bottom:2px">Atas Nama</div>
+            <div>{{ rec.nama_rekening }}</div>
+          </div>
+          {% if rec.catatan %}
+          <div class="col-12">
+            <div style="color:#94a3b8;margin-bottom:2px">Motivasi</div>
+            <div style="background:#f8f9ff;padding:10px;border-radius:8px;
+                        font-size:.85rem;color:#64748b">
+              {{ rec.catatan }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- FOTO IDENTITAS -->
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Foto Identitas</div>
+      </div>
+      <div class="content-card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:#64748b">
+              <i class="bi bi-person-circle me-1"></i>Foto Selfie
+            </div>
+            {% if rec.foto_selfie %}
+            <img src="{{ rec.foto_selfie.url }}"
+                 style="width:100%;border-radius:10px;border:1.5px solid #e2e8f0;
+                        max-height:250px;object-fit:cover">
+            {% else %}
+            <div style="background:#f1f5f9;border-radius:10px;padding:30px;
+                        text-align:center;color:#94a3b8;font-size:.85rem">
+              Tidak ada foto
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:#64748b">
+              <i class="bi bi-card-text me-1"></i>Foto KTP
+            </div>
+            {% if rec.foto_ktp %}
+            <img src="{{ rec.foto_ktp.url }}"
+                 style="width:100%;border-radius:10px;border:1.5px solid #e2e8f0;
+                        max-height:250px;object-fit:cover">
+            {% else %}
+            <div style="background:#f1f5f9;border-radius:10px;padding:30px;
+                        text-align:center;color:#94a3b8;font-size:.85rem">
+              Tidak ada foto KTP
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIWAYAT KOMISI -->
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Riwayat Komisi</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Pendaftar</th>
+              <th>Jumlah Komisi</th>
+              <th>Status</th>
+              <th>Tanggal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in komisi_list %}
+            <tr>
+              <td>{{ k.pendaftaran.user.get_full_name }}</td>
+              <td style="font-weight:600;color:#10b981">
+                Rp {{ k.jumlah_komisi|floatformat:0 }}
+              </td>
+              <td>
+                <span class="badge-status
+                  {% if k.status == 'paid' %}badge-lulus
+                  {% elif k.status == 'approved' %}badge-lengkap
+                  {% elif k.status == 'pending' %}badge-terjadwal
+                  {% else %}badge-tolak{% endif %}">
+                  {{ k.get_status_display }}
+                </span>
+              </td>
+              <td style="font-size:.8rem;color:#94a3b8">
+                {{ k.tgl_komisi|date:"d M Y H:i" }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">
+                Belum ada komisi
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KOLOM KANAN -->
+  <div class="col-md-4">
+
+    <!-- AKSI -->
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Aksi</div>
+      </div>
+      <div class="content-card-body">
+        {% if rec.status == 'menunggu' %}
+        <form method="post" action="{% url 'admin_pmb:afiliasi_approve' rec.pk %}"
+              class="mb-2">
+          {% csrf_token %}
+          <button type="submit" class="btn-primary-custom w-100"
+                  style="justify-content:center;background:#10b981">
+            ✅ Approve & Aktifkan Recruiter
+          </button>
+        </form>
+        <button onclick="showTolakDetail()"
+                style="width:100%;padding:9px;border-radius:8px;
+                       border:1px solid #ef4444;color:#ef4444;
+                       background:white;cursor:pointer;font-size:.875rem">
+          ❌ Tolak Pendaftaran
+        </button>
+
+        <div id="form-tolak-detail" style="display:none;margin-top:12px">
+          <form method="post" action="{% url 'admin_pmb:afiliasi_tolak' rec.pk %}">
+            {% csrf_token %}
+            <textarea name="alasan" rows="3" placeholder="Alasan penolakan..."
+                      style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                             padding:8px;font-size:.85rem;outline:none;
+                             resize:none;margin-bottom:8px"></textarea>
+            <button type="submit"
+                    style="width:100%;padding:9px;border-radius:8px;border:none;
+                           background:#ef4444;color:white;cursor:pointer">
+              Konfirmasi Tolak
+            </button>
+          </form>
+        </div>
+
+        {% elif rec.status == 'aktif' %}
+        <form method="post" action="{% url 'admin_pmb:afiliasi_tolak' rec.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="alasan" value="Disuspend oleh admin">
+          <button type="submit"
+                  style="width:100%;padding:9px;border-radius:8px;border:none;
+                         background:#ef4444;color:white;cursor:pointer;font-size:.875rem">
+            Suspend Recruiter
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- STATISTIK -->
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Statistik</div>
+      </div>
+      <div class="content-card-body">
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:.875rem">
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:#64748b">Total Referral</span>
+            <span style="font-weight:700;color:#667eea">{{ rec.total_referral }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:#64748b">Total Komisi</span>
+            <span style="font-weight:700;color:#10b981">
+              Rp {{ rec.total_komisi|floatformat:0 }}
+            </span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:#64748b">Level</span>
+            <span style="font-weight:700">{{ rec.get_level_display }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:#64748b">Bergabung</span>
+            <span style="color:#94a3b8;font-size:.8rem">
+              {{ rec.tgl_bergabung|date:"d M Y" }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top:16px">
+  <a href="{% url 'admin_pmb:afiliasi' %}"
+     style="color:#667eea;font-size:.875rem;text-decoration:none">
+    ← Kembali ke daftar recruiter
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showTolakDetail() {
+  const div = document.getElementById('form-tolak-detail');
+  div.style.display = div.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

@@ -20,6 +20,10 @@ def calon_maba(request):
     from master.models import PengaturanSistem
     from pendaftaran.models import Pendaftaran, ProfilPendaftar
 
+    # Kalau recruiter nyasar ke sini, redirect ke dashboard recruiter
+    if request.user.role == 'recruiter':
+        return redirect('afiliasi:dashboard')
+
     user       = request.user
     pengaturan = PengaturanSistem.get()
 
@@ -86,3 +90,18 @@ def recruiter_dashboard(request):
 @login_required
 def admin_pmb(request):
     return redirect('admin_pmb:dashboard')
+
+@login_required
+def index(request):
+    user = request.user
+    
+    # Recruiter → redirect ke dashboard recruiter
+    if user.role == 'recruiter':
+        return redirect('afiliasi:dashboard')
+    
+    # Admin → redirect ke admin PMB
+    if user.role in ['admin_pmb', 'operator_pmb', 'panitia_seleksi', 'pimpinan']:
+        return redirect('admin_pmb:dashboard')
+    
+    # Calon maba → dashboard maba
+    return redirect('dashboard:calon_maba')
