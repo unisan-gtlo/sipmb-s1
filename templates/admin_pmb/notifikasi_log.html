@@ -1,0 +1,229 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Log Notifikasi{% endblock %}
+{% block nav_notifikasi %}active{% endblock %}
+{% block page_title %}Log Notifikasi{% endblock %}
+{% block page_sub %}Riwayat semua notifikasi yang dikirim{% endblock %}
+
+{% block content %}
+
+<!-- STAT -->
+<div class="row g-3 mb-4">
+  {% for s in stat %}
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="stat-value" style="
+        {% if s.status == 'terkirim' %}color:#10b981
+        {% elif s.status == 'gagal' %}color:#ef4444
+        {% else %}color:#f59e0b{% endif %}">
+        {{ s.total }}
+      </div>
+      <div class="stat-label">{{ s.status|capfirst }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- FILTER & HAPUS -->
+<div class="content-card mb-3">
+  <div class="content-card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Dari Tanggal</label>
+        <input type="date" name="dari"
+               value="{{ filter_dari }}"
+               style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                      padding:8px 12px;font-size:.875rem;outline:none">
+      </div>
+      <div class="col-md-3">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Sampai Tanggal</label>
+        <input type="date" name="sampai"
+               value="{{ filter_sampai }}"
+               style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                      padding:8px 12px;font-size:.875rem;outline:none">
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Status</label>
+        <select name="status"
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua</option>
+          <option value="terkirim" {% if filter_status == 'terkirim' %}selected{% endif %}>Terkirim</option>
+          <option value="gagal" {% if filter_status == 'gagal' %}selected{% endif %}>Gagal</option>
+          <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Jenis</label>
+        <select name="jenis"
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua</option>
+          <option value="email" {% if filter_jenis == 'email' %}selected{% endif %}>Email</option>
+          <option value="whatsapp" {% if filter_jenis == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn-primary-custom">
+          <i class="bi bi-search"></i> Filter
+        </button>
+        <a href="{% url 'admin_pmb:notifikasi_log' %}"
+           class="btn-outline-custom">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TABEL LOG DENGAN CENTANG -->
+<form method="post" action="{% url 'admin_pmb:notifikasi_log' %}" id="form-hapus">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="hapus">
+
+  <div class="content-card">
+    <div class="content-card-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <input type="checkbox" id="centang-semua" onchange="centangSemua(this)"
+               style="width:16px;height:16px;cursor:pointer">
+        <div class="content-card-title">
+          {{ log_list.count }} log
+          {% if filter_dari or filter_sampai %}
+            <span style="font-size:.8rem;color:#94a3b8;font-weight:400">
+              (filtered)
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="info-terpilih" style="font-size:.8rem;color:#667eea;display:none">
+          <span id="jumlah-terpilih">0</span> dipilih
+        </span>
+        <button type="submit"
+                id="btn-hapus"
+                onclick="return konfirmasiHapus()"
+                style="display:none;padding:6px 14px;border-radius:8px;border:none;
+                       background:#ef4444;color:white;font-size:.8rem;
+                       font-weight:600;cursor:pointer">
+          <i class="bi bi-trash3"></i> Hapus yang Dipilih
+        </button>
+        <button type="button"
+                onclick="hapusByFilter()"
+                style="padding:6px 14px;border-radius:8px;
+                       border:1px solid #ef4444;color:#ef4444;
+                       background:white;font-size:.8rem;cursor:pointer">
+          <i class="bi bi-trash3"></i> Hapus Hasil Filter
+        </button>
+        <a href="{% url 'admin_pmb:notifikasi' %}"
+           class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+          ← Kembali
+        </a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>Waktu</th>
+            <th>Penerima</th>
+            <th>Tujuan</th>
+            <th>Jenis</th>
+            <th>Template</th>
+            <th>Status</th>
+            <th>Pesan Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in log_list %}
+          <tr id="row-{{ log.pk }}">
+            <td style="text-align:center">
+              <input type="checkbox" name="log_ids" value="{{ log.pk }}"
+                     class="log-checkbox"
+                     onchange="updateTerpilih()"
+                     style="width:15px;height:15px;cursor:pointer">
+            </td>
+            <td style="font-size:.8rem;color:#94a3b8;white-space:nowrap">
+              {{ log.tgl_kirim|date:"d M Y H:i" }}
+            </td>
+            <td>
+              <div style="font-weight:500;font-size:.875rem">
+                {{ log.user.get_full_name }}
+              </div>
+              <div style="font-size:.75rem;color:#94a3b8">{{ log.user.email }}</div>
+            </td>
+            <td style="font-size:.8rem;font-family:monospace">{{ log.tujuan }}</td>
+            <td>
+              <span style="font-size:.75rem;padding:2px 8px;border-radius:8px;
+                {% if log.jenis == 'email' %}background:#dbeafe;color:#1d4ed8
+                {% else %}background:#fef3c7;color:#92400e{% endif %}">
+                {{ log.jenis }}
+              </span>
+            </td>
+            <td style="font-size:.8rem;color:#64748b">
+              {{ log.template.nama|default:"-"|truncatechars:30 }}
+            </td>
+            <td>
+              <span class="badge-status
+                {% if log.status == 'terkirim' %}badge-lulus
+                {% elif log.status == 'gagal' %}badge-tolak
+                {% else %}badge-terjadwal{% endif %}">
+                {{ log.status }}
+              </span>
+            </td>
+            <td style="font-size:.75rem;color:#ef4444;max-width:200px">
+              {{ log.error_msg|truncatechars:60|default:"-" }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" style="text-align:center;color:#94a3b8;padding:40px">
+              Tidak ada log yang sesuai filter
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Form hapus by filter (hidden) -->
+  <input type="hidden" name="filter_dari" value="{{ filter_dari }}">
+  <input type="hidden" name="filter_sampai" value="{{ filter_sampai }}">
+  <input type="hidden" name="filter_status" value="{{ filter_status }}">
+  <input type="hidden" name="filter_jenis" value="{{ filter_jenis }}">
+  <input type="hidden" name="hapus_filter" id="input-hapus-filter" value="0">
+
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function centangSemua(cb) {
+  document.querySelectorAll('.log-checkbox').forEach(c => c.checked = cb.checked);
+  updateTerpilih();
+}
+
+function updateTerpilih() {
+  const checked = document.querySelectorAll('.log-checkbox:checked');
+  const jumlah  = checked.length;
+  document.getElementById('jumlah-terpilih').textContent = jumlah;
+  document.getElementById('info-terpilih').style.display = jumlah > 0 ? 'inline' : 'none';
+  document.getElementById('btn-hapus').style.display     = jumlah > 0 ? 'inline-flex' : 'none';
+}
+
+function konfirmasiHapus() {
+  const jumlah = document.querySelectorAll('.log-checkbox:checked').length;
+  return confirm(`Hapus ${jumlah} log notifikasi yang dipilih?`);
+}
+
+function hapusByFilter() {
+  if (!confirm('Hapus semua log sesuai filter yang aktif?')) return;
+  document.getElementById('input-hapus-filter').value = '1';
+  document.getElementById('form-hapus').submit();
+}
+</script>
+{% endblock %}

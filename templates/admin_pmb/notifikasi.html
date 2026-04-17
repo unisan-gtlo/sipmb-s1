@@ -1,0 +1,243 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Notifikasi{% endblock %}
+{% block nav_notifikasi %}active{% endblock %}
+{% block page_title %}Notifikasi{% endblock %}
+{% block page_sub %}Kelola template dan kirim notifikasi ke pendaftar{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- TEMPLATE NOTIFIKASI -->
+  <div class="col-md-7">
+    <div class="content-card mb-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Template Notifikasi Otomatis</div>
+        <a href="/admin/notifikasi/templatenotifikasi/add/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-plus"></i> Tambah
+        </a>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Template</th>
+              <th>Trigger</th>
+              <th>Jenis</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in template_list %}
+            <tr>
+              <td style="font-weight:500">{{ t.nama }}</td>
+              <td>
+                <span style="font-size:.75rem;background:#ede9fe;color:#667eea;
+                             padding:2px 8px;border-radius:8px">
+                  {{ t.get_trigger_display }}
+                </span>
+              </td>
+              <td>
+                <span style="font-size:.75rem;
+                  {% if t.jenis == 'both' %}background:#d1fae5;color:#065f46
+                  {% elif t.jenis == 'email' %}background:#dbeafe;color:#1d4ed8
+                  {% else %}background:#fef3c7;color:#92400e{% endif %};
+                  padding:2px 8px;border-radius:8px">
+                  {{ t.get_jenis_display }}
+                </span>
+              </td>
+              <td>
+                {% if t.aktif %}
+                  <span class="badge-status badge-lulus">Aktif</span>
+                {% else %}
+                  <span class="badge-status badge-draft">Nonaktif</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="/admin/notifikasi/templatenotifikasi/{{ t.pk }}/change/"
+                   target="_blank" style="font-size:.8rem;color:#667eea">Edit</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" style="text-align:center;color:#94a3b8;padding:30px">
+                Belum ada template.
+                <a href="/admin/notifikasi/templatenotifikasi/add/"
+                   target="_blank" style="color:#667eea">Buat template sekarang</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LOG TERBARU -->
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Log Notifikasi Terbaru</div>
+        <a href="{% url 'admin_pmb:notifikasi_log' %}"
+           class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+          Lihat semua
+        </a>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Penerima</th>
+              <th>Jenis</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in log_terbaru %}
+            <tr>
+              <td style="font-size:.75rem;color:#94a3b8">
+                {{ log.tgl_kirim|date:"d M H:i" }}
+              </td>
+              <td>
+                <div style="font-size:.85rem;font-weight:500">
+                  {{ log.user.get_full_name }}
+                </div>
+                <div style="font-size:.75rem;color:#94a3b8">{{ log.tujuan }}</div>
+              </td>
+              <td>
+                <span style="font-size:.75rem;
+                  {% if log.jenis == 'email' %}background:#dbeafe;color:#1d4ed8
+                  {% else %}background:#fef3c7;color:#92400e{% endif %};
+                  padding:2px 8px;border-radius:8px">
+                  {{ log.jenis }}
+                </span>
+              </td>
+              <td>
+                <span class="badge-status
+                  {% if log.status == 'terkirim' %}badge-lulus
+                  {% elif log.status == 'gagal' %}badge-tolak
+                  {% else %}badge-draft{% endif %}">
+                  {{ log.status }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">
+                Belum ada log notifikasi
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- KIRIM MANUAL -->
+  <div class="col-md-5">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">
+          <i class="bi bi-send me-1" style="color:#667eea"></i>
+          Kirim Notifikasi Manual
+        </div>
+      </div>
+      <div class="content-card-body">
+        <form method="post" action="{% url 'admin_pmb:notifikasi_kirim' %}">
+          {% csrf_token %}
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+              Target Pendaftar
+            </label>
+            <select name="status_target"
+                    style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                           padding:8px 12px;font-size:.875rem;outline:none">
+              <option value="">Semua Pendaftar</option>
+              {% for val, label in status_choices %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <div style="font-size:.72rem;color:#94a3b8;margin-top:3px">
+              Pilih status untuk filter target penerima
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+              Kirim Via
+            </label>
+            <select name="kirim_ke"
+                    style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                           padding:8px 12px;font-size:.875rem;outline:none">
+              <option value="both">Email & WhatsApp</option>
+              <option value="email">Email Saja</option>
+              <option value="whatsapp">WhatsApp Saja</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+              Subjek Email
+            </label>
+            <input type="text" name="subjek"
+                   placeholder="Subjek email..."
+                   style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                          padding:8px 12px;font-size:.875rem;outline:none">
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+              Isi Email
+            </label>
+            <textarea name="isi_email" rows="5"
+                      placeholder="Isi pesan email...
+Variabel: {{nama}}, {{no_pendaftaran}}, {{prodi}}, {{jalur}}, {{status}}"
+                      style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                             padding:8px 12px;font-size:.875rem;outline:none;
+                             resize:vertical"></textarea>
+          </div>
+
+          <div style="margin-bottom:16px">
+            <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+              Pesan WhatsApp
+            </label>
+            <textarea name="isi_wa" rows="4"
+                      placeholder="Pesan WhatsApp...
+Variabel: {{nama}}, {{no_pendaftaran}}, {{prodi}}"
+                      style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                             padding:8px 12px;font-size:.875rem;outline:none;
+                             resize:vertical"></textarea>
+          </div>
+
+          <div style="background:#fef3c7;border-radius:8px;padding:10px 12px;
+                      font-size:.78rem;color:#92400e;margin-bottom:14px">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Pastikan konten notifikasi sudah benar sebelum mengirim.
+            Notifikasi akan dikirim ke semua pendaftar sesuai filter.
+          </div>
+
+          <button type="submit" class="btn-primary-custom w-100"
+                  style="justify-content:center"
+                  onclick="return confirm('Yakin ingin mengirim notifikasi?')">
+            <i class="bi bi-send-fill me-1"></i> Kirim Notifikasi
+          </button>
+        </form>
+
+        <!-- VARIABEL TERSEDIA -->
+       <div style="display:flex;gap:6px;flex-wrap:wrap">
+            {% for var in variabel_list %}
+            <code style="background:#ede9fe;color:#667eea;padding:2px 8px;
+                        border-radius:6px;font-size:.75rem">
+                {% templatetag openvariable %}{{ var }}{% templatetag closevariable %}
+            </code>
+            {% endfor %}
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

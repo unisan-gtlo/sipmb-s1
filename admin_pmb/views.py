@@ -172,19 +172,36 @@ def ubah_status(request, pk):
 
     if request.method == 'POST':
         pendaftaran = get_object_or_404(Pendaftaran, pk=pk)
-        status_baru  = request.POST.get('status_baru')
-        keterangan   = request.POST.get('keterangan', '')
+        status_baru = request.POST.get('status_baru')
+        keterangan  = request.POST.get('keterangan', '')
 
         from pendaftaran.models import LogStatusPendaftaran
         LogStatusPendaftaran.objects.create(
-            pendaftaran=pendaftaran,
-            status_lama=pendaftaran.status,
-            status_baru=status_baru,
-            keterangan=keterangan,
-            diubah_oleh=request.user,
+            pendaftaran  = pendaftaran,
+            status_lama  = pendaftaran.status,
+            status_baru  = status_baru,
+            keterangan   = keterangan,
+            diubah_oleh  = request.user,
         )
         pendaftaran.status = status_baru
         pendaftaran.save()
+
+        # Kirim notifikasi otomatis
+        trigger_map = {
+            'LULUS_ADM':     'dokumen_acc',
+            'TERJADWAL':     'terjadwal',
+            'LULUS_SELEKSI': 'lulus_seleksi',
+            'TIDAK_LULUS':   'tidak_lulus',
+            'DAFTAR_ULANG':  'daftar_ulang',
+        }
+        trigger = trigger_map.get(status_baru)
+        if trigger:
+            try:
+                from notifikasi.engine import kirim_notifikasi
+                kirim_notifikasi(trigger, pendaftaran)
+            except Exception as e:
+                logger.error(f'Error notifikasi: {e}')
+
         messages.success(request, f'Status berhasil diubah ke {status_baru}.')
 
     return redirect('admin_pmb:detail_pendaftar', pk=pk)
@@ -212,11 +229,19 @@ def verif_acc(request, dok_id):
         return redirect('dashboard:index')
     if request.method == 'POST':
         dok = get_object_or_404(DokumenPendaftar, pk=dok_id)
-        dok.status_verifikasi = 'terverifikasi'
-        dok.tgl_verifikasi    = timezone.now()
-        dok.diverifikasi_oleh = request.user
+        dok.status_verifikasi  = 'terverifikasi'
+        dok.tgl_verifikasi     = timezone.now()
+        dok.diverifikasi_oleh  = request.user
         dok.catatan_verifikasi = request.POST.get('catatan', '')
         dok.save()
+
+        # Kirim notifikasi
+        try:
+            from notifikasi.engine import kirim_notifikasi
+            kirim_notifikasi('dokumen_acc', dok.pendaftaran)
+        except Exception as e:
+            logger.error(f'Error notifikasi dokumen acc: {e}')
+
         messages.success(request, f'Dokumen "{dok.nama_dokumen}" berhasil diverifikasi.')
     return redirect('admin_pmb:verifikasi')
 
@@ -1076,3 +1101,147 @@ def export_wilayah(request):
     response['Content-Disposition'] = 'attachment; filename="rekap_wilayah_pmb.xlsx"'
     wb.save(response)
     return response
+
+@login_required
+def notifikasi(request):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from notifikasi.models import TemplateNotifikasi, LogNotifikasi
+
+    template_list = TemplateNotifikasi.objects.all().order_by('trigger')
+    log_terbaru   = LogNotifikasi.objects.select_related(
+        'user', 'template'
+    ).order_by('-tgl_kirim')[:20]
+
+    context = {
+        'template_list': template_list,
+        'log_terbaru':   log_terbaru,
+        **get_sidebar_counts(),
+    }
+    return render(request, 'admin_pmb/notifikasi.html', context)
+
+
+@login_required
+def notifikasi_kirim(request):
+    """Kirim notifikasi massal manual"""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    if request.method == 'POST':
+        status_target = request.POST.get('status_target', '')
+        subjek        = request.POST.get('subjek', '')
+        isi_email     = request.POST.get('isi_email', '')
+        isi_wa        = request.POST.get('isi_wa', '')
+        kirim_ke      = request.POST.get('kirim_ke', 'both')
+
+        qs = Pendaftaran.objects.select_related('user', 'jalur', 'prodi_pilihan_1')
+        if status_target:
+            qs = qs.filter(status=status_target)
+
+        from notifikasi.engine import kirim_notifikasi_manual
+        berhasil, gagal = kirim_notifikasi_manual(
+            list(qs), subjek, isi_email, isi_wa, kirim_ke
+        )
+        messages.success(
+            request,
+            f'Notifikasi terkirim: {berhasil} berhasil, {gagal} gagal dari {qs.count()} target.'
+        )
+
+    return redirect('admin_pmb:notifikasi')
+
+
+
+@login_required
+def notifikasi(request):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from notifikasi.models import TemplateNotifikasi, LogNotifikasi
+
+    template_list = TemplateNotifikasi.objects.all().order_by('trigger')
+    log_terbaru   = LogNotifikasi.objects.select_related(
+        'user', 'template'
+    ).order_by('-tgl_kirim')[:20]
+
+    variabel_list = [
+        'nama', 'no_pendaftaran', 'jalur', 'gelombang',
+        'prodi', 'status', 'email', 'no_hp',
+        'url_dashboard', 'nama_kampus', 'kontak_pmb',
+    ]
+
+    context = {
+        'template_list':  template_list,
+        'log_terbaru':    log_terbaru,
+        'variabel_list':  variabel_list,
+        'status_choices': Pendaftaran.STATUS_CHOICES,
+        **get_sidebar_counts(),
+    }
+    return render(request, 'admin_pmb/notifikasi.html', context)
+
+@login_required
+def notifikasi_log(request):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from notifikasi.models import LogNotifikasi
+    from django.db.models import Count
+    from django.utils.dateparse import parse_date
+
+    # Handle hapus
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'hapus':
+            hapus_filter = request.POST.get('hapus_filter', '0')
+
+            if hapus_filter == '1':
+                # Hapus berdasarkan filter
+                qs = LogNotifikasi.objects.all()
+                dari   = request.POST.get('filter_dari', '')
+                sampai = request.POST.get('filter_sampai', '')
+                status = request.POST.get('filter_status', '')
+                jenis  = request.POST.get('filter_jenis', '')
+                if dari:    qs = qs.filter(tgl_kirim__date__gte=dari)
+                if sampai:  qs = qs.filter(tgl_kirim__date__lte=sampai)
+                if status:  qs = qs.filter(status=status)
+                if jenis:   qs = qs.filter(jenis=jenis)
+                jumlah = qs.count()
+                qs.delete()
+                messages.success(request, f'{jumlah} log berhasil dihapus.')
+            else:
+                # Hapus yang dicentang
+                log_ids = request.POST.getlist('log_ids')
+                if log_ids:
+                    jumlah = LogNotifikasi.objects.filter(pk__in=log_ids).count()
+                    LogNotifikasi.objects.filter(pk__in=log_ids).delete()
+                    messages.success(request, f'{jumlah} log berhasil dihapus.')
+
+        return redirect('admin_pmb:notifikasi_log')
+
+    # Filter
+    filter_dari   = request.GET.get('dari', '')
+    filter_sampai = request.GET.get('sampai', '')
+    filter_status = request.GET.get('status', '')
+    filter_jenis  = request.GET.get('jenis', '')
+
+    qs = LogNotifikasi.objects.select_related(
+        'user', 'template', 'pendaftaran'
+    ).order_by('-tgl_kirim')
+
+    if filter_dari:   qs = qs.filter(tgl_kirim__date__gte=filter_dari)
+    if filter_sampai: qs = qs.filter(tgl_kirim__date__lte=filter_sampai)
+    if filter_status: qs = qs.filter(status=filter_status)
+    if filter_jenis:  qs = qs.filter(jenis=filter_jenis)
+
+    stat = LogNotifikasi.objects.values('status').annotate(total=Count('id'))
+
+    context = {
+        'log_list':      qs[:200],
+        'stat':          stat,
+        'filter_dari':   filter_dari,
+        'filter_sampai': filter_sampai,
+        'filter_status': filter_status,
+        'filter_jenis':  filter_jenis,
+        **get_sidebar_counts(),
+    }
+    return render(request, 'admin_pmb/notifikasi_log.html', context)

@@ -28,4 +28,7 @@ urlpatterns = [
     path('laporan/export/pendaftar/',     views.export_pendaftar, name='export_pendaftar'),
     path('laporan/export/ukuran-baju/',   views.export_ukuran_baju,name='export_ukuran_baju'),
     path('laporan/export/rekap-wilayah/', views.export_wilayah,   name='export_wilayah'),
+    path('notifikasi/',        views.notifikasi,        name='notifikasi'),
+    path('notifikasi/kirim/',  views.notifikasi_kirim,  name='notifikasi_kirim'),
+    path('notifikasi/log/',    views.notifikasi_log,    name='notifikasi_log'),
 ]
