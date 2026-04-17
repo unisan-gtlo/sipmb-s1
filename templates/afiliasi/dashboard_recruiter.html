@@ -1,0 +1,285 @@
+{% extends 'base_publik.html' %}
+{% block title %}Dashboard Recruiter — PMB UNISAN{% endblock %}
+
+{% block content %}
+<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:32px 0 60px">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:52px;height:52px;border-radius:50%;
+                      background:rgba(255,255,255,.2);
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:20px;font-weight:700;color:white">
+            {{ request.user.first_name|first|upper }}
+          </div>
+          <div>
+            <div style="color:rgba(255,255,255,.8);font-size:.8rem">Dashboard Recruiter</div>
+            <div style="color:white;font-size:1.2rem;font-weight:700">
+              {{ request.user.get_full_name }}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <span style="background:rgba(255,255,255,.2);color:white;
+                           padding:2px 10px;border-radius:10px;font-size:.75rem;font-weight:600">
+                Level {{ recruiter.level }} — {{ recruiter.get_level_display }}
+              </span>
+              <span style="background:rgba(255,255,255,.15);color:white;
+                           padding:2px 10px;border-radius:10px;font-size:.75rem;
+                           font-family:monospace">
+                {{ recruiter.kode_referral }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'dashboard:calon_maba' %}"
+           style="color:rgba(255,255,255,.8);font-size:.85rem;text-decoration:none">
+          <i class="bi bi-arrow-left me-1"></i>Kembali ke Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="margin-top:-30px;padding-bottom:60px">
+
+  <!-- STAT CARDS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:#667eea">{{ total_referral }}</div>
+        <div style="font-size:.8rem;color:#94a3b8;margin-top:4px">Total Referral</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center">
+        <div style="font-size:1.4rem;font-weight:800;color:#f59e0b">
+          Rp {{ komisi_pending|floatformat:0 }}
+        </div>
+        <div style="font-size:.8rem;color:#94a3b8;margin-top:4px">Komisi Pending</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center">
+        <div style="font-size:1.4rem;font-weight:800;color:#10b981">
+          Rp {{ saldo|floatformat:0 }}
+        </div>
+        <div style="font-size:.8rem;color:#94a3b8;margin-top:4px">Saldo Tersedia</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center">
+        <div style="font-size:1.4rem;font-weight:800;color:#3b82f6">
+          Rp {{ komisi_paid|floatformat:0 }}
+        </div>
+        <div style="font-size:.8rem;color:#94a3b8;margin-top:4px">Total Dicairkan</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- KOLOM KIRI -->
+    <div class="col-md-8">
+
+      <!-- LINK REFERRAL -->
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
+        <div style="font-size:.9rem;font-weight:600;margin-bottom:12px">
+          <i class="bi bi-link-45deg me-1" style="color:#667eea"></i>Link Referral Anda
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="link-ref" value="{{ link_referral }}" readonly
+                 style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;
+                        padding:8px 12px;font-size:.8rem;background:#f8f9ff;outline:none">
+          <button onclick="copyLink()"
+                  style="background:linear-gradient(135deg,#667eea,#764ba2);
+                         color:white;border:none;border-radius:8px;
+                         padding:8px 16px;font-size:.85rem;cursor:pointer;
+                         display:flex;align-items:center;gap:6px">
+            <i class="bi bi-clipboard" id="copy-icon"></i> Salin
+          </button>
+        </div>
+        <div style="font-size:.75rem;color:#94a3b8;margin-top:8px">
+          Bagikan link ini ke calon mahasiswa. Setiap yang mendaftar via link ini akan tercatat sebagai referral Anda.
+        </div>
+      </div>
+
+      <!-- PROGRESS LEVEL -->
+      {% if syarat_naik %}
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:.9rem;font-weight:600">
+            <i class="bi bi-graph-up me-1" style="color:#667eea"></i>Progress Naik Level
+          </div>
+          <div style="font-size:.85rem;color:#667eea;font-weight:600">
+            {{ total_referral }} / {{ syarat_naik }} referral
+          </div>
+        </div>
+        <div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden">
+          <div style="height:100%;border-radius:5px;width:{{ progress_level }}%;
+                      background:linear-gradient(135deg,#667eea,#764ba2);
+                      transition:width .3s"></div>
+        </div>
+        <div style="font-size:.75rem;color:#94a3b8;margin-top:6px">
+          Butuh {{ syarat_naik|add:"-"|add:total_referral }} referral lagi untuk naik ke level berikutnya
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- TABEL REFERRAL -->
+      <div style="background:white;border-radius:14px;overflow:hidden;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
+        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;
+                    font-size:.9rem;font-weight:600">
+          <i class="bi bi-people me-1" style="color:#667eea"></i>Referral Terbaru
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+            <thead>
+              <tr style="background:#f8f9ff">
+                <th style="padding:10px 16px;text-align:left;font-size:.75rem;
+                           font-weight:600;color:#64748b;text-transform:uppercase">Nama</th>
+                <th style="padding:10px 16px;text-align:left;font-size:.75rem;
+                           font-weight:600;color:#64748b;text-transform:uppercase">Prodi</th>
+                <th style="padding:10px 16px;text-align:left;font-size:.75rem;
+                           font-weight:600;color:#64748b;text-transform:uppercase">Status</th>
+                <th style="padding:10px 16px;text-align:left;font-size:.75rem;
+                           font-weight:600;color:#64748b;text-transform:uppercase">Tanggal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in referral_list %}
+              <tr style="border-bottom:1px solid #f1f5f9">
+                <td style="padding:12px 16px;font-weight:500">{{ p.user.get_full_name }}</td>
+                <td style="padding:12px 16px;color:#64748b">{{ p.prodi_pilihan_1.nama_prodi }}</td>
+                <td style="padding:12px 16px">
+                  <span style="font-size:.75rem;padding:2px 8px;border-radius:10px;
+                    {% if p.status == 'LULUS_SELEKSI' or p.status == 'DAFTAR_ULANG' %}
+                      background:#d1fae5;color:#065f46
+                    {% elif p.status == 'DRAFT' %}
+                      background:#f1f5f9;color:#64748b
+                    {% else %}
+                      background:#ede9fe;color:#7c3aed
+                    {% endif %}">
+                    {{ p.get_status_display }}
+                  </span>
+                </td>
+                <td style="padding:12px 16px;color:#94a3b8;font-size:.8rem">
+                  {{ p.tgl_daftar|date:"d M Y" }}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" style="padding:30px;text-align:center;color:#94a3b8">
+                  Belum ada referral
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KOLOM KANAN -->
+    <div class="col-md-4">
+
+      <!-- CAIRKAN KOMISI -->
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
+        <div style="font-size:.9rem;font-weight:600;margin-bottom:16px">
+          <i class="bi bi-cash-coin me-1" style="color:#10b981"></i>Cairkan Komisi
+        </div>
+        <div style="background:#f0fdf4;border-radius:10px;padding:14px;
+                    text-align:center;margin-bottom:14px">
+          <div style="font-size:.75rem;color:#94a3b8;margin-bottom:4px">Saldo Tersedia</div>
+          <div style="font-size:1.6rem;font-weight:800;color:#10b981">
+            Rp {{ saldo|floatformat:0 }}
+          </div>
+        </div>
+        <form method="post" action="{% url 'afiliasi:cairkan' %}">
+          {% csrf_token %}
+          <div style="margin-bottom:10px">
+            <label style="font-size:.8rem;font-weight:500;color:#64748b;margin-bottom:4px;display:block">
+              Jumlah Pencairan
+            </label>
+            <input type="number" name="jumlah"
+                   min="{{ pengaturan.min_pencairan }}"
+                   max="{{ saldo }}"
+                   placeholder="Min. Rp {{ pengaturan.min_pencairan|floatformat:0 }}"
+                   style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                          padding:8px 12px;font-size:.875rem;outline:none">
+          </div>
+          <div style="background:#f8f9ff;border-radius:8px;padding:10px;
+                      font-size:.75rem;color:#64748b;margin-bottom:12px">
+            <i class="bi bi-bank me-1"></i>
+            {{ recruiter.bank }} — {{ recruiter.no_rekening }}<br>
+            a.n. {{ recruiter.nama_rekening }}
+          </div>
+          <button type="submit"
+                  style="width:100%;background:linear-gradient(135deg,#10b981,#059669);
+                         color:white;border:none;border-radius:8px;padding:10px;
+                         font-weight:600;cursor:pointer;font-size:.875rem">
+            <i class="bi bi-send me-1"></i>Request Pencairan
+          </button>
+        </form>
+      </div>
+
+      <!-- RIWAYAT KOMISI -->
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06)">
+        <div style="font-size:.9rem;font-weight:600;margin-bottom:14px">
+          <i class="bi bi-receipt me-1" style="color:#667eea"></i>Riwayat Komisi
+        </div>
+        {% for k in komisi_list %}
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.8rem">
+          <div>
+            <div style="font-weight:500">{{ k.pendaftaran.user.get_full_name }}</div>
+            <div style="color:#94a3b8;font-size:.75rem">{{ k.tgl_komisi|date:"d M Y" }}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:#10b981">
+              +Rp {{ k.jumlah_komisi|floatformat:0 }}
+            </div>
+            <span style="font-size:.7rem;padding:1px 6px;border-radius:8px;
+              {% if k.status == 'paid' %}background:#d1fae5;color:#065f46
+              {% elif k.status == 'approved' %}background:#dbeafe;color:#1d4ed8
+              {% elif k.status == 'pending' %}background:#fef3c7;color:#92400e
+              {% else %}background:#fee2e2;color:#991b1b{% endif %}">
+              {{ k.get_status_display }}
+            </span>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:#94a3b8;font-size:.8rem;padding:20px 0">
+          Belum ada komisi
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyLink() {
+  const input = document.getElementById('link-ref');
+  input.select();
+  document.execCommand('copy');
+  const icon = document.getElementById('copy-icon');
+  icon.className = 'bi bi-check-lg';
+  setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 2000);
+}
+</script>
+{% endblock %}

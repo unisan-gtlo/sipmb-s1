@@ -13,6 +13,7 @@ urlpatterns = [
     path('dokumen/',      include('dokumen.urls',     namespace='dokumen')),
     path('sinta/',        include('chatbot.urls',     namespace='chatbot')),
     path('admin-pmb/',    include('admin_pmb.urls',   namespace='admin_pmb')),
+    path('afiliasi/', include('afiliasi.urls',     namespace='afiliasi')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,179 @@
+{% extends 'base_publik.html' %}
+{% block title %}Program Recruiter — PMB UNISAN{% endblock %}
+
+{% block content %}
+<div class="section-gradient" style="padding:40px 0 60px">
+  <div class="container text-center" style="position:relative;z-index:1">
+    <span class="badge-gradient mb-3 d-inline-block">Program Afiliasi</span>
+    <h1 style="font-size:1.8rem;font-weight:700;margin-bottom:8px">Program Recruiter PMB UNISAN</h1>
+    <p style="opacity:.85;font-size:.95rem">Rekrut mahasiswa baru, dapatkan komisi menarik</p>
+  </div>
+</div>
+
+<div class="container" style="margin-top:-20px;padding-bottom:60px">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <!-- KEUNTUNGAN -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+          <div style="background:white;border-radius:12px;padding:20px;text-align:center;
+                      box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            <div style="font-size:2rem;margin-bottom:8px">💰</div>
+            <div style="font-weight:700;color:#667eea">Rp 50rb+</div>
+            <div style="font-size:.75rem;color:#94a3b8">per referral</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div style="background:white;border-radius:12px;padding:20px;text-align:center;
+                      box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            <div style="font-size:2rem;margin-bottom:8px">📈</div>
+            <div style="font-weight:700;color:#667eea">4 Level</div>
+            <div style="font-size:.75rem;color:#94a3b8">komisi naik</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div style="background:white;border-radius:12px;padding:20px;text-align:center;
+                      box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            <div style="font-size:2rem;margin-bottom:8px">🔗</div>
+            <div style="font-weight:700;color:#667eea">Link Unik</div>
+            <div style="font-size:.75rem;color:#94a3b8">tracking otomatis</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div style="background:white;border-radius:12px;padding:20px;text-align:center;
+                      box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            <div style="font-size:2rem;margin-bottom:8px">💳</div>
+            <div style="font-weight:700;color:#667eea">Cairkan</div>
+            <div style="font-size:.75rem;color:#94a3b8">ke rekening</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABEL KOMISI -->
+      <div style="background:white;border-radius:16px;padding:24px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
+        <h5 style="font-weight:700;margin-bottom:16px;text-align:center">
+          Struktur Komisi per Level
+        </h5>
+        <table style="width:100%;border-collapse:collapse;font-size:.875rem">
+          <thead>
+            <tr style="background:linear-gradient(135deg,#667eea,#764ba2)">
+              <th style="padding:12px 16px;color:white;border-radius:8px 0 0 0">Level</th>
+              <th style="padding:12px 16px;color:white;text-align:center">Komisi/Referral</th>
+              <th style="padding:12px 16px;color:white;text-align:center">Syarat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #f1f5f9">
+              <td style="padding:12px 16px;font-weight:600">
+                <span style="background:#ede9fe;color:#667eea;
+                             padding:2px 8px;border-radius:6px">Level 1</span> Recruiter
+              </td>
+              <td style="padding:12px 16px;text-align:center;font-weight:700;color:#10b981">
+                Rp {{ pengaturan.komisi_level_1|floatformat:0 }}
+              </td>
+              <td style="padding:12px 16px;text-align:center;color:#94a3b8">Mulai bergabung</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9;background:#fafafa">
+              <td style="padding:12px 16px;font-weight:600">
+                <span style="background:#dbeafe;color:#3b82f6;
+                             padding:2px 8px;border-radius:6px">Level 2</span> Senior
+              </td>
+              <td style="padding:12px 16px;text-align:center;font-weight:700;color:#10b981">
+                Rp {{ pengaturan.komisi_level_2|floatformat:0 }}
+              </td>
+              <td style="padding:12px 16px;text-align:center;color:#94a3b8">
+                {{ pengaturan.syarat_naik_level_2 }} referral
+              </td>
+            </tr>
+            <tr style="border-bottom:1px solid #f1f5f9">
+              <td style="padding:12px 16px;font-weight:600">
+                <span style="background:#d1fae5;color:#059669;
+                             padding:2px 8px;border-radius:6px">Level 3</span> Master
+              </td>
+              <td style="padding:12px 16px;text-align:center;font-weight:700;color:#10b981">
+                Rp {{ pengaturan.komisi_level_3|floatformat:0 }}
+              </td>
+              <td style="padding:12px 16px;text-align:center;color:#94a3b8">
+                {{ pengaturan.syarat_naik_level_3 }} referral
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-weight:600">
+                <span style="background:#fef3c7;color:#d97706;
+                             padding:2px 8px;border-radius:6px">Level 4</span> Diamond
+              </td>
+              <td style="padding:12px 16px;text-align:center;font-weight:700;color:#10b981">
+                Rp {{ pengaturan.komisi_level_4|floatformat:0 }}
+              </td>
+              <td style="padding:12px 16px;text-align:center;color:#94a3b8">
+                {{ pengaturan.syarat_naik_level_4 }} referral
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CARA BERGABUNG -->
+      <div style="background:white;border-radius:16px;padding:24px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px">
+        <h5 style="font-weight:700;margin-bottom:20px;text-align:center">Cara Bergabung</h5>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          {% for step in steps %}
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        display:flex;align-items:center;justify-content:center;
+                        font-weight:700;color:white">{{ forloop.counter }}</div>
+            <div style="font-size:.875rem;color:#374151">{{ step }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div style="background:linear-gradient(135deg,#667eea,#764ba2);
+                  border-radius:16px;padding:28px;text-align:center">
+        <h5 style="color:white;font-weight:700;margin-bottom:8px">Siap Bergabung?</h5>
+        <p style="color:rgba(255,255,255,.85);font-size:.9rem;margin-bottom:20px">
+          Daftar sekarang dan mulai dapatkan komisi dari setiap referral Anda
+        </p>
+        {% if request.user.is_authenticated %}
+          {% if request.user.recruiter %}
+            <a href="{% url 'afiliasi:dashboard' %}"
+               style="display:inline-flex;align-items:center;gap:8px;
+                      background:white;color:#667eea;padding:12px 28px;
+                      border-radius:10px;font-weight:700;text-decoration:none">
+              <i class="bi bi-speedometer2"></i> Buka Dashboard Recruiter
+            </a>
+          {% else %}
+            <a href="{% url 'afiliasi:daftar' %}"
+               style="display:inline-flex;align-items:center;gap:8px;
+                      background:white;color:#667eea;padding:12px 28px;
+                      border-radius:10px;font-weight:700;text-decoration:none">
+              <i class="bi bi-person-plus"></i> Daftar Sekarang
+            </a>
+          {% endif %}
+        {% else %}
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="{% url 'accounts:login' %}?next=/afiliasi/daftar/"
+               style="display:inline-flex;align-items:center;gap:8px;
+                      background:white;color:#667eea;padding:12px 24px;
+                      border-radius:10px;font-weight:700;text-decoration:none">
+              <i class="bi bi-box-arrow-in-right"></i> Login & Daftar
+            </a>
+                <a href="{% url 'accounts:registrasi_recruiter' %}"
+                    style="display:block;background:linear-gradient(135deg,#10b981,#059669);
+                        color:white;padding:10px;border-radius:8px;
+                        text-decoration:none;font-weight:600;font-size:.875rem">
+                     <i class="bi bi-person-plus me-1"></i> Buat Akun Baru
+            </a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

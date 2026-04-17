@@ -49,7 +49,7 @@ class ProfilDiriForm(forms.ModelForm):
             'kabupaten_kota_id', 'kabupaten_kota_nama',
             'kecamatan_id', 'kecamatan_nama',
             'kelurahan', 'kode_pos',
-            'sumber_informasi', 'sumber_informasi_lain',
+            'sumber_informasi','ukuran_baju', 'sumber_informasi_lain',
         ]
         widgets = {
             'nik': forms.TextInput(attrs={
@@ -68,6 +68,7 @@ class ProfilDiriForm(forms.ModelForm):
             'kebutuhan_khusus': forms.TextInput(attrs={
                 'class': 'form-control', 'placeholder': 'Isi jika difabel, kosongkan jika tidak',
             }),
+            'ukuran_baju': forms.Select(attrs={'class': 'form-select'}),
             'foto': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
             'alamat_lengkap': forms.Textarea(attrs={
                 'class': 'form-control', 'rows': 3, 'placeholder': 'Alamat domisili lengkap',
@@ -84,6 +85,7 @@ class ProfilDiriForm(forms.ModelForm):
             'sumber_informasi_lain': forms.TextInput(attrs={
                 'class': 'form-control', 'placeholder': 'Sebutkan sumber informasi lainnya',
             }),
+            
             
         }
 

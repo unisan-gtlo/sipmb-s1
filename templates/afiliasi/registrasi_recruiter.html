@@ -1,0 +1,183 @@
+{% extends 'base_publik.html' %}
+{% block title %}Buat Akun Recruiter — PMB UNISAN{% endblock %}
+
+{% block content %}
+
+<div class="section-gradient" style="padding:50px 0 50px;margin-top:0">
+  <div class="container text-center" style="position:relative;z-index:1">
+    <span class="badge-gradient mb-3 d-inline-block">Program Afiliasi</span>
+    <h1 style="font-size:1.6rem;font-weight:700;margin-bottom:8px">Buat Akun Recruiter</h1>
+    <p style="opacity:.85;font-size:.9rem">Daftar akun, aktivasi email, lalu mulai rekrut mahasiswa</p>
+  </div>
+</div>
+
+<div class="container" style="margin-top:3px;padding-bottom:60px">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <!-- STEP INDICATOR -->
+      <div style="display:flex;align-items:center;justify-content:center;
+                  gap:0;margin-bottom:28px">
+        {% for step in step_list %}
+        <div style="text-align:center">
+          <div style="width:36px;height:36px;border-radius:50%;
+                      background:{% if forloop.first %}linear-gradient(135deg,#667eea,#764ba2){% else %}#f1f5f9{% endif %};
+                      display:flex;align-items:center;justify-content:center;
+                      margin:0 auto 4px;font-weight:700;
+                      color:{% if forloop.first %}white{% else %}#94a3b8{% endif %};
+                      font-size:.85rem">{{ forloop.counter }}</div>
+          <div style="font-size:.72rem;
+                      color:{% if forloop.first %}#667eea{% else %}#94a3b8{% endif %};
+                      font-weight:{% if forloop.first %}600{% else %}400{% endif %}">
+            {{ step }}
+          </div>
+        </div>
+        {% if not forloop.last %}
+        <div style="width:50px;height:2px;background:#e2e8f0;margin-bottom:20px"></div>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="card-modern p-4">
+
+        {% if messages %}
+          {% for msg in messages %}
+          <div class="alert alert-{{ msg.tags }} mb-3"
+               style="border-radius:10px;font-size:.875rem">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+
+          <!-- DATA DIRI -->
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <div style="width:28px;height:28px;border-radius:8px;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        display:flex;align-items:center;justify-content:center">
+              <i class="bi bi-person-fill text-white" style="font-size:12px"></i>
+            </div>
+            <h6 class="mb-0" style="font-weight:600">Data Diri</h6>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+              <input type="text" name="nama_lengkap" class="form-control"
+                     placeholder="Nama lengkap sesuai KTP"
+                     value="{{ nama|default:'' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email <span class="text-danger">*</span></label>
+              <input type="email" name="email" class="form-control"
+                     placeholder="Email aktif untuk aktivasi"
+                     value="{{ email|default:'' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">No. HP / WhatsApp <span class="text-danger">*</span></label>
+              <input type="text" name="no_hp" class="form-control"
+                     placeholder="Nomor aktif yang bisa dihubungi"
+                     value="{{ no_hp|default:'' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Password <span class="text-danger">*</span></label>
+              <input type="password" name="password" class="form-control"
+                     placeholder="Minimal 8 karakter" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
+              <input type="password" name="konfirmasi_password" class="form-control"
+                     placeholder="Ulangi password" required>
+            </div>
+          </div>
+
+          <hr style="border-color:#f0f0f0">
+
+          <!-- DOKUMEN IDENTITAS -->
+          <div class="d-flex align-items-center gap-2 mb-3 mt-3">
+            <div style="width:28px;height:28px;border-radius:8px;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        display:flex;align-items:center;justify-content:center">
+              <i class="bi bi-file-earmark-person-fill text-white" style="font-size:12px"></i>
+            </div>
+            <h6 class="mb-0" style="font-weight:600">Dokumen Identitas</h6>
+          </div>
+
+          <div style="background:#fef3c7;border-radius:10px;padding:12px 14px;
+                      margin-bottom:16px;font-size:.8rem;color:#92400e">
+            <i class="bi bi-shield-check me-1"></i>
+            Dokumen ini digunakan untuk verifikasi identitas oleh panitia PMB.
+            Data Anda aman dan tidak akan disebarluaskan.
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">
+                Foto Selfie <span class="text-danger">*</span>
+                <span style="font-size:.75rem;color:#94a3b8;font-weight:400">
+                  (tampak jelas wajah)
+                </span>
+              </label>
+              <input type="file" name="foto_selfie" class="form-control"
+                     accept="image/*" required>
+              <div style="font-size:.72rem;color:#94a3b8;margin-top:4px">
+                Format JPG/PNG, maks 1MB
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">
+                Foto KTP <span class="text-danger">*</span>
+                <span style="font-size:.75rem;color:#94a3b8;font-weight:400">
+                  (KTP/SIM/Paspor)
+                </span>
+              </label>
+              <input type="file" name="foto_ktp" class="form-control"
+                     accept="image/*" required>
+              <div style="font-size:.72rem;color:#94a3b8;margin-top:4px">
+                Format JPG/PNG, maks 1MB
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Pekerjaan / Profesi Saat Ini</label>
+              <input type="text" name="pekerjaan" class="form-control"
+                     placeholder="Contoh: Mahasiswa, Guru, Wiraswasta, dll"
+                     value="{{ pekerjaan|default:'' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Motivasi Bergabung</label>
+              <textarea name="motivasi" class="form-control" rows="3"
+                        placeholder="Ceritakan mengapa Anda ingin bergabung sebagai recruiter PMB UNISAN">{{ motivasi|default:'' }}</textarea>
+            </div>
+          </div>
+
+          <div style="background:#f0fdf4;border-radius:10px;padding:12px 14px;
+                      margin-bottom:16px;font-size:.8rem;color:#065f46">
+            <i class="bi bi-info-circle me-1"></i>
+            Setelah akun aktif via email, Anda perlu mengisi data rekening
+            di halaman daftar recruiter. Panitia akan memverifikasi dalam 1x24 jam.
+          </div>
+
+          <button type="submit" class="btn-gradient btn w-100">
+            <i class="bi bi-send me-2"></i>Kirim Pendaftaran
+          </button>
+        </form>
+
+        <div style="text-align:center;margin-top:16px;font-size:.85rem;color:#94a3b8">
+          Sudah punya akun?
+          <a href="{% url 'accounts:login' %}?next=/afiliasi/daftar/"
+             style="color:#667eea;font-weight:500">Login di sini</a>
+        </div>
+
+      </div>
+
+      <div style="text-align:center;margin-top:12px">
+        <a href="{% url 'afiliasi:info' %}"
+           style="font-size:.85rem;color:#667eea;text-decoration:none">
+          ← Kembali ke info recruiter
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

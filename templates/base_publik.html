@@ -235,6 +235,12 @@
           <a href="/#jadwal" class="nav-link">Jadwal</a>
           <a href="/#faq" class="nav-link">FAQ</a>
           <a href="/#kontak" class="nav-link">Kontak</a>
+          <a href="{% url 'afiliasi:info' %}" class="nav-link"
+            style="background:rgba(255,255,255,.15);border-radius:8px;
+                    padding:6px 14px !important;font-weight:600">
+            <i class="bi bi-person-check me-1"></i>Jadi Recruiter
+          </a>
+
         </ul>
         <div class="d-flex gap-2 align-items-center">
           <a href="#" class="nav-link text-white-50" style="font-size:.85rem">Cek Status</a>
@@ -242,7 +248,53 @@
             <a href="/dashboard/" class="btn-daftar btn">Dashboard</a>
           {% else %}
             <a href="{% url 'accounts:login' %}" class="nav-link text-white-50" style="font-size:.85rem">Masuk</a>
-            <a href="{% url 'accounts:registrasi' %}" class="btn-daftar btn">Daftar Sekarang</a>
+            
+            <div class="dropdown">
+              <button class="btn-daftar btn dropdown-toggle" 
+                      type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Daftar
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end"
+                  style="border-radius:12px;border:1.5px solid #e2e8f0;
+                        box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;min-width:220px">
+                <li>
+                  <a class="dropdown-item" href="{% url 'accounts:registrasi' %}"
+                    style="border-radius:8px;padding:10px 14px;font-size:.875rem">
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <div style="width:34px;height:34px;border-radius:8px;
+                                  background:linear-gradient(135deg,#667eea,#764ba2);
+                                  display:flex;align-items:center;justify-content:center;
+                                  flex-shrink:0">
+                        <i class="bi bi-mortarboard-fill text-white" style="font-size:14px"></i>
+                      </div>
+                      <div>
+                        <div style="font-weight:600;color:#1e1e2e">Calon Mahasiswa</div>
+                        <div style="font-size:.75rem;color:#94a3b8">Daftar kuliah di UNISAN</div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" style="margin:6px 0;border-color:#f1f5f9"></li>
+                <li>
+                  <a class="dropdown-item" href="{% if request.user.is_authenticated %}{% url 'afiliasi:daftar' %}{% else %}{% url 'accounts:registrasi_recruiter' %}{% endif %}"
+                    style="border-radius:8px;padding:10px 14px;font-size:.875rem">
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <div style="width:34px;height:34px;border-radius:8px;
+                                  background:linear-gradient(135deg,#10b981,#059669);
+                                  display:flex;align-items:center;justify-content:center;
+                                  flex-shrink:0">
+                        <i class="bi bi-person-check-fill text-white" style="font-size:14px"></i>
+                      </div>
+                      <div>
+                        <div style="font-weight:600;color:#1e1e2e">Recruiter / Afiliasi</div>
+                        <div style="font-size:.75rem;color:#94a3b8">Dapatkan komisi referral</div>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          
           {% endif %}
         </div>
       </div>
@@ -272,8 +324,8 @@
           <div class="fw-700 text-white mb-2" style="font-size:1rem;font-weight:700">PMB UNISAN 2025/2026</div>
           <div style="font-size:.85rem;line-height:1.8">
             Universitas Ichsan Gorontalo<br>
-            Jl. Achmad Nadjamuddin No. 17 Kota<br>
-            Gorontalo, Gorontalo<br>
+            Jl. Achmad Nadjamuddin No. 17 Kota Gorontalo<br>
+            Gorontalo<br>
             <a href="mailto:pmb@unisan-g.id">pmb@unisan-g.id</a>
           </div>
         </div>

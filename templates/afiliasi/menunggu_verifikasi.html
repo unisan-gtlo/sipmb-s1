@@ -1,0 +1,45 @@
+{% extends 'base_publik.html' %}
+{% block title %}Menunggu Verifikasi — PMB UNISAN{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:80px 0;text-align:center">
+  <div style="max-width:480px;margin:0 auto;background:white;border-radius:16px;
+              padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+    <div style="width:80px;height:80px;border-radius:50%;
+                background:#fef3c7;display:flex;align-items:center;
+                justify-content:center;margin:0 auto 20px;font-size:36px">
+      ⏳
+    </div>
+    <h4 style="font-weight:700;margin-bottom:8px;color:#1e1e2e">
+      Pendaftaran Sedang Diverifikasi
+    </h4>
+    <p style="color:#64748b;font-size:.9rem;line-height:1.7;margin-bottom:20px">
+      Terima kasih telah mendaftar sebagai Recruiter PMB UNISAN.<br>
+      Panitia sedang memverifikasi data Anda.
+    </p>
+    <div style="background:#f8f9ff;border-radius:10px;padding:16px;
+                text-align:left;margin-bottom:20px">
+      <div style="font-size:.8rem;color:#64748b;margin-bottom:8px;font-weight:600">
+        Data yang didaftarkan:
+      </div>
+      <div style="font-size:.85rem;color:#374151">
+        <div>👤 {{ recruiter.user.get_full_name }}</div>
+        <div>🏦 {{ recruiter.bank }} — {{ recruiter.no_rekening }}</div>
+        <div>📅 {{ recruiter.tgl_bergabung|date:"d M Y H:i" }}</div>
+      </div>
+    </div>
+    <div style="background:#fef3c7;border-radius:10px;padding:14px;
+                font-size:.8rem;color:#92400e;margin-bottom:20px">
+      <i class="bi bi-info-circle me-1"></i>
+      Proses verifikasi biasanya membutuhkan 1x24 jam kerja.
+      Anda akan dihubungi via WhatsApp/email setelah diverifikasi.
+    </div>
+    <a href="{% url 'dashboard:calon_maba' %}"
+       style="display:block;background:linear-gradient(135deg,#667eea,#764ba2);
+              color:white;padding:12px;border-radius:10px;
+              text-decoration:none;font-weight:600;font-size:.9rem">
+      Kembali ke Dashboard
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -111,6 +111,19 @@ class ProfilPendaftar(models.Model):
         ('lainnya',   'Lainnya'),
     ]
 
+    UKURAN_BAJU_CHOICES = [
+        ('S',   'S'),
+        ('M',   'M'),
+        ('L',   'L'),
+        ('XL',  'XL'),
+        ('XXL', 'XXL'),
+        ('3XL', '3XL'),
+        ]
+
+    ukuran_baju = models.CharField(
+        max_length=5, choices=UKURAN_BAJU_CHOICES, blank=True,
+        help_text='Ukuran baju untuk kebutuhan almamater/seragam'
+    )
     pendaftaran     = models.OneToOneField(Pendaftaran, on_delete=models.CASCADE, related_name='profil')
 
     # Data diri

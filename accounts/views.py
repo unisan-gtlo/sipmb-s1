@@ -92,6 +92,12 @@ def registrasi(request):
         initial = {'kode_referral': kode_ref} if kode_ref else {}
         form    = RegistrasiAwalForm(initial=initial)
 
+    # Di view registrasi, setelah Pendaftaran dibuat, tambahkan:
+    kode_ref = request.POST.get('kode_referral', '').strip()
+    if kode_ref:
+        pendaftaran.kode_referral = kode_ref
+        pendaftaran.save()
+
     return render(request, 'publik/registrasi.html', {
         'form':     form,
         'kode_ref': kode_ref,
@@ -339,3 +345,90 @@ def pengumuman_detail(request, pk):
     from django.shortcuts import get_object_or_404
     p = get_object_or_404(Pengumuman, pk=pk, status='aktif')
     return render(request, 'publik/pengumuman_detail.html', {'p': p})    
+
+def registrasi_recruiter(request):
+    from django.contrib.auth import login
+
+    if request.user.is_authenticated:
+        return redirect('afiliasi:daftar')
+
+    step_list = ['Buat Akun', 'Aktivasi Email', 'Daftar Recruiter', 'Akun Aktif']
+
+    if request.method == 'POST':
+        nama       = request.POST.get('nama_lengkap', '').strip()
+        email      = request.POST.get('email', '').strip().lower()
+        no_hp      = request.POST.get('no_hp', '').strip()
+        password   = request.POST.get('password', '')
+        konfirmasi = request.POST.get('konfirmasi_password', '')
+        pekerjaan  = request.POST.get('pekerjaan', '').strip()
+        motivasi   = request.POST.get('motivasi', '').strip()
+        foto_selfie= request.FILES.get('foto_selfie')
+        foto_ktp   = request.FILES.get('foto_ktp')
+
+        errors = []
+        if not nama:         errors.append('Nama lengkap wajib diisi.')
+        if not email:        errors.append('Email wajib diisi.')
+        elif User.objects.filter(email=email).exists():
+            errors.append('Email sudah terdaftar.')
+        if len(password) < 8: errors.append('Password minimal 8 karakter.')
+        if password != konfirmasi: errors.append('Konfirmasi password tidak cocok.')
+        if not foto_selfie:  errors.append('Foto selfie wajib diupload.')
+        if not foto_ktp:     errors.append('Foto KTP wajib diupload.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'afiliasi/registrasi_recruiter.html', {
+                'step_list': step_list,
+                'nama': nama, 'email': email, 'no_hp': no_hp,
+                'pekerjaan': pekerjaan, 'motivasi': motivasi,
+            })
+
+        # Buat user
+        nama_parts = nama.split(' ', 1)
+        user = User.objects.create_user(
+            username   = email,
+            email      = email,
+            password   = password,
+            first_name = nama_parts[0],
+            last_name  = nama_parts[1] if len(nama_parts) > 1 else '',
+            no_hp      = no_hp,
+            role       = 'recruiter',
+            is_active  = False,
+        )
+
+        # Simpan foto ke model Recruiter
+        from afiliasi.models import Recruiter
+        import uuid, re
+        nama_bersih = re.sub(r'[^a-zA-Z]', '', nama).upper()[:4]
+        kode = f"{nama_bersih}{str(uuid.uuid4())[:4].upper()}"
+        rec = Recruiter.objects.create(
+            user          = user,
+            kode_referral = kode,
+            pekerjaan     = pekerjaan,
+            catatan       = motivasi,
+            status        = 'menunggu',
+        )
+        if foto_selfie: rec.foto_selfie = foto_selfie; rec.save()
+        if foto_ktp:    rec.foto_ktp    = foto_ktp;    rec.save()
+
+        # Kirim email aktivasi
+        from accounts.models import TokenAktivasi
+        token = TokenAktivasi.objects.create(user=user, token=uuid.uuid4())
+        aktivasi_url = f"{request.scheme}://{request.get_host()}/accounts/aktivasi/{token.token}/"
+        from django.core.mail import send_mail
+        from django.conf import settings
+        send_mail(
+            subject    = 'Aktivasi Akun Recruiter PMB UNISAN',
+            message    = f'Halo {nama_parts[0]},\n\nKlik link berikut untuk mengaktifkan akun Anda:\n\n{aktivasi_url}\n\nSetelah aktif, login dan lengkapi data rekening Anda.',
+            from_email = settings.DEFAULT_FROM_EMAIL,
+            recipient_list = [email],
+            fail_silently  = True,
+        )
+
+        messages.success(request, f'Akun berhasil dibuat! Cek email {email} untuk aktivasi.')
+        return redirect('accounts:registrasi_sukses')
+
+    return render(request, 'afiliasi/registrasi_recruiter.html', {
+        'step_list': step_list,
+    })
