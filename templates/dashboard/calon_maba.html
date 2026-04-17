@@ -78,6 +78,9 @@
             <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:#e2e8f0;color:#94a3b8">5</div>
             <div style="font-size:10px;color:#94a3b8;font-weight:500">Daftar Ulang</div>
           </div>
+
+ 
+
           {% endwith %}
         </div>
 
@@ -258,6 +261,44 @@
         <a href="{{ pengaturan.link_wa_group }}" target="_blank"
            class="btn btn-success w-100" style="border-radius:10px;font-weight:600;font-size:.875rem">
           <i class="bi bi-whatsapp me-2"></i>Join Grup WA
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- FORMULIR PENDAFTARAN -->
+      <div class="card-modern p-3 mb-3">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <i class="bi bi-file-earmark-text" style="color:#667eea;font-size:18px"></i>
+          <div style="font-size:.9rem;font-weight:600">Formulir Pendaftaran</div>
+        </div>
+        <div style="font-size:.8rem;color:#64748b;margin-bottom:12px">
+          Cetak formulir pendaftaran lengkap untuk arsip pribadi.
+        </div>
+        <a href="/profil/formulir/" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:6px;
+                  background:linear-gradient(135deg,#667eea,#764ba2);
+                  color:white;padding:10px;border-radius:8px;
+                  text-decoration:none;font-size:.875rem;font-weight:600">
+          <i class="bi bi-printer"></i> Cetak Formulir
+        </a>
+      </div>
+
+      <!-- KARTU PESERTA -->
+      {% if pendaftaran.status == 'LULUS_ADM' or pendaftaran.status == 'TERJADWAL' or pendaftaran.status == 'LULUS_SELEKSI' or pendaftaran.status == 'DAFTAR_ULANG' %}
+      <div class="card-modern p-3 mb-3">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <i class="bi bi-card-text" style="color:#10b981;font-size:18px"></i>
+          <div style="font-size:.9rem;font-weight:600">Kartu Peserta</div>
+        </div>
+        <div style="font-size:.8rem;color:#64748b;margin-bottom:12px">
+          Kartu peserta seleksi PMB Anda sudah tersedia dan siap dicetak.
+        </div>
+        <a href="/profil/kartu-peserta/" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:6px;
+                  background:linear-gradient(135deg,#10b981,#059669);
+                  color:white;padding:10px;border-radius:8px;
+                  text-decoration:none;font-size:.875rem;font-weight:600">
+          <i class="bi bi-printer"></i> Cetak Kartu Peserta
         </a>
       </div>
       {% endif %}

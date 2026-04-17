@@ -53,6 +53,12 @@
         </button>
         <a href="{% url 'admin_pmb:pendaftar' %}" class="btn-outline-custom">Reset</a>
       </div>
+      <!-- Tambahkan di sebelah tombol filter -->
+      <a href="{% url 'admin_pmb:cetak_kartu_massal' %}?status=LULUS_ADM"
+        target="_blank"
+        class="btn-primary-custom" style="background:#10b981">
+        <i class="bi bi-printer"></i> Cetak Kartu Massal (Lulus Adm)
+      </a>
     </form>
   </div>
 </div>

@@ -31,4 +31,7 @@ urlpatterns = [
     path('notifikasi/',        views.notifikasi,        name='notifikasi'),
     path('notifikasi/kirim/',  views.notifikasi_kirim,  name='notifikasi_kirim'),
     path('notifikasi/log/',    views.notifikasi_log,    name='notifikasi_log'),
+    path('cetak-kartu/<int:pk>/',  views.cetak_kartu,        name='cetak_kartu'),
+    path('cetak-kartu/massal/',    views.cetak_kartu_massal, name='cetak_kartu_massal'),
+    path('cetak-formulir/<int:pk>/', views.cetak_formulir_admin, name='cetak_formulir'),
 ]

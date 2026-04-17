@@ -1245,3 +1245,122 @@ def notifikasi_log(request):
         **get_sidebar_counts(),
     }
     return render(request, 'admin_pmb/notifikasi_log.html', context)
+
+@login_required
+def cetak_kartu(request, pk):
+    """Cetak kartu peserta satu pendaftar"""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from django.http import HttpResponse
+    from seleksi.kartu_pdf import buat_kartu_peserta
+    from seleksi.models import KartuPeserta
+
+    pendaftaran = get_object_or_404(Pendaftaran, pk=pk)
+
+    # Generate atau ambil nomor kartu
+    kartu, created = KartuPeserta.objects.get_or_create(
+        pendaftaran=pendaftaran,
+        defaults={
+            'no_kartu': f'PMB-{pendaftaran.gelombang.kode_gelombang}-{pendaftaran.pk:04d}'
+                        if hasattr(pendaftaran.gelombang, 'kode_gelombang')
+                        else f'PMB-{pendaftaran.no_pendaftaran}',
+        }
+    )
+    kartu.sudah_cetak = True
+    kartu.save()
+
+    # Ambil jadwal terbaru jika ada
+    jadwal = None
+    try:
+        from seleksi.models import PesertaSeleksi
+        peserta = PesertaSeleksi.objects.filter(
+            pendaftaran=pendaftaran
+        ).select_related('jadwal').last()
+        if peserta:
+            jadwal = peserta.jadwal
+    except:
+        pass
+
+    buffer = buat_kartu_peserta(pendaftaran, jadwal)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'inline; filename="kartu_{pendaftaran.no_pendaftaran}.pdf"'
+    )
+    return response
+
+
+@login_required
+def cetak_kartu_massal(request):
+    """Cetak kartu peserta massal berdasarkan filter"""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from django.http import HttpResponse
+    from seleksi.kartu_pdf import buat_kartu_peserta
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+    from io import BytesIO
+
+    gelombang_id = request.GET.get('gelombang', '')
+    jalur_id     = request.GET.get('jalur', '')
+    status       = request.GET.get('status', 'LULUS_ADM')
+
+    qs = Pendaftaran.objects.select_related(
+        'user', 'jalur', 'gelombang', 'prodi_pilihan_1'
+    )
+    if gelombang_id: qs = qs.filter(gelombang_id=gelombang_id)
+    if jalur_id:     qs = qs.filter(jalur_id=jalur_id)
+    if status:       qs = qs.filter(status=status)
+
+    if not qs.exists():
+        messages.warning(request, 'Tidak ada pendaftar yang sesuai filter.')
+        return redirect('admin_pmb:pendaftar')
+
+    # Gabungkan semua PDF
+    from PyPDF2 import PdfMerger
+    merger = PdfMerger()
+
+    for p in qs:
+        try:
+            buf = buat_kartu_peserta(p)
+            merger.append(buf)
+            from seleksi.models import KartuPeserta
+            KartuPeserta.objects.get_or_create(
+                pendaftaran=p,
+                defaults={'no_kartu': f'PMB-{p.no_pendaftaran}'}
+            )
+        except Exception as e:
+            logger.error(f'Error cetak kartu {p.no_pendaftaran}: {e}')
+
+    output = BytesIO()
+    merger.write(output)
+    merger.close()
+    output.seek(0)
+
+    response = HttpResponse(output, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="kartu_peserta_massal.pdf"'
+    return response
+
+@login_required
+def cetak_formulir_admin(request, pk):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    from django.http import HttpResponse
+    from seleksi.kartu_pdf import buat_formulir_pendaftaran
+
+    pendaftaran = get_object_or_404(
+        Pendaftaran.objects.select_related(
+            'user', 'jalur', 'gelombang',
+            'prodi_pilihan_1', 'prodi_pilihan_2'
+        ), pk=pk
+    )
+
+    buffer = buat_formulir_pendaftaran(pendaftaran)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'inline; filename="formulir_{pendaftaran.no_pendaftaran}.pdf"'
+    )
+    return response

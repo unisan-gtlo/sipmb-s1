@@ -120,10 +120,23 @@ class ProfilPendaftar(models.Model):
         ('3XL', '3XL'),
         ]
 
+    PENDIDIKAN_ORTU_CHOICES = [
+        ('SD',           'SD / Sederajat'),
+        ('SMP',          'SMP / Sederajat'),
+        ('SMA',          'SMA / SMK / Sederajat'),
+        ('D3',           'Diploma (D1/D2/D3)'),
+        ('D4',           'D4 / Sarjana Terapan'),
+        ('S1',           'S1 / Sarjana'),
+        ('S2',           'S2 / Magister'),
+        ('S3',           'S3 / Doktor'),
+        ('TIDAK_SEKOLAH','Tidak Sekolah'),
+    ]
+
     ukuran_baju = models.CharField(
         max_length=5, choices=UKURAN_BAJU_CHOICES, blank=True,
         help_text='Ukuran baju untuk kebutuhan almamater/seragam'
     )
+
     pendaftaran     = models.OneToOneField(Pendaftaran, on_delete=models.CASCADE, related_name='profil')
 
     # Data diri
@@ -152,9 +165,28 @@ class ProfilPendaftar(models.Model):
     # Data orang tua
     nama_ayah       = models.CharField(max_length=200, blank=True)
     pekerjaan_ayah  = models.CharField(max_length=100, blank=True)
+    # Tambahkan setelah field pekerjaan_ayah
+    pendidikan_ayah = models.CharField(
+        max_length=20, choices=PENDIDIKAN_ORTU_CHOICES,
+        blank=True, default='',
+        verbose_name='Pendidikan Terakhir Ayah'
+    )
+    no_hp_ayah = models.CharField(
+        max_length=20, blank=True, default='',
+        verbose_name='No HP Ayah'
+    )
     penghasilan_ayah= models.CharField(max_length=20, blank=True)
     nama_ibu        = models.CharField(max_length=200, blank=True)
     pekerjaan_ibu   = models.CharField(max_length=100, blank=True)
+    pendidikan_ibu  = models.CharField(
+        max_length=20, choices=PENDIDIKAN_ORTU_CHOICES,
+        blank=True, default='',
+        verbose_name='Pendidikan Terakhir Ibu'
+    )
+    no_hp_ibu = models.CharField(
+        max_length=20, blank=True, default='',
+        verbose_name='No HP Ibu'
+    )
     penghasilan_ibu = models.CharField(max_length=20, blank=True)
     nama_wali       = models.CharField(max_length=200, blank=True)
     no_hp_ortu      = models.CharField(max_length=20, blank=True)

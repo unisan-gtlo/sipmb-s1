@@ -8,4 +8,6 @@ urlpatterns = [
     path('ortu/',        views.profil_ortu,        name='profil_ortu'),
     path('pendidikan/',  views.profil_pendidikan,  name='profil_pendidikan'),
     path('foto/',        views.profil_foto,        name='profil_foto'),
+    path('kartu-peserta/', views.cetak_kartu_maba, name='cetak_kartu'),
+    path('formulir/', views.cetak_formulir, name='cetak_formulir'),
 ]

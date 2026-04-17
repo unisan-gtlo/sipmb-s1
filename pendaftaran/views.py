@@ -41,7 +41,6 @@ def profil_diri(request):
         'tab_aktif':   'diri',
     })
 
-
 @login_required
 def profil_ortu(request):
     pendaftaran = _get_pendaftaran(request.user)
@@ -115,3 +114,85 @@ def profil_foto(request):
         'profil':      profil,
         'tab_aktif':   'foto',
     })
+
+@login_required
+def cetak_kartu_maba(request):
+    from seleksi.models import KartuPeserta, PesertaSeleksi
+    from seleksi.kartu_pdf import buat_kartu_peserta
+    from django.http import HttpResponse
+    from django.contrib import messages
+
+    # Ambil pendaftaran user yang login
+    try:
+        pendaftaran = Pendaftaran.objects.filter(
+            user=request.user
+        ).select_related(
+            'jalur', 'gelombang', 'prodi_pilihan_1'
+        ).first()
+
+        if not pendaftaran:
+            messages.error(request, 'Data pendaftaran tidak ditemukan.')
+            return redirect('dashboard:calon_maba')
+
+    except Exception as e:
+        messages.error(request, f'Error: {e}')
+        return redirect('dashboard:calon_maba')
+
+    # Cek status
+    status_boleh_cetak = ['LULUS_ADM', 'TERJADWAL', 'LULUS_SELEKSI', 'DAFTAR_ULANG']
+    if pendaftaran.status not in status_boleh_cetak:
+        messages.warning(request,
+            'Kartu peserta belum tersedia. '
+            'Kartu dapat dicetak setelah dokumen diverifikasi panitia PMB.')
+        return redirect('dashboard:calon_maba')
+
+    # Generate kartu
+    kartu, _ = KartuPeserta.objects.get_or_create(
+        pendaftaran=pendaftaran,
+        defaults={'no_kartu': f'PMB-{pendaftaran.no_pendaftaran}'}
+    )
+    kartu.sudah_cetak = True
+    kartu.save()
+
+    # Ambil jadwal jika ada
+    jadwal = None
+    try:
+        from seleksi.models import PesertaSeleksi
+        peserta = PesertaSeleksi.objects.filter(
+            pendaftaran=pendaftaran
+        ).select_related('jadwal').last()
+        if peserta:
+            jadwal = peserta.jadwal
+    except:
+        pass
+
+    buffer = buat_kartu_peserta(pendaftaran, jadwal)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'inline; filename="kartu_{pendaftaran.no_pendaftaran}.pdf"'
+    )
+    return response
+
+@login_required
+def cetak_formulir(request):
+    from seleksi.kartu_pdf import buat_formulir_pendaftaran
+    from django.http import HttpResponse
+
+    pendaftaran = Pendaftaran.objects.filter(
+        user=request.user
+    ).select_related(
+        'jalur', 'gelombang', 'prodi_pilihan_1', 'prodi_pilihan_2'
+    ).first()
+
+    if not pendaftaran:
+        from django.contrib import messages
+        messages.error(request, 'Data pendaftaran tidak ditemukan.')
+        return redirect('dashboard:calon_maba')
+
+    buffer = buat_formulir_pendaftaran(pendaftaran)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'inline; filename="formulir_{pendaftaran.no_pendaftaran}.pdf"'
+    )
+    return response

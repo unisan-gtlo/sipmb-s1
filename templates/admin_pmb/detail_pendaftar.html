@@ -220,7 +220,37 @@
           <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center">
             <i class="bi bi-arrow-repeat"></i> Ubah Status
           </button>
-        </form>
+    <!-- CETAK KARTU -->
+    <div class="content-card mt-3">
+      <div class="content-card-header">
+        <div class="content-card-title">Kartu & Formulir</div>
+      </div>
+      <div class="content-card-body">
+        <a href="{% url 'admin_pmb:cetak_formulir' pendaftaran.pk %}"
+          target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:6px;
+                  width:100%;background:linear-gradient(135deg,#667eea,#764ba2);
+                  color:white;padding:10px;border-radius:8px;
+                  text-decoration:none;font-size:.875rem;font-weight:600;
+                  margin-bottom:8px">
+          <i class="bi bi-file-earmark-text"></i> Cetak Formulir Lengkap
+        </a>
+        <a href="{% url 'admin_pmb:cetak_kartu' pendaftaran.pk %}"
+          target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:6px;
+                  width:100%;background:linear-gradient(135deg,#10b981,#059669);
+                  color:white;padding:10px;border-radius:8px;
+                  text-decoration:none;font-size:.875rem;font-weight:600">
+          <i class="bi bi-printer"></i> Cetak Kartu Peserta
+        </a>
+        {% if pendaftaran.kartu %}
+        <div style="margin-top:8px;font-size:.75rem;color:#94a3b8;text-align:center">
+          No. Kartu: {{ pendaftaran.kartu.no_kartu }}<br>
+          {% if pendaftaran.kartu.sudah_cetak %}
+            ✅ Sudah pernah dicetak
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
 
