@@ -14,14 +14,15 @@
   </div>
 </div>
 
-<div class="container" style="margin-top:-30px;padding-bottom:60px">
+<div class="container" style="margin-top:-10px;padding-bottom:50px">
   <div class="row justify-content-center">
     <div class="col-lg-5 col-md-7">
       <div class="card-modern p-4">
 
-        <form method="post" novalidate>
+        <form method="post" novalidate id="loginForm">
           {% csrf_token %}
 
+          <!-- Email -->
           <div class="mb-3">
             <label class="form-label">Email <span class="text-danger">*</span></label>
             {{ form.email }}
@@ -30,14 +31,47 @@
             {% endif %}
           </div>
 
+          <!-- Password dengan icon show/hide -->
           <div class="mb-4">
             <label class="form-label">Password <span class="text-danger">*</span></label>
-            {{ form.password }}
+            <div class="password-wrapper" style="position:relative">
+              {{ form.password }}
+              <button type="button" id="togglePasswordBtn"
+                      aria-label="Tampilkan password"
+                      style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                             background:transparent;border:none;padding:6px;cursor:pointer;
+                             opacity:0;pointer-events:none;transition:opacity .15s ease;
+                             color:#64748b">
+                <i class="bi bi-eye" id="togglePasswordIcon" style="font-size:1.1rem"></i>
+              </button>
+            </div>
             {% if form.password.errors %}
               <div class="text-danger mt-1" style="font-size:.8rem">{{ form.password.errors.0 }}</div>
             {% endif %}
           </div>
 
+          <!-- CAPTCHA: Saya bukan robot -->
+          <div class="mb-4">
+            <div class="captcha-box" id="captchaBox"
+                 style="border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;
+                        background:#f8fafc;transition:all .2s ease;cursor:pointer"
+                 onclick="document.getElementById('id_captcha_confirm').click()">
+              <div class="form-check d-flex align-items-center gap-2 mb-0">
+                {{ form.captcha_confirm }}
+                <label class="form-check-label mb-0" for="id_captcha_confirm"
+                       style="cursor:pointer;user-select:none;font-size:.9rem;color:#334155">
+                  Saya bukan robot
+                </label>
+                <i id="captchaShield" class="bi bi-shield-check ms-auto"
+                   style="font-size:1.3rem;color:#cbd5e1;transition:color .2s ease"></i>
+              </div>
+            </div>
+            {% if form.captcha_confirm.errors %}
+              <div class="text-danger mt-1" style="font-size:.8rem">{{ form.captcha_confirm.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Tombol Masuk -->
           <div class="d-grid mb-3">
             <button type="submit" class="btn-gradient btn">
               <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
@@ -63,5 +97,94 @@
     </div>
   </div>
 </div>
+
+{# Fix posisi teks di input (email & password) + hover captcha #}
+<style>
+  /* Cukup tambah ruang untuk icon mata — padding dasar dari base_publik.html */
+  #loginForm input[type="password"] {
+    padding-right: 44px;
+  }
+  /* Card login - padding biar tidak mepet */
+  .card-modern {
+    padding: 2rem !important;
+  }
+  /* Beri nafas lebih ke input login */
+  #loginForm .form-control {
+    padding: 12px 16px !important;
+    min-height: 48px;
+  }
+  /* Tambah jarak label ke input (kasih "nafas") */
+  #loginForm .form-label {
+    margin-bottom: 10px !important;
+  }
+  /* Captcha box */
+  #captchaBox:hover {
+    border-color: #a5b4fc;
+    background: #f5f3ff;
+  }
+  #captchaBox.captcha-checked {
+    border-color: #10b981;
+    background: #ecfdf5;
+  }
+</style>
+
+<script>
+(function() {
+  // ================ Icon mata: muncul saat ada teks ================
+  const pwdInput  = document.getElementById('id_password');
+  const toggleBtn = document.getElementById('togglePasswordBtn');
+  const toggleIcn = document.getElementById('togglePasswordIcon');
+
+  if (pwdInput && toggleBtn) {
+    function syncIconVisibility() {
+      if (pwdInput.value.length > 0) {
+        toggleBtn.style.opacity = '1';
+        toggleBtn.style.pointerEvents = 'auto';
+      } else {
+        toggleBtn.style.opacity = '0';
+        toggleBtn.style.pointerEvents = 'none';
+        // Reset ke mode tersembunyi kalau input dikosongkan
+        pwdInput.type = 'password';
+        toggleIcn.classList.remove('bi-eye-slash');
+        toggleIcn.classList.add('bi-eye');
+      }
+    }
+    pwdInput.addEventListener('input', syncIconVisibility);
+    syncIconVisibility(); // cek state awal (kalau browser auto-fill)
+
+    toggleBtn.addEventListener('click', function() {
+      const isHidden = pwdInput.type === 'password';
+      pwdInput.type = isHidden ? 'text' : 'password';
+      toggleIcn.classList.toggle('bi-eye');
+      toggleIcn.classList.toggle('bi-eye-slash');
+      toggleBtn.setAttribute('aria-label',
+        isHidden ? 'Sembunyikan password' : 'Tampilkan password');
+    });
+  }
+
+  // ================ Captcha visual feedback ================
+  const cbCaptcha = document.getElementById('id_captcha_confirm');
+  const captchaBox = document.getElementById('captchaBox');
+  const shield = document.getElementById('captchaShield');
+
+  if (cbCaptcha && captchaBox && shield) {
+    function syncCaptchaState() {
+      if (cbCaptcha.checked) {
+        captchaBox.classList.add('captcha-checked');
+        shield.style.color = '#10b981';
+        shield.classList.remove('bi-shield-check');
+        shield.classList.add('bi-shield-fill-check');
+      } else {
+        captchaBox.classList.remove('captcha-checked');
+        shield.style.color = '#cbd5e1';
+        shield.classList.remove('bi-shield-fill-check');
+        shield.classList.add('bi-shield-check');
+      }
+    }
+    cbCaptcha.addEventListener('change', syncCaptchaState);
+    syncCaptchaState(); // cek state awal
+  }
+})();
+</script>
 
 {% endblock %}

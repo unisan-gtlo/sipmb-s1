@@ -126,5 +126,16 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Password',
+            'id': 'id_password',
+        })
+    )
+    captcha_confirm = forms.BooleanField(
+        required=True,
+        error_messages={
+            'required': 'Harap centang "Saya bukan robot" untuk melanjutkan.',
+        },
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'id_captcha_confirm',
         })
     )
