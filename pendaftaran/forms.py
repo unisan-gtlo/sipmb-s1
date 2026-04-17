@@ -51,9 +51,13 @@ class ProfilDiriForm(forms.ModelForm):
             'tempat_lahir': forms.TextInput(attrs={
                 'class': 'form-control', 'placeholder': 'Kota/kabupaten tempat lahir',
             }),
-            'tgl_lahir': forms.DateInput(attrs={
-                'class': 'form-control', 'type': 'date',
-            }),
+            'tgl_lahir': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={
+                    'class': 'form-control',
+                    'type': 'date',
+                }
+            ),
             'jenis_kelamin':  forms.Select(attrs={'class': 'form-select'}),
             'agama_nama':     forms.HiddenInput(),
             'kewarganegaraan': forms.Select(attrs={'class': 'form-select'}),
