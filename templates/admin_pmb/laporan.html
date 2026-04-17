@@ -1,0 +1,520 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Laporan & Analitik{% endblock %}
+{% block nav_laporan %}active{% endblock %}
+{% block page_title %}Laporan & Analitik{% endblock %}
+{% block page_sub %}Statistik dan export data PMB UNISAN{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="stat-icon" style="background:#ede9fe;margin:0 auto 12px">
+        <i class="bi bi-people-fill" style="color:#667eea"></i>
+      </div>
+      <div class="stat-value" style="color:#667eea">{{ total_pendaftar }}</div>
+      <div class="stat-label">Total Pendaftar</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="stat-icon" style="background:#d1fae5;margin:0 auto 12px">
+        <i class="bi bi-trophy-fill" style="color:#059669"></i>
+      </div>
+      <div class="stat-value" style="color:#059669">{{ total_lulus }}</div>
+      <div class="stat-label">Lulus Seleksi</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="stat-icon" style="background:#dbeafe;margin:0 auto 12px">
+        <i class="bi bi-person-check-fill" style="color:#2563eb"></i>
+      </div>
+      <div class="stat-value" style="color:#2563eb">{{ total_daftar_ulang }}</div>
+      <div class="stat-label">Daftar Ulang</div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT BUTTONS -->
+<div class="content-card mb-4">
+  <div class="content-card-header">
+    <div class="content-card-title">
+      <i class="bi bi-download me-1" style="color:#667eea"></i>Export Data
+    </div>
+  </div>
+  <div class="content-card-body">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{% url 'admin_pmb:export_pendaftar' %}"
+         style="display:inline-flex;align-items:center;gap:8px;
+                background:linear-gradient(135deg,#667eea,#764ba2);
+                color:white;padding:10px 20px;border-radius:8px;
+                text-decoration:none;font-size:.875rem;font-weight:600">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+        Export Data Lengkap Pendaftar
+      </a>
+      <a href="{% url 'admin_pmb:export_ukuran_baju' %}"
+         style="display:inline-flex;align-items:center;gap:8px;
+                background:linear-gradient(135deg,#10b981,#059669);
+                color:white;padding:10px 20px;border-radius:8px;
+                text-decoration:none;font-size:.875rem;font-weight:600">
+        <i class="bi bi-rulers"></i>
+        Export Rekap Ukuran Baju
+      </a>
+      <a href="{% url 'admin_pmb:export_wilayah' %}"
+         style="display:inline-flex;align-items:center;gap:8px;
+                background:linear-gradient(135deg,#f59e0b,#d97706);
+                color:white;padding:10px 20px;border-radius:8px;
+                text-decoration:none;font-size:.875rem;font-weight:600">
+        <i class="bi bi-geo-alt"></i>
+        Export Rekap Wilayah & Sekolah
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- TAB ANALITIK -->
+<div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid #f1f5f9;padding-bottom:0">
+  {% for tab in tabs %}
+  <button onclick="showTab('{{ tab.id }}')"
+          id="tab-btn-{{ tab.id }}"
+          style="padding:10px 18px;border:none;background:none;cursor:pointer;
+                 font-size:.875rem;font-weight:500;border-bottom:3px solid transparent;
+                 margin-bottom:-2px;transition:all .15s;
+                 {% if forloop.first %}color:#667eea;border-bottom-color:#667eea{% else %}color:#94a3b8{% endif %}">
+    {{ tab.label }}
+  </button>
+  {% endfor %}
+</div>
+
+<!-- TAB 1: PRODI & JALUR -->
+<div id="tab-prodi" class="tab-content">
+  <div class="row g-3">
+    <div class="col-md-7">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Pendaftar per Program Studi</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartProdi" height="280"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Per Jalur & Gelombang</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartJalur" height="160"></canvas>
+        </div>
+        <div style="padding:0 16px 16px">
+          <canvas id="chartGelombang" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: WILAYAH -->
+<div id="tab-wilayah" class="tab-content" style="display:none">
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">
+            Top 15 Provinsi Asal Pendaftar
+          </div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartProvinsi" height="320"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Top 15 Kab/Kota Potensial</div>
+        </div>
+        <div style="overflow-x:auto;max-height:380px;overflow-y:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Kab/Kota</th>
+                <th>Provinsi</th>
+                <th style="text-align:center">Pendaftar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for k in per_kabkota %}
+              <tr>
+                <td style="font-weight:500">{{ k.kabupaten_kota_nama }}</td>
+                <td style="font-size:.8rem;color:#94a3b8">{{ k.provinsi_nama }}</td>
+                <td style="text-align:center;font-weight:700;color:#667eea">
+                  {{ k.total }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: SEKOLAH -->
+<div id="tab-sekolah" class="tab-content" style="display:none">
+  <div class="content-card">
+    <div class="content-card-header">
+      <div class="content-card-title">
+        Top 20 Sekolah Asal Pendaftar
+        <span style="font-size:.75rem;color:#94a3b8;font-weight:400;margin-left:8px">
+          — Gunakan untuk strategi kunjungan sekolah
+        </span>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="text-align:center">Rank</th>
+            <th>Nama Sekolah</th>
+            <th>Kab/Kota</th>
+            <th style="text-align:center">Pendaftar</th>
+            <th>Potensi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in per_sekolah %}
+          <tr>
+            <td style="text-align:center;font-weight:700;color:#667eea">
+              {{ forloop.counter }}
+            </td>
+            <td style="font-weight:500">{{ s.asal_sekolah }}</td>
+            <td style="font-size:.8rem;color:#94a3b8">{{ s.kabupaten_kota_nama }}</td>
+            <td style="text-align:center;font-weight:700">{{ s.total }}</td>
+            <td>
+              <div style="height:8px;background:#f1f5f9;border-radius:4px;
+                          overflow:hidden;min-width:80px">
+                <div style="height:100%;border-radius:4px;
+                            background:linear-gradient(135deg,#667eea,#764ba2);
+                            width:{{ s.total|floatformat:0 }}%"></div>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center;color:#94a3b8;padding:30px">
+              Belum ada data asal sekolah
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: SUMBER INFORMASI -->
+<div id="tab-sumber" class="tab-content" style="display:none">
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Efektivitas Media Promosi</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartSumber" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Detail Sumber Informasi</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sumber</th>
+                <th style="text-align:center">Jumlah</th>
+                <th style="text-align:center">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% with total_sumber=per_sumber|length %}
+              {% for s in per_sumber %}
+              <tr>
+                <td style="font-weight:500">
+                  {{ s.sumber_informasi }}
+                </td>
+                <td style="text-align:center;font-weight:700;color:#667eea">
+                  {{ s.total }}
+                </td>
+                <td style="text-align:center;color:#94a3b8;font-size:.8rem">
+                  -
+                </td>
+              </tr>
+              {% endfor %}
+              {% endwith %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: UKURAN BAJU -->
+<div id="tab-baju" class="tab-content" style="display:none">
+  <div class="row g-3">
+    <div class="col-md-5">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Rekap Ukuran Baju</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartBaju" height="280"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Detail per Ukuran</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="text-align:center">Ukuran</th>
+                <th style="text-align:center">Jumlah</th>
+                <th>Bar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in per_ukuran %}
+              <tr>
+                <td style="text-align:center;font-size:1.1rem;font-weight:700;
+                           color:#667eea">{{ u.ukuran_baju }}</td>
+                <td style="text-align:center;font-weight:700">{{ u.total }}</td>
+                <td>
+                  <div style="height:10px;background:#f1f5f9;border-radius:5px;
+                              overflow:hidden;min-width:120px">
+                    <div style="height:100%;background:linear-gradient(135deg,#667eea,#764ba2);
+                                border-radius:5px;width:{{ u.total|floatformat:0 }}%"></div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" style="text-align:center;color:#94a3b8;padding:30px">
+                  Belum ada data ukuran baju
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: DEMOGRAFI -->
+<div id="tab-demo" class="tab-content" style="display:none">
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Jenis Kelamin</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartGender" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Agama</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartAgama" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="content-card">
+        <div class="content-card-header">
+          <div class="content-card-title">Tren Pendaftaran per Bulan</div>
+        </div>
+        <div style="padding:16px">
+          <canvas id="chartBulan" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const WARNA = ['#667eea','#764ba2','#10b981','#f59e0b','#ef4444',
+               '#3b82f6','#8b5cf6','#06b6d4','#ec4899','#84cc16',
+               '#f97316','#14b8a6','#6366f1','#a855f7','#0ea5e9'];
+
+const tabs = ['prodi','wilayah','sekolah','sumber','baju','demo'];
+
+function showTab(id) {
+  tabs.forEach(t => {
+    document.getElementById('tab-' + t).style.display = 'none';
+    const btn = document.getElementById('tab-btn-' + t);
+    if (btn) {
+      btn.style.color = '#94a3b8';
+      btn.style.borderBottomColor = 'transparent';
+    }
+  });
+  document.getElementById('tab-' + id).style.display = 'block';
+  const activeBtn = document.getElementById('tab-btn-' + id);
+  if (activeBtn) {
+    activeBtn.style.color = '#667eea';
+    activeBtn.style.borderBottomColor = '#667eea';
+  }
+}
+
+// Chart Prodi
+new Chart(document.getElementById('chartProdi'), {
+  type: 'bar',
+  data: {
+    labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Pendaftar',
+      data: [{% for p in per_prodi %}{{ p.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: WARNA,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  }
+});
+
+// Chart Jalur
+new Chart(document.getElementById('chartJalur'), {
+  type: 'doughnut',
+  data: {
+    labels: [{% for j in per_jalur %}'{{ j.jalur__nama_jalur }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{ data: [{% for j in per_jalur %}{{ j.total }}{% if not forloop.last %},{% endif %}{% endfor %}], backgroundColor: WARNA }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+// Chart Gelombang
+new Chart(document.getElementById('chartGelombang'), {
+  type: 'bar',
+  data: {
+    labels: [{% for g in per_gelombang %}'{{ g.gelombang__nama_gelombang }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Pendaftar',
+      data: [{% for g in per_gelombang %}{{ g.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: '#667eea', borderRadius: 4,
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+
+// Chart Provinsi
+new Chart(document.getElementById('chartProvinsi'), {
+  type: 'bar',
+  data: {
+    labels: [{% for p in per_provinsi %}'{{ p.provinsi_nama }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Pendaftar',
+      data: [{% for p in per_provinsi %}{{ p.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: WARNA, borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true } }
+  }
+});
+
+// Chart Sumber
+new Chart(document.getElementById('chartSumber'), {
+  type: 'pie',
+  data: {
+    labels: [{% for s in per_sumber %}'{{ s.sumber_informasi }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{ data: [{% for s in per_sumber %}{{ s.total }}{% if not forloop.last %},{% endif %}{% endfor %}], backgroundColor: WARNA }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+});
+
+// Chart Baju
+new Chart(document.getElementById('chartBaju'), {
+  type: 'bar',
+  data: {
+    labels: [{% for u in per_ukuran %}'{{ u.ukuran_baju }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Jumlah',
+      data: [{% for u in per_ukuran %}{{ u.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: WARNA, borderRadius: 6,
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+
+// Chart Gender
+new Chart(document.getElementById('chartGender'), {
+  type: 'doughnut',
+  data: {
+    labels: [{% for g in per_gender %}'{% if g.jenis_kelamin == "L" %}Laki-laki{% else %}Perempuan{% endif %}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{ data: [{% for g in per_gender %}{{ g.total }}{% if not forloop.last %},{% endif %}{% endfor %}], backgroundColor: ['#667eea','#ec4899'] }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+// Chart Agama
+new Chart(document.getElementById('chartAgama'), {
+  type: 'doughnut',
+  data: {
+    labels: [{% for a in per_agama %}'{{ a.agama_nama }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{ data: [{% for a in per_agama %}{{ a.total }}{% if not forloop.last %},{% endif %}{% endfor %}], backgroundColor: WARNA }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+// Chart Bulan
+new Chart(document.getElementById('chartBulan'), {
+  type: 'line',
+  data: {
+    labels: [{% for b in per_bulan %}'{{ b.bulan|date:"M Y" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Pendaftar',
+      data: [{% for b in per_bulan %}{{ b.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,.1)',
+      fill: true, tension: 0.4,
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+
+<style>
+.tab-content { animation: fadeIn .2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+{% endblock %}

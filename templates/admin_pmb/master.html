@@ -1,0 +1,248 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Master Data{% endblock %}
+{% block nav_master %}active{% endblock %}
+{% block page_title %}Master Data{% endblock %}
+{% block page_sub %}Kelola data master PMB UNISAN{% endblock %}
+
+{% block content %}
+
+<!-- MENU MASTER -->
+<div class="row g-3 mb-4">
+  {% for item in menu_master %}
+  <div class="col-md-4">
+    <a href="{{ item.url }}" target="_blank"
+       style="display:flex;align-items:center;gap:14px;padding:18px 20px;
+              background:white;border-radius:12px;text-decoration:none;
+              border:1.5px solid #e2e8f0;transition:all .2s"
+       onmouseover="this.style.borderColor='#667eea';this.style.transform='translateY(-2px)'"
+       onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='translateY(0)'">
+      <div style="width:44px;height:44px;border-radius:10px;
+                  background:linear-gradient(135deg,#667eea,#764ba2);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:20px;flex-shrink:0">
+        {{ item.icon }}
+      </div>
+      <div>
+        <div style="font-size:.9rem;font-weight:600;color:#1e1e2e">{{ item.nama }}</div>
+        <div style="font-size:.75rem;color:#94a3b8">{{ item.desc }}</div>
+      </div>
+      <i class="bi bi-arrow-up-right ms-auto" style="color:#94a3b8;font-size:14px"></i>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+
+  <!-- JALUR PENERIMAAN -->
+  <div class="col-md-6">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Jalur Penerimaan</div>
+        <a href="/admin/master/jalurpenerimaan/add/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-plus"></i> Tambah
+        </a>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Kode</th>
+              <th>Nama Jalur</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for j in jalur_list %}
+            <tr>
+              <td style="font-family:monospace;font-weight:600;color:#667eea">
+                {{ j.kode_jalur }}
+              </td>
+              <td style="font-weight:500">{{ j.nama_jalur }}</td>
+              <td>
+                <span class="badge-status
+                  {% if j.status == 'aktif' %}badge-lulus{% else %}badge-draft{% endif %}">
+                  {{ j.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <a href="/admin/master/jalurpenerimaan/{{ j.pk }}/change/"
+                   target="_blank" style="font-size:.8rem;color:#667eea">Edit</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">
+                Belum ada jalur
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- GELOMBANG -->
+  <div class="col-md-6">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Gelombang Pendaftaran</div>
+        <a href="/admin/master/gelombangpenerimaan/add/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-plus"></i> Tambah
+        </a>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nama Gelombang</th>
+              <th>Jalur</th>
+              <th>Buka — Tutup</th>
+              <th>Biaya</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in gelombang_list %}
+            <tr>
+              <td style="font-weight:500">{{ g.nama_gelombang }}</td>
+              <td style="font-size:.8rem">{{ g.jalur.nama_jalur }}</td>
+              <td style="font-size:.78rem;color:#94a3b8">
+                {{ g.tgl_buka|date:"d M" }} — {{ g.tgl_tutup|date:"d M Y" }}
+              </td>
+              <td style="font-size:.85rem;font-weight:600;color:#667eea">
+                {% if g.jenis_biaya == 'gratis' %}GRATIS
+                {% else %}Rp {{ g.biaya_akhir|floatformat:0 }}{% endif %}
+              </td>
+              <td>
+                <span class="badge-status
+                  {% if g.status == 'buka' %}badge-lulus
+                  {% elif g.status == 'tutup' %}badge-draft
+                  {% else %}badge-terjadwal{% endif %}">
+                  {{ g.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <a href="/admin/master/gelombangpenerimaan/{{ g.pk }}/change/"
+                   target="_blank" style="font-size:.8rem;color:#667eea">Edit</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">
+                Belum ada gelombang
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRAM STUDI -->
+  <div class="col-12">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Program Studi PMB</div>
+        <a href="/admin/master/prodipmb/add/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-plus"></i> Tambah
+        </a>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nama Prodi</th>
+              <th>Kode SIMDA</th>
+              <th>Jenjang</th>
+              <th>Akreditasi</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in prodi_list %}
+            <tr>
+              <td style="font-weight:500">{{ p.nama_prodi }}</td>
+              <td style="font-family:monospace;font-size:.8rem;color:#94a3b8">
+                {{ p.kode_prodi_simda|default:"-" }}
+              </td>
+              <td>
+                <span style="font-size:.75rem;background:#ede9fe;color:#667eea;
+                             padding:2px 8px;border-radius:6px">
+                  {{ p.jenjang }}
+                </span>
+              </td>
+              <td style="font-size:.85rem">{{ p.akreditasi|default:"-" }}</td>
+              <td>
+                <span class="badge-status
+                  {% if p.status == 'aktif' %}badge-lulus{% else %}badge-draft{% endif %}">
+                  {{ p.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <a href="/admin/master/prodipmb/{{ p.pk }}/change/"
+                   target="_blank" style="font-size:.8rem;color:#667eea">Edit</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">
+                Belum ada prodi
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENGATURAN SISTEM -->
+  <div class="col-12">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Pengaturan Sistem PMB</div>
+        <a href="/admin/master/pengaturansistem/1/change/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-gear"></i> Edit Pengaturan
+        </a>
+      </div>
+      <div class="content-card-body">
+        {% if pengaturan %}
+        <div class="row g-3" style="font-size:.875rem">
+          <div class="col-md-3">
+            <div style="color:#94a3b8;margin-bottom:2px">Tahun Akademik</div>
+            <div style="font-weight:600">{{ pengaturan.tahun_akademik_aktif }}</div>
+          </div>
+          <div class="col-md-3">
+            <div style="color:#94a3b8;margin-bottom:2px">Status Pendaftaran</div>
+            <span class="badge-status
+              {% if pengaturan.status_pendaftaran == 'buka' %}badge-lulus
+              {% else %}badge-draft{% endif %}">
+              {{ pengaturan.get_status_pendaftaran_display }}
+            </span>
+          </div>
+          <div class="col-md-3">
+            <div style="color:#94a3b8;margin-bottom:2px">WA PMB</div>
+            <div style="font-weight:500">{{ pengaturan.whatsapp_pmb|default:"-" }}</div>
+          </div>
+          <div class="col-md-3">
+            <div style="color:#94a3b8;margin-bottom:2px">Email PMB</div>
+            <div style="font-weight:500">{{ pengaturan.email_pmb|default:"-" }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

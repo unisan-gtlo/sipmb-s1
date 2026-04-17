@@ -1,0 +1,257 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Hasil Penerimaan{% endblock %}
+{% block nav_hasil %}active{% endblock %}
+{% block page_title %}Hasil Penerimaan{% endblock %}
+{% block page_sub %}Input dan kelola hasil seleksi penerimaan mahasiswa baru{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7">
+        <i class="bi bi-clipboard-check" style="color:#d97706"></i>
+      </div>
+      <div class="stat-value" style="color:#d97706">{{ total_terjadwal }}</div>
+      <div class="stat-label">Sudah Seleksi</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5">
+        <i class="bi bi-trophy-fill" style="color:#059669"></i>
+      </div>
+      <div class="stat-value" style="color:#059669">{{ total_lulus }}</div>
+      <div class="stat-label">Lulus Seleksi</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fee2e2">
+        <i class="bi bi-x-circle" style="color:#dc2626"></i>
+      </div>
+      <div class="stat-value" style="color:#dc2626">{{ total_tidak_lulus }}</div>
+      <div class="stat-label">Tidak Lulus</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER -->
+<div class="content-card mb-4">
+  <div class="content-card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Gelombang</label>
+        <select name="gelombang"
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Gelombang</option>
+          {% for g in gelombang_list %}
+          <option value="{{ g.id }}"
+                  {% if filter_gelombang == g.id|stringformat:"s" %}selected{% endif %}>
+            {{ g.nama_gelombang }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Program Studi</label>
+        <select name="prodi"
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Prodi</option>
+          {% for p in prodi_list %}
+          <option value="{{ p.id }}"
+                  {% if filter_prodi == p.id|stringformat:"s" %}selected{% endif %}>
+            {{ p.nama_prodi }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;
+                      margin-bottom:4px;display:block">Status</label>
+        <select name="status"
+                style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Status</option>
+          <option value="TERJADWAL">Terjadwal</option>
+          <option value="LULUS_SELEKSI">Lulus Seleksi</option>
+          <option value="TIDAK_LULUS">Tidak Lulus</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn-primary-custom">
+          <i class="bi bi-search"></i> Filter
+        </button>
+        <a href="{% url 'admin_pmb:hasil' %}"
+           class="btn-outline-custom ms-2">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TABEL -->
+<div class="content-card">
+  <div class="content-card-header">
+    <div class="content-card-title">{{ pendaftar_list.count }} peserta</div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>No. Pendaftaran</th>
+          <th>Nama</th>
+          <th>Prodi Pilihan 1</th>
+          <th>Nilai Akhir</th>
+          <th>Status Saat Ini</th>
+          <th>Hasil</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pendaftar_list %}
+        <tr>
+          <td style="font-family:monospace;font-size:.8rem;color:#667eea">
+            {{ p.no_pendaftaran }}
+          </td>
+          <td style="font-weight:500">{{ p.user.get_full_name }}</td>
+          <td style="font-size:.85rem">{{ p.prodi_pilihan_1.nama_prodi }}</td>
+          <td style="font-weight:600;text-align:center">
+            {% if p.hasil %}{{ p.hasil.nilai_akhir|default:"-" }}{% else %}-{% endif %}
+          </td>
+          <td>
+            <span class="badge-status badge-{{ p.status|lower }}">
+              {{ p.get_status_display }}
+            </span>
+          </td>
+          <td>
+            {% if p.hasil %}
+            <span class="badge-status
+              {% if p.hasil.status == 'lulus' %}badge-lulus
+              {% elif p.hasil.status == 'tidak_lulus' %}badge-tolak
+              {% else %}badge-terjadwal{% endif %}">
+              {{ p.hasil.get_status_display }}
+            </span>
+            {% else %}
+            <span style="font-size:.75rem;color:#94a3b8">Belum diinput</span>
+            {% endif %}
+          </td>
+          <td>
+            <button onclick="showHasil(
+                      {{ p.pk }},
+                      '{{ p.user.get_full_name }}',
+                      '{{ p.prodi_pilihan_1.pk }}')"
+                    class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+              Input Hasil
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;color:#94a3b8;padding:40px">
+            Tidak ada data
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Input Hasil -->
+<div id="modal-hasil" style="display:none;position:fixed;inset:0;
+     background:rgba(0,0,0,.4);z-index:999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:440px">
+    <h6 style="font-weight:600;margin-bottom:4px">Input Hasil Penerimaan</h6>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:16px" id="modal-hasil-nama"></p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="input_hasil">
+      <input type="hidden" name="pendaftaran_id" id="input-pend-id">
+      <div class="row g-3">
+        <div class="col-12">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Status Penerimaan <span class="text-danger">*</span>
+          </label>
+          <select name="status_hasil" required
+                  style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                         padding:8px 12px;font-size:.875rem;outline:none">
+            <option value="lulus">✅ Lulus</option>
+            <option value="tidak_lulus">❌ Tidak Lulus</option>
+            <option value="cadangan">⏳ Cadangan</option>
+            <option value="lulus_bersyarat">⚠️ Lulus Bersyarat</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Prodi yang Diterima
+          </label>
+          <select name="prodi_id" id="input-prodi-id"
+                  style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                         padding:8px 12px;font-size:.875rem;outline:none">
+            {% for pr in prodi_list %}
+            <option value="{{ pr.pk }}">{{ pr.nama_prodi }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Nilai Akhir
+          </label>
+          <input type="number" name="nilai_akhir" min="0" max="100" step="0.01"
+                 placeholder="0-100"
+                 style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                        padding:8px 12px;font-size:.875rem;outline:none">
+        </div>
+        <div class="col-md-6">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Peringkat
+          </label>
+          <input type="number" name="peringkat" min="1"
+                 placeholder="Urutan peringkat"
+                 style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                        padding:8px 12px;font-size:.875rem;outline:none">
+        </div>
+        <div class="col-12">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Catatan
+          </label>
+          <textarea name="catatan" rows="2"
+                    style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                           padding:8px 12px;font-size:.875rem;outline:none;resize:none">
+          </textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button type="submit" class="btn-primary-custom" style="flex:1;justify-content:center">
+          <i class="bi bi-save"></i> Simpan Hasil
+        </button>
+        <button type="button" onclick="hideHasil()"
+                style="flex:1;padding:9px;border-radius:8px;
+                       border:1px solid #e2e8f0;background:white;cursor:pointer">
+          Batal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showHasil(id, nama, prodiId) {
+  document.getElementById('input-pend-id').value    = id;
+  document.getElementById('modal-hasil-nama').textContent = nama;
+  document.getElementById('input-prodi-id').value   = prodiId;
+  document.getElementById('modal-hasil').style.display = 'flex';
+}
+function hideHasil() {
+  document.getElementById('modal-hasil').style.display = 'none';
+}
+</script>
+{% endblock %}

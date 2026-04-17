@@ -44,6 +44,21 @@
             <div style="color:#94a3b8;margin-bottom:2px">Prodi Pilihan 2</div>
             <div style="font-weight:500">{{ pendaftaran.prodi_pilihan_2.nama_prodi|default:"-" }}</div>
           </div>
+          <!-- Tambahkan di bagian detail pendaftaran -->
+          <div class="col-md-6">
+            <div style="color:#94a3b8;margin-bottom:2px">Kode Referral / Recruiter</div>
+            {% if pendaftaran.kode_referral %}
+              <div style="font-weight:500;color:#667eea;font-family:monospace">
+                {{ pendaftaran.kode_referral }}
+              </div>
+              {% with rec=pendaftaran.kode_referral %}
+              {% load static %}
+              {% comment %}Cari nama recruiter{% endcomment %}
+              {% endwith %}
+            {% else %}
+              <div style="color:#94a3b8">Tidak ada referral</div>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>

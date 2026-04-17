@@ -1,0 +1,88 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Seleksi{% endblock %}
+{% block nav_seleksi %}active{% endblock %}
+{% block page_title %}Jadwal Seleksi{% endblock %}
+{% block page_sub %}Kelola jadwal dan peserta seleksi PMB{% endblock %}
+
+{% block content %}
+
+<div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+  <a href="{% url 'admin_pmb:seleksi_tambah' %}" class="btn-primary-custom">
+    <i class="bi bi-plus-lg"></i> Tambah Jadwal Seleksi
+  </a>
+</div>
+
+<div class="content-card">
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nama Seleksi</th>
+          <th>Jalur / Gelombang</th>
+          <th>Jenis</th>
+          <th>Tanggal & Waktu</th>
+          <th>Lokasi</th>
+          <th>Peserta</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for j in jadwal_list %}
+        <tr>
+          <td style="font-weight:600">{{ j.nama_seleksi }}</td>
+          <td>
+            <div style="font-size:.85rem">{{ j.jalur.nama_jalur }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ j.gelombang.nama_gelombang }}</div>
+          </td>
+          <td>
+            <span style="font-size:.75rem;background:#ede9fe;color:#667eea;
+                         padding:2px 8px;border-radius:8px">
+              {{ j.get_jenis_seleksi_display }}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:.85rem;font-weight:500">
+              {{ j.tgl_seleksi|date:"d M Y" }}
+            </div>
+            <div style="font-size:.75rem;color:#94a3b8">
+              {{ j.jam_mulai|time:"H:i" }} — {{ j.jam_selesai|time:"H:i" }}
+            </div>
+          </td>
+          <td style="font-size:.85rem;color:#64748b">
+            {{ j.lokasi|default:"-" }}
+          </td>
+          <td style="text-align:center;font-weight:600;color:#667eea">
+            {{ j.peserta.count }}
+          </td>
+          <td>
+            <span class="badge-status
+              {% if j.status == 'publish' %}badge-lengkap
+              {% elif j.status == 'selesai' %}badge-lulus
+              {% elif j.status == 'batal' %}badge-tolak
+              {% else %}badge-draft{% endif %}">
+              {{ j.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <a href="{% url 'admin_pmb:seleksi_detail' j.pk %}"
+               class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+              Detail
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;color:#94a3b8;padding:40px">
+            Belum ada jadwal seleksi.
+            <a href="{% url 'admin_pmb:seleksi_tambah' %}" style="color:#667eea">
+              Tambah sekarang
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

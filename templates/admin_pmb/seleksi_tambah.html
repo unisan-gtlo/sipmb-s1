@@ -1,0 +1,131 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Tambah Jadwal Seleksi{% endblock %}
+{% block nav_seleksi %}active{% endblock %}
+{% block page_title %}Tambah Jadwal Seleksi{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Form Jadwal Seleksi</div>
+      </div>
+      <div class="content-card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Nama Seleksi <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="nama_seleksi" required
+                     placeholder="Contoh: Tes Tulis Gelombang 1 Jalur Reguler"
+                     style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                            padding:9px 12px;font-size:.875rem;outline:none">
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Jalur <span class="text-danger">*</span>
+              </label>
+              <select name="jalur" required
+                      style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                             padding:9px 12px;font-size:.875rem;outline:none">
+                <option value="">-- Pilih Jalur --</option>
+                {% for j in jalur_list %}
+                <option value="{{ j.id }}">{{ j.nama_jalur }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Gelombang <span class="text-danger">*</span>
+              </label>
+              <select name="gelombang" required
+                      style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                             padding:9px 12px;font-size:.875rem;outline:none">
+                <option value="">-- Pilih Gelombang --</option>
+                {% for g in gelombang_list %}
+                <option value="{{ g.id }}">{{ g.nama_gelombang }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Jenis Seleksi <span class="text-danger">*</span>
+              </label>
+              <select name="jenis_seleksi" required
+                      style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                             padding:9px 12px;font-size:.875rem;outline:none">
+                <option value="">-- Pilih Jenis --</option>
+                {% for val, label in jenis_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Tanggal Seleksi <span class="text-danger">*</span>
+              </label>
+              <input type="date" name="tgl_seleksi" required
+                     style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                            padding:9px 12px;font-size:.875rem;outline:none">
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Jam Mulai <span class="text-danger">*</span>
+              </label>
+              <input type="time" name="jam_mulai" required
+                     style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                            padding:9px 12px;font-size:.875rem;outline:none">
+            </div>
+            <div class="col-md-6">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Jam Selesai <span class="text-danger">*</span>
+              </label>
+              <input type="time" name="jam_selesai" required
+                     style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                            padding:9px 12px;font-size:.875rem;outline:none">
+            </div>
+            <div class="col-12">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Lokasi
+              </label>
+              <input type="text" name="lokasi"
+                     placeholder="Gedung/ruang tempat seleksi"
+                     style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                            padding:9px 12px;font-size:.875rem;outline:none">
+            </div>
+            <div class="col-12">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Link Online (jika daring)
+              </label>
+              <input type="url" name="link_online"
+                     placeholder="https://zoom.us/... atau https://meet.google.com/..."
+                     style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                            padding:9px 12px;font-size:.875rem;outline:none">
+            </div>
+            <div class="col-12">
+              <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+                Keterangan Tambahan
+              </label>
+              <textarea name="keterangan" rows="3"
+                        placeholder="Instruksi atau keterangan untuk peserta..."
+                        style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                               padding:9px 12px;font-size:.875rem;outline:none;resize:none">
+              </textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button type="submit" class="btn-primary-custom">
+              <i class="bi bi-save"></i> Simpan Jadwal
+            </button>
+            <a href="{% url 'admin_pmb:seleksi' %}"
+               class="btn-outline-custom">Batal</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Konten & Promosi{% endblock %}
+{% block nav_konten %}active{% endblock %}
+{% block page_title %}Konten & Promosi{% endblock %}
+{% block page_sub %}Kelola konten halaman publik PMB UNISAN{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-md-2">
+    <div class="stat-card text-center">
+      <div style="font-size:1.8rem;margin-bottom:6px">📢</div>
+      <div class="stat-value" style="font-size:1.4rem">{{ total_pengumuman }}</div>
+      <div class="stat-label">Pengumuman</div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="stat-card text-center">
+      <div style="font-size:1.8rem;margin-bottom:6px">💬</div>
+      <div class="stat-value" style="font-size:1.4rem">{{ total_testimoni }}</div>
+      <div class="stat-label">Testimoni</div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="stat-card text-center">
+      <div style="font-size:1.8rem;margin-bottom:6px">🤝</div>
+      <div class="stat-value" style="font-size:1.4rem">{{ total_mitra }}</div>
+      <div class="stat-label">Mitra</div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="stat-card text-center">
+      <div style="font-size:1.8rem;margin-bottom:6px">❓</div>
+      <div class="stat-value" style="font-size:1.4rem">{{ total_faq }}</div>
+      <div class="stat-label">FAQ</div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="stat-card text-center">
+      <div style="font-size:1.8rem;margin-bottom:6px">📄</div>
+      <div class="stat-value" style="font-size:1.4rem">{{ total_brosur }}</div>
+      <div class="stat-label">Brosur</div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="stat-card text-center">
+      <div style="font-size:1.8rem;margin-bottom:6px">📥</div>
+      <div class="stat-value" style="font-size:1.4rem">{{ total_dokumen }}</div>
+      <div class="stat-label">Dokumen</div>
+    </div>
+  </div>
+</div>
+
+<!-- MENU KONTEN -->
+<div class="row g-3 mb-4">
+  {% for item in menu_konten %}
+  <div class="col-md-4">
+    <a href="{{ item.url }}" target="_blank"
+       style="display:flex;align-items:center;gap:14px;padding:18px 20px;
+              background:white;border-radius:12px;text-decoration:none;
+              border:1.5px solid #e2e8f0;transition:all .2s"
+       onmouseover="this.style.borderColor='#667eea';this.style.transform='translateY(-2px)'"
+       onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='translateY(0)'">
+      <div style="width:44px;height:44px;border-radius:10px;
+                  background:linear-gradient(135deg,#667eea,#764ba2);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:20px;flex-shrink:0">
+        {{ item.icon }}
+      </div>
+      <div>
+        <div style="font-size:.9rem;font-weight:600;color:#1e1e2e">{{ item.nama }}</div>
+        <div style="font-size:.75rem;color:#94a3b8">{{ item.desc }}</div>
+      </div>
+      <i class="bi bi-arrow-up-right ms-auto" style="color:#94a3b8;font-size:14px"></i>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- PENGUMUMAN TERBARU -->
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Pengumuman Terbaru</div>
+        <a href="/admin/konten/pengumuman/add/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-plus"></i> Tambah
+        </a>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Tgl Tayang</th>
+              <th>Penting</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pengumuman_list %}
+            <tr>
+              <td style="font-weight:500">{{ p.judul|truncatechars:40 }}</td>
+              <td style="font-size:.8rem;color:#94a3b8">
+                {{ p.tgl_tayang|date:"d M Y" }}
+              </td>
+              <td>
+                {% if p.penting %}
+                <span style="background:#fee2e2;color:#dc2626;
+                             padding:2px 8px;border-radius:8px;font-size:.75rem">
+                  Penting
+                </span>
+                {% else %}-{% endif %}
+              </td>
+              <td>
+                <a href="/admin/konten/pengumuman/{{ p.pk }}/change/"
+                   target="_blank"
+                   style="font-size:.8rem;color:#667eea">Edit</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">
+                Belum ada pengumuman
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TESTIMONI TERBARU -->
+  <div class="col-md-5">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Testimoni</div>
+        <a href="/admin/konten/testimoni/add/" target="_blank"
+           class="btn-primary-custom" style="padding:6px 14px;font-size:.8rem">
+          <i class="bi bi-plus"></i> Tambah
+        </a>
+      </div>
+      <div style="padding:12px 16px">
+        {% for t in testimoni_list %}
+        <div style="display:flex;align-items:center;gap:10px;
+                    padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.85rem">
+          <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                      background:linear-gradient(135deg,#667eea,#764ba2);
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:13px;font-weight:700;color:white">
+            {{ t.nama|first|upper }}
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:500">{{ t.nama }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ t.prodi }}</div>
+          </div>
+          <a href="/admin/konten/testimoni/{{ t.pk }}/change/"
+             target="_blank" style="font-size:.8rem;color:#667eea">Edit</a>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:#94a3b8;padding:20px;font-size:.875rem">
+          Belum ada testimoni
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

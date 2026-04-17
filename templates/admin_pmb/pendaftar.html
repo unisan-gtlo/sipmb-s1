@@ -65,59 +65,75 @@
     </div>
   </div>
   <div style="overflow-x:auto">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>No. Pendaftaran</th>
-          <th>Nama Lengkap</th>
-          <th>Email / HP</th>
-          <th>Jalur</th>
-          <th>Prodi Pilihan 1</th>
-          <th>Status</th>
-          <th>Tgl Daftar</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in pendaftar_list %}
-        <tr>
-          <td style="font-family:monospace;font-size:.8rem;color:#667eea">
-            {{ p.no_pendaftaran }}
-          </td>
-          <td>
-            <div style="font-weight:500">{{ p.user.get_full_name }}</div>
-          </td>
-          <td>
-            <div style="font-size:.8rem">{{ p.user.email }}</div>
-            <div style="font-size:.75rem;color:#94a3b8">{{ p.user.no_hp }}</div>
-          </td>
-          <td style="font-size:.85rem">{{ p.jalur.nama_jalur }}</td>
-          <td style="font-size:.85rem">{{ p.prodi_pilihan_1.nama_prodi }}</td>
-          <td>
-            <span class="badge-status badge-{{ p.status|lower }}">
-              {{ p.get_status_display }}
+<div style="overflow-x:auto">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>No. Pendaftaran</th>
+        <th>Nama Lengkap</th>
+        <th>Email / HP</th>
+        <th>Jalur</th>
+        <th>Prodi Pilihan 1</th>
+        <th>Status</th>
+        <th>Recruiter</th>
+        <th>Tgl Daftar</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in pendaftar_list %}
+      <tr>
+        <td style="font-family:monospace;font-size:.8rem;color:#667eea">
+          {{ p.no_pendaftaran }}
+        </td>
+        <td>
+          <div style="font-weight:500">{{ p.user.get_full_name }}</div>
+        </td>
+        <td>
+          <div style="font-size:.8rem">{{ p.user.email }}</div>
+          <div style="font-size:.75rem;color:#94a3b8">{{ p.user.no_hp }}</div>
+        </td>
+        <td style="font-size:.85rem">{{ p.jalur.nama_jalur }}</td>
+        <td style="font-size:.85rem">{{ p.prodi_pilihan_1.nama_prodi }}</td>
+        <td>
+          <span class="badge-status badge-{{ p.status|lower }}">
+            {{ p.get_status_display }}
+          </span>
+        </td>
+        <td>
+          {% if p.kode_referral %}
+            <span style="background:#ede9fe;color:#667eea;padding:2px 8px;
+                         border-radius:8px;font-family:monospace;font-size:.75rem;
+                         display:block;margin-bottom:2px">
+              {{ p.kode_referral }}
             </span>
-          </td>
-          <td style="font-size:.8rem;color:#94a3b8">
-            {{ p.tgl_daftar|date:"d M Y" }}
-          </td>
-          <td>
-            <a href="{% url 'admin_pmb:detail_pendaftar' p.pk %}"
-               class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
-              Detail
-            </a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="8" style="text-align:center;color:#94a3b8;padding:40px">
-            Tidak ada pendaftar yang sesuai filter
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+            {% if p.nama_recruiter %}
+            <div style="font-size:.75rem;color:#64748b">{{ p.nama_recruiter }}</div>
+            {% endif %}
+          {% else %}
+            <span style="color:#94a3b8;font-size:.8rem">-</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.8rem;color:#94a3b8">
+          {{ p.tgl_daftar|date:"d M Y" }}
+        </td>
+        <td>
+          <a href="{% url 'admin_pmb:detail_pendaftar' p.pk %}"
+             class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+            Detail
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" style="text-align:center;color:#94a3b8;padding:40px">
+          Tidak ada pendaftar yang sesuai filter
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 </div>
 
 {% endblock %}

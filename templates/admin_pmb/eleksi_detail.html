@@ -1,0 +1,268 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Detail Seleksi{% endblock %}
+{% block nav_seleksi %}active{% endblock %}
+{% block page_title %}{{ jadwal.nama_seleksi }}{% endblock %}
+{% block page_sub %}{{ jadwal.tgl_seleksi|date:"d M Y" }} • {{ jadwal.jam_mulai|time:"H:i" }}-{{ jadwal.jam_selesai|time:"H:i" }}{% endblock %}
+
+{% block content %}
+
+<!-- INFO JADWAL -->
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Info Jadwal</div>
+        <span class="badge-status
+          {% if jadwal.status == 'publish' %}badge-lengkap
+          {% elif jadwal.status == 'selesai' %}badge-lulus
+          {% else %}badge-draft{% endif %}">
+          {{ jadwal.get_status_display }}
+        </span>
+      </div>
+      <div class="content-card-body">
+        <div class="row g-2" style="font-size:.875rem">
+          <div class="col-md-4">
+            <div style="color:#94a3b8">Jalur</div>
+            <div style="font-weight:500">{{ jadwal.jalur.nama_jalur }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8">Gelombang</div>
+            <div style="font-weight:500">{{ jadwal.gelombang.nama_gelombang }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8">Jenis</div>
+            <div style="font-weight:500">{{ jadwal.get_jenis_seleksi_display }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8">Tanggal</div>
+            <div style="font-weight:500">{{ jadwal.tgl_seleksi|date:"d M Y" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8">Waktu</div>
+            <div style="font-weight:500">
+              {{ jadwal.jam_mulai|time:"H:i" }} — {{ jadwal.jam_selesai|time:"H:i" }}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="color:#94a3b8">Lokasi</div>
+            <div style="font-weight:500">{{ jadwal.lokasi|default:"-" }}</div>
+          </div>
+          {% if jadwal.link_online %}
+          <div class="col-12">
+            <div style="color:#94a3b8">Link Online</div>
+            <a href="{{ jadwal.link_online }}" target="_blank"
+               style="color:#667eea">{{ jadwal.link_online }}</a>
+          </div>
+          {% endif %}
+          {% if jadwal.keterangan %}
+          <div class="col-12">
+            <div style="color:#94a3b8">Keterangan</div>
+            <div style="background:#f8f9ff;padding:10px;border-radius:8px;
+                        font-size:.85rem">{{ jadwal.keterangan }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AKSI -->
+  <div class="col-md-4">
+    <div class="content-card">
+      <div class="content-card-header">
+        <div class="content-card-title">Aksi</div>
+      </div>
+      <div class="content-card-body">
+        {% if jadwal.status == 'draft' %}
+        <form method="post" class="mb-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="publish">
+          <button type="submit" class="btn-primary-custom w-100"
+                  style="justify-content:center">
+            <i class="bi bi-send"></i> Publish & Tambah Peserta Otomatis
+          </button>
+        </form>
+        <div style="font-size:.75rem;color:#94a3b8">
+          Semua pendaftar yang sudah Lulus Administrasi akan otomatis ditambahkan
+        </div>
+        {% elif jadwal.status == 'publish' %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="selesai">
+          <button type="submit"
+                  style="width:100%;padding:9px;border-radius:8px;border:none;
+                         background:#10b981;color:white;cursor:pointer;font-weight:500">
+            <i class="bi bi-check-all"></i> Tandai Selesai
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="content-card mt-3">
+      <div class="content-card-body" style="text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:#667eea">
+          {{ peserta_list.count }}
+        </div>
+        <div style="font-size:.85rem;color:#94a3b8">Total Peserta</div>
+        <div style="display:flex;justify-content:space-around;margin-top:12px;
+                    font-size:.8rem">
+          <div>
+            <div style="font-weight:600;color:#10b981">
+              {{ peserta_list|length }}
+            </div>
+            <div style="color:#94a3b8">Terdaftar</div>
+          </div>
+          <div>
+            <div style="font-weight:600;color:#3b82f6">
+              {{ jadwal.peserta.filter.count }}
+            </div>
+            <div style="color:#94a3b8">Hadir</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABEL PESERTA -->
+<div class="content-card">
+  <div class="content-card-header">
+    <div class="content-card-title">Daftar Peserta ({{ peserta_list.count }})</div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>No Ujian</th>
+          <th>Nama Peserta</th>
+          <th>No. Pendaftaran</th>
+          <th>Prodi Pilihan</th>
+          <th>Kehadiran</th>
+          <th>Nilai</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in peserta_list %}
+        <tr>
+          <td style="font-family:monospace;font-weight:600;color:#667eea">
+            {{ p.no_ujian }}
+          </td>
+          <td style="font-weight:500">{{ p.pendaftaran.user.get_full_name }}</td>
+          <td style="font-size:.8rem;font-family:monospace">
+            {{ p.pendaftaran.no_pendaftaran }}
+          </td>
+          <td style="font-size:.85rem">{{ p.pendaftaran.prodi_pilihan_1.nama_prodi }}</td>
+          <td>
+            <span class="badge-status
+              {% if p.status_kehadiran == 'hadir' %}badge-lulus
+              {% elif p.status_kehadiran == 'tidak_hadir' %}badge-tolak
+              {% elif p.status_kehadiran == 'izin' %}badge-terjadwal
+              {% else %}badge-draft{% endif %}">
+              {{ p.get_status_kehadiran_display }}
+            </span>
+          </td>
+          <td style="font-weight:600;color:#667eea">
+            {% if p.nilai %}{{ p.nilai }}{% else %}-{% endif %}
+          </td>
+          <td>
+            <button onclick="showNilai({{ p.pk }}, '{{ p.pendaftaran.user.get_full_name }}',
+                            '{{ p.status_kehadiran }}', '{{ p.nilai|default:'' }}')"
+                    class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+              Input Nilai
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;color:#94a3b8;padding:30px">
+            Belum ada peserta. Klik "Publish" untuk menambahkan peserta otomatis.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top:16px">
+  <a href="{% url 'admin_pmb:seleksi' %}"
+     style="color:#667eea;font-size:.875rem;text-decoration:none">
+    ← Kembali ke daftar jadwal
+  </a>
+</div>
+
+<!-- Modal Input Nilai -->
+<div id="modal-nilai" style="display:none;position:fixed;inset:0;
+     background:rgba(0,0,0,.4);z-index:999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:24px;width:420px">
+    <h6 style="font-weight:600;margin-bottom:4px">Input Nilai & Kehadiran</h6>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:16px" id="modal-peserta-nama"></p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="nilai">
+      <input type="hidden" name="peserta_id" id="input-peserta-id">
+      <div class="row g-3">
+        <div class="col-12">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Status Kehadiran
+          </label>
+          <select name="hadir" id="input-hadir"
+                  style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                         padding:8px 12px;font-size:.875rem;outline:none">
+            <option value="hadir">Hadir</option>
+            <option value="tidak_hadir">Tidak Hadir</option>
+            <option value="izin">Izin</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Nilai (0-100)
+          </label>
+          <input type="number" name="nilai" id="input-nilai"
+                 min="0" max="100" step="0.01"
+                 placeholder="Kosongkan jika belum dinilai"
+                 style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                        padding:8px 12px;font-size:.875rem;outline:none">
+        </div>
+        <div class="col-12">
+          <label style="font-size:.85rem;font-weight:500;margin-bottom:4px;display:block">
+            Catatan Penilai
+          </label>
+          <textarea name="catatan" rows="2"
+                    style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;
+                           padding:8px 12px;font-size:.875rem;outline:none;resize:none">
+          </textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button type="submit" class="btn-primary-custom" style="flex:1;justify-content:center">
+          Simpan
+        </button>
+        <button type="button" onclick="hideNilai()"
+                style="flex:1;padding:9px;border-radius:8px;
+                       border:1px solid #e2e8f0;background:white;cursor:pointer">
+          Batal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showNilai(id, nama, hadir, nilai) {
+  document.getElementById('input-peserta-id').value = id;
+  document.getElementById('modal-peserta-nama').textContent = nama;
+  document.getElementById('input-hadir').value = hadir || 'hadir';
+  document.getElementById('input-nilai').value = nilai || '';
+  document.getElementById('modal-nilai').style.display = 'flex';
+}
+function hideNilai() {
+  document.getElementById('modal-nilai').style.display = 'none';
+}
+</script>
+{% endblock %}
