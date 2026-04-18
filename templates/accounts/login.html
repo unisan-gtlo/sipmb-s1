@@ -5,19 +5,19 @@
 {% block content %}
 
 <div class="section-gradient">
-  <div class="container text-center" style="position:relative;z-index:1;padding:40px 0 70px">
-    <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-      <i class="bi bi-person-fill text-white" style="font-size:28px"></i>
+  <div class="container text-center" style="position:relative;z-index:1;padding:32px 0 30px">
+    <div style="width:96px;height:96px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15)">
+      <img src="/media/institusi/logo_unisan.png" alt="Logo UNISAN" style="width:100%;height:100%;object-fit:contain;">
     </div>
     <h1 style="font-size:1.8rem;font-weight:700;margin-bottom:8px">Masuk ke Akun</h1>
-    <p style="opacity:.85;font-size:.95rem">PMB Universitas Ichsan Gorontalo 2025/2026</p>
+    <p style="opacity:.85;font-size:.95rem;margin-bottom:0">PMB Universitas Ichsan Gorontalo</p>
   </div>
 </div>
 
-<div class="container" style="margin-top:-10px;padding-bottom:50px">
+<div class="container" style="margin-top:30px;padding-bottom:60px;position:relative;z-index:2">
   <div class="row justify-content-center">
     <div class="col-lg-5 col-md-7">
-      <div class="card-modern p-4">
+      <div class="card-modern login-card">
 
         <form method="post" novalidate id="loginForm">
           {% csrf_token %}
@@ -38,10 +38,10 @@
               {{ form.password }}
               <button type="button" id="togglePasswordBtn"
                       aria-label="Tampilkan password"
-                      style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                      style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
                              background:transparent;border:none;padding:6px;cursor:pointer;
                              opacity:0;pointer-events:none;transition:opacity .15s ease;
-                             color:#64748b">
+                             color:#64748b;z-index:3">
                 <i class="bi bi-eye" id="togglePasswordIcon" style="font-size:1.1rem"></i>
               </button>
             </div>
@@ -52,10 +52,7 @@
 
           <!-- CAPTCHA: Saya bukan robot -->
           <div class="mb-4">
-            <div class="captcha-box" id="captchaBox"
-                 style="border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;
-                        background:#f8fafc;transition:all .2s ease;cursor:pointer"
-                 onclick="document.getElementById('id_captcha_confirm').click()">
+            <div class="captcha-box" id="captchaBox" onclick="document.getElementById('id_captcha_confirm').click()">
               <div class="form-check d-flex align-items-center gap-2 mb-0">
                 {{ form.captcha_confirm }}
                 <label class="form-check-label mb-0" for="id_captcha_confirm"
@@ -73,7 +70,7 @@
 
           <!-- Tombol Masuk -->
           <div class="d-grid mb-3">
-            <button type="submit" class="btn-gradient btn">
+            <button type="submit" class="btn-gradient btn btn-login-submit">
               <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
             </button>
           </div>
@@ -98,26 +95,65 @@
   </div>
 </div>
 
-{# Fix posisi teks di input (email & password) + hover captcha #}
 <style>
-  /* Cukup tambah ruang untuk icon mata — padding dasar dari base_publik.html */
-  #loginForm input[type="password"] {
-    padding-right: 44px;
-  }
-  /* Card login - padding biar tidak mepet */
-  .card-modern {
+  /* =========================================================
+     LOGIN PAGE — Polish UI
+     ========================================================= */
+
+  /* Card login - rounded + shadow + spacing */
+  .login-card {
     padding: 2rem !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important;
+    border: none !important;
+    background: white;
   }
-  /* Beri nafas lebih ke input login */
+
+  /* Input fields: email, password, text — rounded konsisten */
+  #loginForm input[type="email"],
+  #loginForm input[type="password"],
+  #loginForm input[type="text"],
   #loginForm .form-control {
+    border-radius: 12px !important;
     padding: 12px 16px !important;
     min-height: 48px;
+    border: 1.5px solid #e5e7eb !important;
+    transition: all 0.2s ease !important;
+    font-size: 0.95rem !important;
   }
-  /* Tambah jarak label ke input (kasih "nafas") */
+
+  /* Input focus state */
+  #loginForm input[type="email"]:focus,
+  #loginForm input[type="password"]:focus,
+  #loginForm input[type="text"]:focus,
+  #loginForm .form-control:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12) !important;
+    outline: none !important;
+  }
+
+  /* Password field: tambah padding-right untuk icon mata */
+  #loginForm input[type="password"] {
+    padding-right: 44px !important;
+  }
+
+  /* Label form */
   #loginForm .form-label {
     margin-bottom: 10px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    font-size: 0.9rem !important;
   }
-  /* Captcha box */
+
+  /* Captcha box — rounded konsisten */
+  #captchaBox {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
   #captchaBox:hover {
     border-color: #a5b4fc;
     background: #f5f3ff;
@@ -125,6 +161,31 @@
   #captchaBox.captcha-checked {
     border-color: #10b981;
     background: #ecfdf5;
+  }
+
+  /* Captcha checkbox size */
+  #captchaBox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  /* Tombol Masuk — padding + rounded */
+  .btn-login-submit {
+    padding: 13px 24px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+  }
+
+  /* Responsive — di HP hero lebih compact */
+  @media (max-width: 768px) {
+    .section-gradient .container {
+      padding: 24px 0 24px !important;
+    }
+    .login-card {
+      padding: 1.5rem !important;
+    }
   }
 </style>
 
@@ -143,14 +204,13 @@
       } else {
         toggleBtn.style.opacity = '0';
         toggleBtn.style.pointerEvents = 'none';
-        // Reset ke mode tersembunyi kalau input dikosongkan
         pwdInput.type = 'password';
         toggleIcn.classList.remove('bi-eye-slash');
         toggleIcn.classList.add('bi-eye');
       }
     }
     pwdInput.addEventListener('input', syncIconVisibility);
-    syncIconVisibility(); // cek state awal (kalau browser auto-fill)
+    syncIconVisibility();
 
     toggleBtn.addEventListener('click', function() {
       const isHidden = pwdInput.type === 'password';
@@ -182,7 +242,7 @@
       }
     }
     cbCaptcha.addEventListener('change', syncCaptchaState);
-    syncCaptchaState(); // cek state awal
+    syncCaptchaState();
   }
 })();
 </script>

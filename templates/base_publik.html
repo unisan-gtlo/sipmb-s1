@@ -2,6 +2,9 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/media/institusi/logo_unisan.png">
+  <link rel="shortcut icon" type="image/png" href="/media/institusi/logo_unisan.png">
+  <link rel="apple-touch-icon" href="/media/institusi/logo_unisan.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}PMB UNISAN Gorontalo{% endblock %}</title>
 
@@ -317,53 +320,97 @@
   <!-- CONTENT -->
   {% block content %}{% endblock %}
 
-  <!-- FOOTER -->
-  <footer class="footer-pmb">
-    <div class="container">
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="fw-700 text-white mb-2" style="font-size:1rem;font-weight:700">PMB UNISAN Gorontalo</div>
-          <div style="font-size:.85rem;line-height:1.8">
-            Universitas Ichsan Gorontalo<br>
-            Jl. Achmad Nadjamuddin No. 17 Kota Gorontalo<br>
-            Gorontalo<br>
-            <a href="mailto:pmb@unisan-g.id">pmb@unisan-g.id</a>
-          </div>
+ <!-- FOOTER -->
+<footer class="footer-pmb">
+  <div class="container">
+    <div class="row g-4">
+
+      <!-- Kolom 1: Info Kampus (DINAMIS dari PengaturanSistem) -->
+      <div class="col-md-4">
+        <div class="fw-700 text-white mb-2" style="font-size:1rem;font-weight:700">
+          PMB UNISAN Gorontalo
+          {% if pengaturan.tahun_akademik_aktif %}
+            <span style="font-size:.8rem;font-weight:400;opacity:.75"> · {{ pengaturan.tahun_akademik_aktif }}</span>
+          {% endif %}
         </div>
-        <div class="col-md-2">
-          <div class="text-white fw-600 mb-2" style="font-size:.875rem;font-weight:600">Navigasi</div>
-          <div style="font-size:.85rem;display:flex;flex-direction:column;gap:6px">
-            <a href="/">Beranda</a>
-            <a href="#">Jalur Masuk</a>
-            <a href="#">Program Studi</a>
-            <a href="#">Jadwal PMB</a>
-          </div>
-        </div>
-        <div class="col-md-2">
-          <div class="text-white fw-600 mb-2" style="font-size:.875rem;font-weight:600">Informasi</div>
-          <div style="font-size:.85rem;display:flex;flex-direction:column;gap:6px">
-            <a href="#">Pengumuman</a>
-            <a href="#">FAQ</a>
-            <a href="#">Unduh Formulir</a>
-            <a href="#">Kontak PMB</a>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="text-white fw-600 mb-2" style="font-size:.875rem;font-weight:600">Sistem Lain</div>
-          <div style="font-size:.85rem;display:flex;flex-direction:column;gap:6px">
-            <a href="https://sso.unisan-g.id/"target="_blank">Portal SSO UNISAN</a>
-            <a href="#">PMB Pascasarjana</a>
-            <a href="#">PMB RPL</a>
-            <a href="https://unisan.ac.id/"target="_blank">Website UNISAN</a>
-          </div>
+        <div style="font-size:.85rem;line-height:1.8">
+          Universitas Ichsan Gorontalo<br>
+
+          {% if pengaturan.alamat_kampus %}
+            {{ pengaturan.alamat_kampus }}<br>
+          {% else %}
+            Jl. Achmad Nadjamuddin No. 17<br>
+            Kota Gorontalo<br>
+          {% endif %}
+
+          {% if pengaturan.email_pmb %}
+            <i class="bi bi-envelope me-1"></i>
+            <a href="mailto:{{ pengaturan.email_pmb }}" style="color:inherit;text-decoration:none">
+              {{ pengaturan.email_pmb }}
+            </a><br>
+          {% else %}
+            <i class="bi bi-envelope me-1"></i>
+            <a href="mailto:pmb@unisan-g.id" style="color:inherit;text-decoration:none">pmb@unisan-g.id</a><br>
+          {% endif %}
+
+          {% if pengaturan.no_telepon_pmb %}
+            <i class="bi bi-telephone me-1"></i>{{ pengaturan.no_telepon_pmb }}<br>
+          {% endif %}
+
+          {% if pengaturan.whatsapp_pmb %}
+            <i class="bi bi-whatsapp me-1"></i>
+            <a href="https://wa.me/{{ pengaturan.whatsapp_pmb|cut:' '|cut:'+'|cut:'-' }}"
+               target="_blank" rel="noopener"
+               style="color:inherit;text-decoration:none">
+              {{ pengaturan.whatsapp_pmb }}
+            </a>
+          {% endif %}
         </div>
       </div>
-      <hr style="border-color:rgba(255,255,255,0.1);margin:24px 0 16px">
-      <div style="font-size:.8rem;text-align:center">
-        © 2025 Pustikom — Universitas Ichsan Gorontalo. Semua hak dilindungi.
+
+      <!-- Kolom 2: Navigasi -->
+      <div class="col-md-2">
+        <div class="text-white fw-600 mb-2" style="font-size:.875rem;font-weight:600">Navigasi</div>
+        <div style="font-size:.85rem;display:flex;flex-direction:column;gap:6px">
+          <a href="/">Beranda</a>
+          <a href="/#jalur">Jalur Masuk</a>
+          <a href="/#prodi">Program Studi</a>
+          <a href="/#jadwal">Jadwal PMB</a>
+        </div>
       </div>
+
+      <!-- Kolom 3: Informasi -->
+      <div class="col-md-2">
+        <div class="text-white fw-600 mb-2" style="font-size:.875rem;font-weight:600">Informasi</div>
+        <div style="font-size:.85rem;display:flex;flex-direction:column;gap:6px">
+          <a href="/#pengumuman">Pengumuman</a>
+          <a href="/#faq">FAQ</a>
+          <a href="/dokumen/">Unduh Formulir</a>
+          <a href="/#kontak">Kontak PMB</a>
+        </div>
+      </div>
+
+      <!-- Kolom 4: Sistem Lain -->
+      <div class="col-md-4">
+        <div class="text-white fw-600 mb-2" style="font-size:.875rem;font-weight:600">Sistem Lain</div>
+        <div style="font-size:.85rem;display:flex;flex-direction:column;gap:6px">
+          <a href="https://sso.unisan-g.id/" target="_blank" rel="noopener">Portal SSO UNISAN</a>
+          <a href="#">PMB Pascasarjana</a>
+          <a href="#">PMB RPL</a>
+          <a href="https://unisan.ac.id/" target="_blank" rel="noopener">Website UNISAN</a>
+        </div>
+      </div>
+
     </div>
-  </footer>
+
+    <hr style="border-color:rgba(255,255,255,0.1);margin:24px 0 16px">
+
+    <div style="font-size:.8rem;text-align:center">
+      © {% now "Y" %} Pustikom — Universitas Ichsan Gorontalo. Semua hak dilindungi.
+    </div>
+
+  </div>
+</footer>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
