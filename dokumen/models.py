@@ -1,7 +1,7 @@
 from django.db import models
 from pendaftaran.models import Pendaftaran
 from master.models import PersyaratanJalur
-
+from utils.validators import validate_document_or_image
 
 class DokumenPendaftar(models.Model):
     STATUS_CHOICES = [
@@ -20,6 +20,7 @@ class DokumenPendaftar(models.Model):
     catatan_verifikasi= models.TextField(blank=True)
     tgl_upload        = models.DateTimeField(auto_now_add=True)
     tgl_verifikasi    = models.DateTimeField(null=True, blank=True)
+    validators=[validate_document_or_image],
     diverifikasi_oleh = models.ForeignKey(
         'accounts.User', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='dokumen_diverifikasi'

@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
+from django_ratelimit.decorators import ratelimit
 
 from .models import User
 from .forms import RegistrasiAwalForm, LoginForm
@@ -16,7 +17,7 @@ from konten.models import Pengumuman, Testimoni, MitraKerjasama, MediaSosial, Do
 
 logger = logging.getLogger(__name__)
 
-
+@ratelimit(key='ip', rate='5/h', method='POST', block=True)
 def registrasi(request):
     """Halaman registrasi awal calon maba"""
     # Ambil kode referral dari URL jika ada
@@ -149,7 +150,7 @@ def aktivasi_sukses(request):
         'pengaturan': pengaturan,
     })
 
-
+@ratelimit(key='ip', rate='10/m', method='POST', block=True) 
 def login_view(request):
     """Login untuk calon maba dan recruiter"""
     if request.user.is_authenticated:
@@ -346,6 +347,7 @@ def pengumuman_detail(request, pk):
     p = get_object_or_404(Pengumuman, pk=pk, status='aktif')
     return render(request, 'publik/pengumuman_detail.html', {'p': p})    
 
+@ratelimit(key='ip', rate='5/h', method='POST', block=True)
 def registrasi_recruiter(request):
     from django.contrib.auth import login
 

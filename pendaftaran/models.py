@@ -2,7 +2,7 @@ from django.db import models
 from accounts.models import User
 from master.models import JalurPenerimaan, GelombangPenerimaan, ProdiPMB
 import uuid
-
+from utils.validators import validate_image, validate_document_or_image
 
 def generate_no_pendaftaran():
     """Generate nomor pendaftaran unik: PMB-S1-2025-XXXXX"""
@@ -150,7 +150,7 @@ class ProfilPendaftar(models.Model):
     status_nikah    = models.CharField(max_length=15, choices=STATUS_NIKAH_CHOICES, default='belum_menikah')
     kebutuhan_khusus= models.CharField(max_length=100, blank=True)
     foto            = models.ImageField(upload_to='foto_pendaftar/', blank=True, null=True)
-
+    validators=[validate_image],
     # Alamat
     alamat_lengkap      = models.TextField(blank=True)
     provinsi_id         = models.BigIntegerField(null=True, blank=True)

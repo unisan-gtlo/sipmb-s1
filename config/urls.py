@@ -1,3 +1,10 @@
+from django.shortcuts import render
+
+def ratelimited_view(request, exception=None):
+    return render(request, '429.html', status=429)
+
+handler429 = 'config.urls.ratelimited_view'
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings

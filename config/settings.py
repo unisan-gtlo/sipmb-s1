@@ -43,6 +43,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'csp.middleware.CSPMiddleware', 
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'utils.sso_middleware.SSOAutoLoginMiddleware',  # SSO middleware
@@ -133,10 +134,25 @@ AXES_LOCKOUT_TEMPLATE = 'accounts/lockout.html'
 # PASSWORD VALIDATION
 # =============================================================
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'OPTIONS': {
+            'user_attributes': ('email', 'username', 'first_name', 'last_name'),
+            'max_similarity': 0.7,
+        },
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,  # Minimum 8 karakter (bisa dinaikkan ke 10 kalau strict)
+        },
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 # =============================================================
@@ -193,30 +209,104 @@ DUITKU_BASE_URL = 'https://sandbox.duitku.com/webapi/api/merchant' if DUITKU_SAN
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 ANTHROPIC_MODEL = 'claude-sonnet-4-6'
 
-# =============================================================
-# LOGGING
-# =============================================================
+# ============================================================
+# ========================== LOGGING =========================
+# ============================================================
+import os
+
+# Pastikan folder logs ada
+LOGS_DIR = BASE_DIR / 'logs'
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'sipmb.log',
+    
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] [{levelname}] [{name}] {message}',
+            'style': '{',
         },
-        'console': {
-            'class': 'logging.StreamHandler',
+        'simple': {
+            'format': '[{levelname}] {message}',
+            'style': '{',
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
+    
+    'handlers': {
+        # Log umum aplikasi
+        'app_file': {
             'level': 'INFO',
-            'propagate': True,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'sipmb.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        # Log khusus security events
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'security.log',
+            'maxBytes': 10 * 1024 * 1024,
+            'backupCount': 10,  # simpan lebih banyak
+            'formatter': 'verbose',
+        },
+        # Console (untuk development)
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    
+    'loggers': {
+        # Django core
+        'django': {
+            'handlers': ['app_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Django security events (HTTP 400, 500, CSRF, etc)
+        'django.security': {
+            'handlers': ['security_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Django request errors
+        'django.request': {
+            'handlers': ['security_file', 'app_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        # django-axes (brute force protection)
+        'axes': {
+            'handlers': ['security_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # django-ratelimit
+        'django_ratelimit': {
+            'handlers': ['security_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # App-specific loggers (custom log dari view kita)
+        'sipmb': {
+            'handlers': ['app_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'sipmb.security': {
+            'handlers': ['security_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
         },
     },
 }
+
+# ============================================================
+# ======================== END LOGGING =======================
+# ============================================================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -233,3 +323,153 @@ EMAIL_USE_TLS   = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL', default='PMB UNISAN <pmb@unisan-g.id>')
+
+# ============================================================
+# ===================== SECURITY SETTINGS ====================
+# ============================================================
+# Aktif hanya saat DEBUG=False (production)
+# Reference: https://docs.djangoproject.com/en/5.0/topics/security/
+
+if not DEBUG:
+    # --------------------- HTTPS ENFORCEMENT ---------------------
+    # Semua traffic harus HTTPS. Ini bekerja bareng dengan Nginx redirect.
+    SECURE_SSL_REDIRECT = True
+    
+    # Proxy header — Nginx kasih tahu Django kalau request aslinya HTTPS
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # HSTS — force browser selalu pakai HTTPS untuk domain ini
+    # Browser akan remember ini selama SECONDS detik
+    SECURE_HSTS_SECONDS = 31536000  # 1 tahun
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # --------------------- COOKIE SECURITY ---------------------
+    # Cookie hanya dikirim lewat HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Cookie tidak bisa diakses via JavaScript (prevent XSS mencuri cookie)
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+    
+    # SameSite — prevent CSRF attack via cross-site request
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    
+    # Session timeout — logout otomatis setelah 2 jam idle
+    SESSION_COOKIE_AGE = 7200  # 2 jam dalam detik
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # True = strict (logout saat browser ditutup)
+    
+    # --------------------- BROWSER SECURITY HEADERS ---------------------
+    # X-Content-Type-Options: nosniff
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # Referrer policy — kontrol info referrer yang dikirim ke situs lain
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    
+    # Cross-origin policies
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# --------------------- CSRF TRUSTED ORIGINS ---------------------
+# Django 4.0+ butuh ini untuk POST request cross-origin
+# Berlaku di production maupun development
+CSRF_TRUSTED_ORIGINS = [
+    'https://pmb.unisan-g.id',
+]
+
+# Kalau DEBUG, tambah juga localhost untuk development
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ]
+
+# --------------------- X-FRAME-OPTIONS ---------------------
+# Deny iframe embedding (prevent clickjacking)
+X_FRAME_OPTIONS = 'DENY'
+
+# --------------------- FILE UPLOAD LIMITS ---------------------
+# Batas ukuran upload — prevent server overflow
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  # max form fields per request
+
+# --------------------- ADMIN SECURITY ---------------------
+# Rename admin URL dari /admin/ ke non-standard
+# Tapi kita tidak rename karena Anda sudah familiar dengan /admin/
+# Kalau mau rename, ubah di config/urls.py dari path('admin/', ...) 
+# ke path('hogwarts-panel/', ...)
+
+# --------------------- LOG SQL INJECTION WARNINGS ---------------------
+# Django sudah protected dari SQL injection via ORM,
+# tapi kita log kalau ada query aneh
+
+# ============================================================
+# =================== END SECURITY SETTINGS ==================
+# ============================================================
+
+# ============================================================
+# ============= CONTENT SECURITY POLICY (CSP) ================
+# ============================================================
+# Prevent XSS: batasi sumber resource yang boleh di-load browser
+
+CSP_DEFAULT_SRC = ("'self'",)
+
+# CSS: self + CDN yang dipakai (Bootstrap, Google Fonts, dll)
+CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",  # needed untuk style inline di template (bisa diperketat nanti)
+    "https://cdn.jsdelivr.net",
+    "https://fonts.googleapis.com",
+    "https://cdnjs.cloudflare.com",
+)
+
+# JavaScript: self + CDN
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "'unsafe-inline'",  # needed untuk script inline (onclick, dll)
+    "https://cdn.jsdelivr.net",
+    "https://cdnjs.cloudflare.com",
+)
+
+# Fonts
+CSP_FONT_SRC = (
+    "'self'",
+    "https://fonts.gstatic.com",
+    "https://cdn.jsdelivr.net",
+    "data:",
+)
+
+# Images: self + data URI + HTTPS apa saja (karena user bisa upload foto)
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",
+    "https:",
+)
+
+# Media (audio/video)
+CSP_MEDIA_SRC = ("'self'",)
+
+# Iframe: tidak boleh
+CSP_FRAME_SRC = ("'none'",)
+
+# Iframe ancestors (siapa yang boleh embed site ini)
+CSP_FRAME_ANCESTORS = ("'none'",)
+
+# AJAX/Fetch connections
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://api.anthropic.com",  # untuk chatbot SINTA
+    "https://api.fonnte.com",     # untuk WhatsApp gateway
+)
+
+# Form action: cuma ke domain sendiri
+CSP_FORM_ACTION = ("'self'",)
+
+# Base URI: tidak boleh di-override via HTML
+CSP_BASE_URI = ("'self'",)
+
+# ============================================================
+# =============== END CONTENT SECURITY POLICY ================
+# ============================================================
