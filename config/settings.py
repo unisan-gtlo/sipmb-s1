@@ -410,6 +410,19 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  # max form fields per request
 # ============================================================
 
 # ============================================================
+# ================= RATE LIMIT CONFIGURATION =================
+# ============================================================
+# Karena kita pakai Nginx reverse proxy + Unix socket,
+# REMOTE_ADDR kosong. Ambil IP dari header X-Forwarded-For
+# yang di-set Nginx.
+#
+# Urutan: cek X-Forwarded-For dulu (standar), fallback ke X-Real-IP
+
+RATELIMIT_IP_META_KEY = 'HTTP_X_FORWARDED_FOR'
+
+# ============================================================
+
+# ============================================================
 # ============= CONTENT SECURITY POLICY (CSP) ================
 # ============================================================
 # Prevent XSS: batasi sumber resource yang boleh di-load browser
