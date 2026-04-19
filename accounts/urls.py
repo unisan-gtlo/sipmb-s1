@@ -17,4 +17,7 @@ urlpatterns = [
     path('api/sekolah/',               api.api_sekolah,         name='api_sekolah'),
     path('pengumuman/<int:pk>/', views.pengumuman_detail, name='pengumuman_detail'),
     path('daftar-recruiter/', views.registrasi_recruiter, name='registrasi_recruiter'),
+    # ===== API endpoints untuk filter dinamis registrasi =====
+    path('api/gelombang-by-jalur/', api.api_gelombang_by_jalur, name='api_gelombang_by_jalur'),
+    path('api/prodi-by-gelombang/', api.api_prodi_by_gelombang, name='api_prodi_by_gelombang'),
 ]
