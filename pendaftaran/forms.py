@@ -34,10 +34,10 @@ class ProfilDiriForm(forms.ModelForm):
         choices=[('', '-- Pilih Agama --')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    sumber_informasi = forms.ChoiceField(
-        choices=[('', '-- Darimana Anda tahu tentang UNISAN? --')] + ProfilPendaftar.SUMBER_INFO_CHOICES,
+    sumber_informasi = forms.MultipleChoiceField(
+        choices=ProfilPendaftar.SUMBER_INFO_CHOICES,
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'})
     )
 
     class Meta:
@@ -104,7 +104,7 @@ class ProfilDiriForm(forms.ModelForm):
                 self.fields['nama_lengkap'].initial = self.instance.pendaftaran.user.nama_lengkap
             except Exception:
                 pass
-                
+
         # ----- Isi choices provinsi & agama (selalu) -----
         try:
             provinsi_list = get_provinsi()

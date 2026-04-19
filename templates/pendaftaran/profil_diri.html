@@ -28,7 +28,7 @@
         Pastikan nama ini <strong>BENAR</strong>. Nama akan tercetak di kartu peserta dan dokumen resmi.
       </div>
     </div>
-    
+
     <div class="col-md-6">
       <label class="form-label">NIK <span class="text-danger">*</span></label>
       {{ form.nik }}
@@ -133,13 +133,28 @@
     <h6 class="mb-0" style="font-weight:600">Sumber Informasi PMB</h6>
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-6">
-      <label class="form-label">Dari mana Anda tahu tentang PMB UNISAN?</label>
-      {{ form.sumber_informasi }}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+      <label class="form-label">Dari mana Anda tahu tentang PMB UNISAN Gorontalo?
+        <small class="text-muted ms-2">(Boleh pilih lebih dari satu)</small>
+      </label>
+      <div class="p-3" style="background:#f8f9ff;border-radius:12px;border:1.5px solid #e2e8f0">
+        <div class="row g-2">
+          {% for checkbox in form.sumber_informasi %}
+          <div class="col-md-6 col-lg-4">
+            <div class="form-check">
+              {{ checkbox.tag }}
+              <label class="form-check-label" for="{{ checkbox.id_for_label }}" style="font-size:.875rem">
+                {{ checkbox.choice_label }}
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
     </div>
-    <div class="col-md-6" id="div_sumber_lain" style="display:none">
-      <label class="form-label">Sebutkan sumbernya</label>
+    <div class="col-12" id="div_sumber_lain" style="display:none">
+      <label class="form-label">Sebutkan sumber lainnya</label>
       {{ form.sumber_informasi_lain }}
     </div>
   </div>
@@ -195,103 +210,131 @@ document.getElementById('id_kecamatan').addEventListener('change', function() {
 });
 
 // ===== WILAYAH SEKOLAH =====
-document.getElementById('id_sekolah_provinsi').addEventListener('change', function() {
-  const provId = this.value;
-  resetSelect('id_sekolah_kabupaten', '-- Pilih Kabupaten/Kota --');
-  resetSekolah();
-  if (!provId) return;
-  fetch(API_KAB + '?provinsi_id=' + provId)
-    .then(r => r.json())
-    .then(data => {
-      const sel = document.getElementById('id_sekolah_kabupaten');
-      sel.innerHTML = '<option value="">-- Pilih Kabupaten/Kota --</option>';
-      data.data.forEach(k => {
-        sel.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+const elSekolahProv = document.getElementById('id_sekolah_provinsi');
+if (elSekolahProv) {
+  elSekolahProv.addEventListener('change', function() {
+    const provId = this.value;
+    resetSelect('id_sekolah_kabupaten', '-- Pilih Kabupaten/Kota --');
+    resetSekolah();
+    if (!provId) return;
+    fetch(API_KAB + '?provinsi_id=' + provId)
+      .then(r => r.json())
+      .then(data => {
+        const sel = document.getElementById('id_sekolah_kabupaten');
+        sel.innerHTML = '<option value="">-- Pilih Kabupaten/Kota --</option>';
+        data.data.forEach(k => {
+          sel.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+        });
       });
-    });
-});
+  });
+}
 
-document.getElementById('id_sekolah_kabupaten').addEventListener('change', function() {
-  resetSekolah();
-});
+const elSekolahKab = document.getElementById('id_sekolah_kabupaten');
+if (elSekolahKab) {
+  elSekolahKab.addEventListener('change', function() {
+    resetSekolah();
+  });
+}
 
 // ===== AUTOCOMPLETE SEKOLAH =====
 let sekolahTimeout;
-document.getElementById('id_sekolah_nama_input').addEventListener('input', function() {
-  const q       = this.value;
-  const provId  = document.getElementById('id_sekolah_provinsi').value;
-  const kabId   = document.getElementById('id_sekolah_kabupaten').value;
-  clearTimeout(sekolahTimeout);
-  if (q.length < 3) {
-    document.getElementById('sekolah_suggestions').style.display = 'none';
-    return;
-  }
-  sekolahTimeout = setTimeout(() => {
-    let url = API_SEKOLAH + '?q=' + encodeURIComponent(q);
-    if (kabId)  url += '&kabupaten_kota_id=' + kabId;
-    else if (provId) url += '&provinsi_id=' + provId;
-    fetch(url)
-      .then(r => r.json())
-      .then(data => {
-        const div = document.getElementById('sekolah_suggestions');
-        if (!data.data.length) {
-          div.innerHTML = `<div style="padding:10px 14px;font-size:.85rem;color:#94a3b8">
-            Sekolah tidak ditemukan — nama akan disimpan manual</div>`;
-          // Simpan input manual
-          document.querySelector('[name=asal_sekolah]').value = q;
-          document.querySelector('[name=sekolah_id]').value   = '';
-          document.querySelector('[name=npsn]').value          = '';
-        } else {
-          div.innerHTML = data.data.map(s => `
-            <div onclick="pilihSekolah(${s.id}, '${s.nama_sekolah.replace(/'/g,"\\'")}', '${s.npsn}')"
-                 style="padding:10px 14px;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9"
-                 onmouseover="this.style.background='#f8f9ff'"
-                 onmouseout="this.style.background='white'">
-              <div style="font-weight:500">${s.nama_sekolah}</div>
-              <div style="font-size:.75rem;color:#94a3b8">NPSN: ${s.npsn}</div>
-            </div>
-          `).join('');
-        }
-        div.style.display = 'block';
-      });
-  }, 400);
-});
+const elSekolahInput = document.getElementById('id_sekolah_nama_input');
+if (elSekolahInput) {
+  elSekolahInput.addEventListener('input', function() {
+    const q       = this.value;
+    const provId  = document.getElementById('id_sekolah_provinsi').value;
+    const kabId   = document.getElementById('id_sekolah_kabupaten').value;
+    clearTimeout(sekolahTimeout);
+    if (q.length < 3) {
+      document.getElementById('sekolah_suggestions').style.display = 'none';
+      return;
+    }
+    sekolahTimeout = setTimeout(() => {
+      let url = API_SEKOLAH + '?q=' + encodeURIComponent(q);
+      if (kabId)  url += '&kabupaten_kota_id=' + kabId;
+      else if (provId) url += '&provinsi_id=' + provId;
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          const div = document.getElementById('sekolah_suggestions');
+          if (!data.data.length) {
+            div.innerHTML = `<div style="padding:10px 14px;font-size:.85rem;color:#94a3b8">
+              Sekolah tidak ditemukan - nama akan disimpan manual</div>`;
+            document.querySelector('[name=asal_sekolah]').value = q;
+            document.querySelector('[name=sekolah_id]').value   = '';
+            document.querySelector('[name=npsn]').value          = '';
+          } else {
+            div.innerHTML = data.data.map(s => `
+              <div onclick="pilihSekolah(${s.id}, '${s.nama_sekolah.replace(/'/g,"\\'")}', '${s.npsn}')"
+                   style="padding:10px 14px;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9"
+                   onmouseover="this.style.background='#f8f9ff'"
+                   onmouseout="this.style.background='white'">
+                <div style="font-weight:500">${s.nama_sekolah}</div>
+                <div style="font-size:.75rem;color:#94a3b8">NPSN: ${s.npsn}</div>
+              </div>
+            `).join('');
+          }
+          div.style.display = 'block';
+        });
+    }, 400);
+  });
+}
 
 function pilihSekolah(id, nama, npsn) {
   document.querySelector('[name=sekolah_id]').value   = id;
   document.querySelector('[name=asal_sekolah]').value = nama;
   document.querySelector('[name=npsn]').value          = npsn;
-  document.getElementById('id_sekolah_nama_input').value = nama;
+  const el = document.getElementById('id_sekolah_nama_input');
+  if (el) el.value = nama;
   document.getElementById('sekolah_suggestions').style.display = 'none';
   document.getElementById('sekolah_terpilih').style.display    = 'block';
   document.getElementById('sekolah_terpilih_nama').textContent = nama;
-  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+  if (el) el.style.display = 'none';
 }
 
 function resetSekolah() {
-  document.querySelector('[name=sekolah_id]').value   = '';
-  document.querySelector('[name=asal_sekolah]').value = '';
-  document.querySelector('[name=npsn]').value          = '';
-  document.getElementById('id_sekolah_nama_input').value = '';
-  document.getElementById('id_sekolah_nama_input').style.display = 'block';
-  document.getElementById('sekolah_suggestions').style.display   = 'none';
-  document.getElementById('sekolah_terpilih').style.display      = 'none';
+  const elSekolahId = document.querySelector('[name=sekolah_id]');
+  const elAsalSekolah = document.querySelector('[name=asal_sekolah]');
+  const elNpsn = document.querySelector('[name=npsn]');
+  const elInput = document.getElementById('id_sekolah_nama_input');
+  const elSuggestions = document.getElementById('sekolah_suggestions');
+  const elTerpilih = document.getElementById('sekolah_terpilih');
+  if (elSekolahId) elSekolahId.value = '';
+  if (elAsalSekolah) elAsalSekolah.value = '';
+  if (elNpsn) elNpsn.value = '';
+  if (elInput) {
+    elInput.value = '';
+    elInput.style.display = 'block';
+  }
+  if (elSuggestions) elSuggestions.style.display = 'none';
+  if (elTerpilih) elTerpilih.style.display = 'none';
 }
 
-// ===== JURUSAN → simpan nama =====
-document.getElementById('id_jurusan').addEventListener('change', function() {
-  document.querySelector('[name=jurusan_sekolah]').value =
-    this.value ? this.options[this.selectedIndex].text : '';
+// ===== JURUSAN -> simpan nama =====
+const elJurusan = document.getElementById('id_jurusan');
+if (elJurusan) {
+  elJurusan.addEventListener('change', function() {
+    document.querySelector('[name=jurusan_sekolah]').value =
+      this.value ? this.options[this.selectedIndex].text : '';
+  });
+}
+
+// ===== SUMBER INFORMASI (multi-checkbox) =====
+function updateSumberLain() {
+  const checkboxes = document.querySelectorAll('input[name=sumber_informasi]:checked');
+  let adaLainnya = false;
+  checkboxes.forEach(cb => {
+    if (cb.value === 'lainnya') adaLainnya = true;
+  });
+  document.getElementById('div_sumber_lain').style.display = adaLainnya ? 'block' : 'none';
+}
+
+document.querySelectorAll('input[name=sumber_informasi]').forEach(cb => {
+  cb.addEventListener('change', updateSumberLain);
 });
 
-// ===== SUMBER INFORMASI =====
-document.querySelector('[name=sumber_informasi]').addEventListener('change', function() {
-  document.getElementById('div_sumber_lain').style.display =
-    this.value === 'lainnya' ? 'block' : 'none';
-});
-if (document.querySelector('[name=sumber_informasi]').value === 'lainnya') {
-  document.getElementById('div_sumber_lain').style.display = 'block';
-}
+// Initial check on page load
+updateSumberLain();
 
 // ===== HELPERS =====
 function fetchOptions(url, selectId, placeholder) {
@@ -312,11 +355,17 @@ function resetSelect(id, label) {
 }
 
 // Cek jika sekolah sudah dipilih sebelumnya
-const existingSekolah = document.querySelector('[name=asal_sekolah]').value;
-if (existingSekolah) {
-  document.getElementById('sekolah_terpilih').style.display    = 'block';
-  document.getElementById('sekolah_terpilih_nama').textContent = existingSekolah;
-  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+const elAsalSekolahCheck = document.querySelector('[name=asal_sekolah]');
+if (elAsalSekolahCheck) {
+  const existingSekolah = elAsalSekolahCheck.value;
+  if (existingSekolah) {
+    const elT = document.getElementById('sekolah_terpilih');
+    const elTN = document.getElementById('sekolah_terpilih_nama');
+    const elInp = document.getElementById('id_sekolah_nama_input');
+    if (elT) elT.style.display = 'block';
+    if (elTN) elTN.textContent = existingSekolah;
+    if (elInp) elInp.style.display = 'none';
+  }
 }
 </script>
 {% endblock %}

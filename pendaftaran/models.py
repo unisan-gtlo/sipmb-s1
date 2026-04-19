@@ -285,7 +285,9 @@ class ProfilPendaftar(models.Model):
     prestasi        = models.TextField(blank=True)
 
     # Sumber informasi
-    sumber_informasi      = models.CharField(max_length=20, choices=SUMBER_INFO_CHOICES, blank=True)
+    # Sumber informasi (multi-select, stored as JSON list of codes)
+    # Example: ['instagram', 'teman', 'brosur']
+    sumber_informasi      = models.JSONField(default=list, blank=True)
     sumber_informasi_lain = models.CharField(max_length=200, blank=True)
 
     tgl_diupdate    = models.DateTimeField(auto_now=True)

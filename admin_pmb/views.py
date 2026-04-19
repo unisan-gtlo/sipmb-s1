@@ -505,12 +505,15 @@ def laporan(request):
         total=Count('id')
     ).order_by('-total')[:20]
 
-    # Per sumber informasi
+ # Per sumber informasi (multi-select JSONField)
     per_sumber = ProfilPendaftar.objects.exclude(
-        sumber_informasi=''
+        sumber_informasi=[]
+    ).exclude(
+        sumber_informasi__isnull=True
     ).values('sumber_informasi').annotate(
         total=Count('id')
     ).order_by('-total')
+
 
     # Ukuran baju
     per_ukuran = ProfilPendaftar.objects.exclude(
@@ -853,7 +856,8 @@ def export_pendaftar(request):
             profil.tahun_lulus if profil else '',
             str(profil.nilai_rata_rata) if profil and profil.nilai_rata_rata else '',
             profil.ukuran_baju if profil else '',
-            profil.get_sumber_informasi_display() if profil and profil.sumber_informasi else '',
+            ', '.join([dict(ProfilPendaftar.SUMBER_INFO_CHOICES).get(s, s) for s in (profil.sumber_informasi or [])]) if profil else '',
+           
             p.kode_referral or '',
         ]
 
@@ -1084,17 +1088,25 @@ def export_wilayah(request):
     # Sheet 4 — Sumber Informasi
     ws4 = wb.create_sheet('Sumber Informasi')
     set_header(ws4, ['No','Sumber Informasi','Jumlah','%'], [5,30,15,10])
-    per_src = ProfilPendaftar.objects.exclude(sumber_informasi='').values(
-        'sumber_informasi').annotate(total=Count('id')).order_by('-total')
-    total4 = sum(p['total'] for p in per_src)
+
+    # Per sumber informasi (multi-select JSONField)
+    from collections import Counter
+    all_sumber = []
+    for profil in ProfilPendaftar.objects.exclude(sumber_informasi=[]).exclude(sumber_informasi__isnull=True):
+        if isinstance(profil.sumber_informasi, list):
+            all_sumber.extend(profil.sumber_informasi)
+    counter = Counter(all_sumber)
+    total4 = sum(counter.values())
     sumber_map = dict(ProfilPendaftar.SUMBER_INFO_CHOICES)
-    for i, p in enumerate(per_src, 2):
-        pct = f"{p['total']/total4*100:.1f}%" if total4 else '0%'
-        label = sumber_map.get(p['sumber_informasi'], p['sumber_informasi'])
-        for col, val in enumerate([i-1, label, p['total'], pct], 1):
+    for i, (kode, total) in enumerate(counter.most_common(), 2):
+        pct = f"{total/total4*100:.1f}%" if total4 else '0%'
+        label = sumber_map.get(kode, kode)
+        for col, val in enumerate([i-1, label, total, pct], 1):
             c = ws4.cell(i, col, val); c.border = th
             if i%2==0: c.fill = PatternFill(fill_type='solid', fgColor='F8F9FF')
 
+
+    
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
