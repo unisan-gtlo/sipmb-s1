@@ -418,7 +418,10 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  # max form fields per request
 #
 # Urutan: cek X-Forwarded-For dulu (standar), fallback ke X-Real-IP
 
-RATELIMIT_IP_META_KEY = 'HTTP_X_FORWARDED_FOR'
+RATELIMIT_IP_META_KEY = lambda request: (
+    request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    or request.META.get('REMOTE_ADDR', '')
+)
 
 # ============================================================
 

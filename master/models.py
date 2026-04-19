@@ -16,7 +16,29 @@ class JalurPenerimaan(models.Model):
     ada_wawancara= models.BooleanField(default=False)
     status       = models.CharField(max_length=10, choices=STATUS_CHOICES, default='aktif')
     urutan       = models.IntegerField(default=0)
-
+    # === TAMBAHAN: Tampilan di web publik ===
+    icon = models.CharField(
+        max_length=50,
+        default='ti-school',
+        help_text="Nama icon Tabler (contoh: ti-school, ti-pencil, ti-star, ti-trophy)",
+        verbose_name="Icon"
+    )
+    warna = models.CharField(
+        max_length=20,
+        default='purple',
+        choices=[
+            ('purple', 'Ungu'),
+            ('blue', 'Biru'),
+            ('green', 'Hijau'),
+            ('red', 'Merah'),
+            ('orange', 'Oranye'),
+            ('teal', 'Teal'),
+            ('pink', 'Pink'),
+            ('indigo', 'Indigo'),
+        ],
+        help_text="Warna gradient icon jalur",
+        verbose_name="Warna Tampilan"
+    )
     class Meta:
         db_table    = 'pmb\".\"jalur_penerimaan'
         ordering    = ['urutan', 'nama_jalur']

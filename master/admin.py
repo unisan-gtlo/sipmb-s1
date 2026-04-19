@@ -19,11 +19,64 @@ class ProdiPMBInline(admin.TabularInline):
 
 @admin.register(JalurPenerimaan)
 class JalurPenerimaanAdmin(admin.ModelAdmin):
-    list_display  = ['kode_jalur', 'nama_jalur', 'ada_tes', 'ada_wawancara', 'status', 'urutan']
-    list_filter   = ['status', 'ada_tes', 'ada_wawancara']
+    list_display = ['kode_jalur', 'nama_jalur', 'icon_preview', 'warna_badge', 'ada_tes', 'ada_wawancara', 'status', 'urutan']
+    list_filter = ['status', 'warna', 'ada_tes', 'ada_wawancara']
     search_fields = ['kode_jalur', 'nama_jalur']
-    ordering      = ['urutan']
-    inlines       = [PersyaratanInline]
+    list_editable = ['status', 'urutan']
+    ordering = ['urutan']
+    
+    class Media:
+        css = {
+            'all': ('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css',)
+        }
+
+    fieldsets = (
+        ('Data Utama', {
+            'fields': ('kode_jalur', 'nama_jalur', 'deskripsi', 'syarat_umum')
+        }),
+        ('Seleksi', {
+            'fields': ('ada_tes', 'ada_wawancara')
+        }),
+        ('Tampilan di Web', {
+            'fields': ('icon', 'warna'),
+            'description': (
+                '<b>Icon:</b> Gunakan Bootstrap Icons. Contoh populer:<br>'
+                '• <code>bi-pencil-square</code> — pensil (Reguler)<br>'
+                '• <code>bi-trophy-fill</code> — trofi (Prestasi/Undangan)<br>'
+                '• <code>bi-mortarboard-fill</code> — topi wisuda (Beasiswa)<br>'
+                '• <code>bi-arrow-left-right</code> — panah (Pindahan)<br>'
+                '• <code>bi-building-fill</code> — gedung (Kemitraan)<br>'
+                '• <code>bi-star-fill</code>, <code>bi-award-fill</code>, <code>bi-heart-fill</code><br>'
+                'Daftar lengkap: <a href="https://icons.getbootstrap.com/" target="_blank">icons.getbootstrap.com</a>'
+            )
+        }),
+        ('Status & Urutan', {
+            'fields': ('status', 'urutan')
+        }),
+    )
+    
+    def icon_preview(self, obj):
+        from django.utils.html import format_html
+        return format_html(
+            '<i class="bi {}" style="font-size:20px;color:#667eea"></i> <code>{}</code>',
+            obj.icon, obj.icon
+        )
+    icon_preview.short_description = 'Preview Icon'
+    
+    def warna_badge(self, obj):
+        from django.utils.html import format_html
+        color_map = {
+            'purple': '#764ba2', 'blue': '#1d4ed8', 'green': '#059669',
+            'orange': '#d97706', 'red': '#dc2626', 'teal': '#0d9488',
+            'pink': '#db2777', 'indigo': '#4f46e5', 'yellow': '#ca8a04',
+            'cyan': '#0891b2',
+        }
+        color = color_map.get(obj.warna, '#667eea')
+        return format_html(
+            '<span style="display:inline-block;padding:3px 10px;background:{};color:white;border-radius:8px;font-size:12px;font-weight:600">{}</span>',
+            color, obj.get_warna_display() if hasattr(obj, 'get_warna_display') else obj.warna
+        )
+    warna_badge.short_description = 'Warna'
 
 
 @admin.register(GelombangPenerimaan)

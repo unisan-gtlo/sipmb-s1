@@ -148,7 +148,7 @@
 </div>
 {% endif %}
 
-<<!-- JALUR PENERIMAAN -->
+<!-- JALUR PENERIMAAN -->
 <div id="jalur" style="padding:60px 0;background:white">
   <div class="container">
     <div style="text-align:center;margin-bottom:36px">
@@ -168,17 +168,12 @@
            onmouseover="this.style.borderColor='#667eea';this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(102,126,234,.15)'"
            onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='translateY(0)';this.style.boxShadow='none'">
 
-          <!-- Icon -->
-          <div style="width:60px;height:60px;border-radius:16px;
-                      background:linear-gradient(135deg,#667eea,#764ba2);
+          <!-- Icon (dari database: jalur.icon + jalur.warna_gradient) -->
+          <div class="jalur-icon-{{ jalur.warna|default:'purple' }}"
+               style="width:60px;height:60px;border-radius:16px;
                       display:flex;align-items:center;justify-content:center;
                       margin:0 auto 16px">
-            <i class="bi bi-{% if jalur.kode_jalur == 'REG' %}pencil-square
-                {% elif jalur.kode_jalur == 'BIUS' %}award-fill
-                {% elif jalur.kode_jalur == 'PRES' %}trophy-fill
-                {% elif jalur.kode_jalur == 'MITRA' %}building
-                {% elif jalur.kode_jalur == 'UND' %}envelope-open-fill
-                {% else %}mortarboard-fill{% endif %} text-white"
+            <i class="bi {{ jalur.icon|default:'bi-mortarboard-fill' }} text-white"
                style="font-size:24px"></i>
           </div>
 
@@ -214,9 +209,9 @@
             {% endif %}
           </div>
 
-          <!-- Tombol -->
-          <div style="background:linear-gradient(135deg,#667eea,#764ba2);
-                      color:white;padding:8px 20px;border-radius:8px;
+          <!-- Tombol (warna menyesuaikan warna_gradient dari database) -->
+          <div class="jalur-icon-{{ jalur.warna|default:'purple' }}"
+               style="color:white;padding:8px 20px;border-radius:8px;
                       font-size:.8rem;font-weight:600;display:inline-block">
             Daftar Jalur Ini →
           </div>
