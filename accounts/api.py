@@ -102,3 +102,30 @@ def api_prodi_by_gelombang(request):
     ]
     
     return JsonResponse({'prodis': data})
+
+@require_GET
+def api_jurusan_by_jenjang(request):
+    """
+    Return list jurusan berdasarkan kode jenis_sekolah (SMA/SMK/MA/MAK/PAKET_C).
+    Endpoint: /accounts/api/jurusan-by-jenjang/?kode=SMA
+    """
+    from pendaftaran.models import ProfilPendaftar
+    
+    kode_jenjang = request.GET.get('kode', '').upper().strip()
+    
+    if not kode_jenjang:
+        return JsonResponse({'jurusan': []})
+    
+    # Get list kode jurusan yang valid untuk jenjang ini
+    valid_codes = ProfilPendaftar.JURUSAN_PER_JENJANG.get(kode_jenjang, [])
+    
+    # Map kode → label dari JURUSAN_CHOICES
+    jurusan_dict = dict(ProfilPendaftar.JURUSAN_CHOICES)
+    
+    # Build response
+    data = [
+        {'kode': kode, 'label': jurusan_dict.get(kode, kode)}
+        for kode in valid_codes
+    ]
+    
+    return JsonResponse({'jurusan': data})

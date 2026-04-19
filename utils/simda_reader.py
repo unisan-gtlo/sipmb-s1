@@ -50,24 +50,26 @@ def get_kecamatan(kabupaten_kota_id=None):
 # ============================================================
 
 def get_sekolah(query=None, provinsi_id=None, kabupaten_kota_id=None):
-    """Autocomplete sekolah"""
+    """Autocomplete sekolah, return juga kode jenjang (SMA/SMK/MA/MAK)"""
     sql = """
-        SELECT id, npsn, nama_sekolah, alamat,
-               kabupaten_kota_id, provinsi_id
-        FROM master.sekolah
-        WHERE status = true
+        SELECT s.id, s.npsn, s.nama_sekolah, s.alamat,
+               s.kabupaten_kota_id, s.provinsi_id,
+               s.jenis_sekolah_id, js.kode AS jenjang_kode
+        FROM master.sekolah s
+        LEFT JOIN master.jenis_sekolah js ON s.jenis_sekolah_id = js.id
+        WHERE s.status = true
     """
     params = []
     if query:
-        sql += " AND LOWER(nama_sekolah) LIKE LOWER(%s)"
+        sql += " AND LOWER(s.nama_sekolah) LIKE LOWER(%s)"
         params.append(f'%{query}%')
     if kabupaten_kota_id:
-        sql += " AND kabupaten_kota_id = %s"
+        sql += " AND s.kabupaten_kota_id = %s"
         params.append(kabupaten_kota_id)
     elif provinsi_id:
-        sql += " AND provinsi_id = %s"
+        sql += " AND s.provinsi_id = %s"
         params.append(provinsi_id)
-    sql += " ORDER BY nama_sekolah LIMIT 20"
+    sql += " ORDER BY s.nama_sekolah LIMIT 20"
     return _fetch(sql, params)
 
 

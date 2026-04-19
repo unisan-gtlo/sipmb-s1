@@ -60,8 +60,17 @@
     <div class="col-md-6">
       <label class="form-label">Jurusan</label>
       {{ form.jurusan_id }}
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:4px" id="jurusan_hint">
+        Pilih sekolah dulu untuk filter jurusan sesuai jenjang
+      </div>
     </div>
-  </div>
+    <div class="col-md-6" id="div_jurusan_manual" style="display:none">
+      <label class="form-label">Tulis Jurusan Manual</label>
+      {{ form.jurusan_manual }}
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:4px">
+        Contoh: Teknik Farmasi, Keperawatan Gigi, dll
+      </div>
+    </div>
 
   <hr style="border-color:#f0f0f0">
 
@@ -152,12 +161,12 @@ document.getElementById('id_sekolah_nama_input').addEventListener('input', funct
         document.querySelector('[name=npsn]').value         = '';
       } else {
         div.innerHTML = data.data.map(s => `
-          <div onclick="pilihSekolah(${s.id},'${s.nama_sekolah.replace(/'/g,"\\'")}','${s.npsn}')"
+          <div onclick="pilihSekolah(${s.id},'${s.nama_sekolah.replace(/'/g,"\\'")}','${s.npsn}','${s.jenjang_kode || ''}')"
                style="padding:10px 14px;cursor:pointer;font-size:.85rem;border-bottom:1px solid #f1f5f9"
                onmouseover="this.style.background='#f8f9ff'"
                onmouseout="this.style.background='white'">
             <div style="font-weight:500">${s.nama_sekolah}</div>
-            <div style="font-size:.75rem;color:#94a3b8">NPSN: ${s.npsn}</div>
+            <div style="font-size:.75rem;color:#94a3b8">NPSN: ${s.npsn} — ${s.jenjang_kode || 'Jenjang tidak diketahui'}</div>
           </div>`).join('');
       }
       div.style.display = 'block';
@@ -165,7 +174,7 @@ document.getElementById('id_sekolah_nama_input').addEventListener('input', funct
   }, 400);
 });
 
-function pilihSekolah(id, nama, npsn) {
+function pilihSekolah(id, nama, npsn, jenjangKode) {
   document.querySelector('[name=sekolah_id]').value   = id;
   document.querySelector('[name=asal_sekolah]').value = nama;
   document.querySelector('[name=npsn]').value         = npsn;
@@ -174,6 +183,11 @@ function pilihSekolah(id, nama, npsn) {
   document.getElementById('sekolah_terpilih').style.display    = 'block';
   document.getElementById('sekolah_terpilih_nama').textContent = nama;
   document.getElementById('id_sekolah_nama_input').style.display = 'none';
+  
+  // Trigger filter jurusan sesuai jenjang sekolah
+  if (typeof filterJurusanByJenjang === 'function') {
+    filterJurusanByJenjang(jenjangKode);
+  }
 }
 
 function resetSekolah() {
@@ -186,22 +200,70 @@ function resetSekolah() {
   document.getElementById('sekolah_terpilih').style.display       = 'none';
 }
 
-// Jurusan → simpan nama
-document.getElementById('id_jurusan').addEventListener('change', function() {
-  document.querySelector('[name=jurusan_sekolah]').value =
-    this.value ? this.options[this.selectedIndex].text : '';
-});
+// ===== JURUSAN DINAMIS BERDASARKAN JENJANG SEKOLAH =====
 
-function resetSelect(id, label) {
-  document.getElementById(id).innerHTML = `<option value="">${label}</option>`;
+// Store semua option jurusan untuk filtering
+const jurusanSelect = document.getElementById('id_jurusan');
+const allJurusanOptions = Array.from(jurusanSelect.options).map(opt => ({
+  value: opt.value,
+  text: opt.text,
+}));
+
+function filterJurusanByJenjang(kodeJenjang) {
+  if (!kodeJenjang) {
+    // No sekolah dipilih → tampil semua
+    jurusanSelect.innerHTML = '';
+    allJurusanOptions.forEach(opt => {
+      jurusanSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
+    });
+    document.getElementById('jurusan_hint').textContent = 'Pilih sekolah dulu untuk filter jurusan sesuai jenjang';
+    return;
+  }
+  
+  fetch(`/accounts/api/jurusan-by-jenjang/?kode=${encodeURIComponent(kodeJenjang)}`)
+    .then(r => r.json())
+    .then(data => {
+      const savedValue = jurusanSelect.value;
+      jurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
+      data.jurusan.forEach(j => {
+        jurusanSelect.innerHTML += `<option value="${j.kode}">${j.label}</option>`;
+      });
+      // Restore value kalau masih valid
+      if (savedValue) {
+        jurusanSelect.value = savedValue;
+      }
+      document.getElementById('jurusan_hint').textContent = `Jurusan untuk jenjang ${kodeJenjang}`;
+    })
+    .catch(err => console.error('Error fetch jurusan:', err));
 }
 
-// Cek jika sekolah sudah dipilih
-const existingSekolah = document.querySelector('[name=asal_sekolah]').value;
-if (existingSekolah) {
-  document.getElementById('sekolah_terpilih').style.display    = 'block';
-  document.getElementById('sekolah_terpilih_nama').textContent = existingSekolah;
-  document.getElementById('id_sekolah_nama_input').style.display = 'none';
+// Saat jurusan diubah → simpan nama + toggle field manual
+jurusanSelect.addEventListener('change', function() {
+  const selected = this.options[this.selectedIndex];
+  document.querySelector('[name=jurusan_sekolah]').value = this.value ? selected.text : '';
+  
+  // Show/hide field manual kalau pilih "Lainnya"
+  const divManual = document.getElementById('div_jurusan_manual');
+  if (this.value === 'lainnya') {
+    divManual.style.display = 'block';
+  } else {
+    divManual.style.display = 'none';
+  }
+});
+
+// Saat user ketik manual → update jurusan_sekolah juga
+const jurusanManual = document.getElementById('id_jurusan_manual');
+if (jurusanManual) {
+  jurusanManual.addEventListener('input', function() {
+    if (jurusanSelect.value === 'lainnya') {
+      document.querySelector('[name=jurusan_sekolah]').value = this.value;
+    }
+  });
+}
+
+// Initial check saat load page (jika jurusan_id sudah 'lainnya')
+if (jurusanSelect.value === 'lainnya') {
+  document.getElementById('div_jurusan_manual').style.display = 'block';
 }
 </script>
 {% endblock %}

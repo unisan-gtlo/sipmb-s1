@@ -379,9 +379,18 @@ class ProfilPendidikanForm(forms.ModelForm):
         })
     )
     jurusan_id = forms.ChoiceField(
-        choices=[('', '-- Pilih Jurusan --')],
+        choices=[('', '-- Pilih Jurusan --')] + ProfilPendaftar.JURUSAN_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_jurusan'})
+    )
+    # Field manual untuk jurusan "Lainnya"
+    jurusan_manual = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tulis jurusan sekolah secara manual',
+            'id': 'id_jurusan_manual',
+        })
     )
 
     class Meta:
@@ -415,20 +424,20 @@ class ProfilPendidikanForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Populate provinsi dari SIMDA
         try:
-            from utils.simda_reader import get_provinsi, get_jurusan_sekolah
+            from utils.simda_reader import get_provinsi
             provinsi_list = get_provinsi()
             self.fields['sekolah_provinsi_id'].choices = (
                 [('', '-- Provinsi asal sekolah --')] +
                 [(str(p['id']), p['nama']) for p in provinsi_list]
             )
-            jurusan_list = get_jurusan_sekolah()
-            self.fields['jurusan_id'].choices = (
-                [('', '-- Pilih Jurusan --')] +
-                [(str(j['id']), j['nama']) for j in jurusan_list]
-            )
         except Exception:
             pass
+        
+        # jurusan_id sudah populate dari ProfilPendaftar.JURUSAN_CHOICES di field definition
+        # Tidak perlu populate dari SIMDA lagi
 
         # Set nilai awal jika sudah ada data
         if self.instance and self.instance.pk:
@@ -436,6 +445,9 @@ class ProfilPendidikanForm(forms.ModelForm):
                 self.fields['sekolah_nama_input'].initial = self.instance.asal_sekolah
             if self.instance.jurusan_id:
                 self.fields['jurusan_id'].initial = self.instance.jurusan_id
+            # Pre-fill jurusan_manual kalau jurusan_id == 'lainnya'
+            if self.instance.jurusan_id == 'lainnya' and self.instance.jurusan_sekolah:
+                self.fields['jurusan_manual'].initial = self.instance.jurusan_sekolah
 
 class ProfilFotoForm(forms.ModelForm):
     class Meta:

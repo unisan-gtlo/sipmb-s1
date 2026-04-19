@@ -289,7 +289,7 @@ class ProfilPendaftar(models.Model):
             'lainnya',
         ],
     }
-    
+
     ukuran_baju = models.CharField(
         max_length=5, choices=UKURAN_BAJU_CHOICES, blank=True,
         help_text='Ukuran baju untuk kebutuhan almamater/seragam'

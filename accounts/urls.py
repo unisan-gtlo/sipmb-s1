@@ -20,4 +20,5 @@ urlpatterns = [
     # ===== API endpoints untuk filter dinamis registrasi =====
     path('api/gelombang-by-jalur/', api.api_gelombang_by_jalur, name='api_gelombang_by_jalur'),
     path('api/prodi-by-gelombang/', api.api_prodi_by_gelombang, name='api_prodi_by_gelombang'),
+    path('api/jurusan-by-jenjang/', api.api_jurusan_by_jenjang, name='api_jurusan_by_jenjang'),
 ]

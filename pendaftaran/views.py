@@ -80,7 +80,21 @@ def profil_pendidikan(request):
     if request.method == 'POST':
         form = ProfilPendidikanForm(request.POST, instance=profil)
         if form.is_valid():
-            form.save()
+            # Handle jurusan_manual kalau pilih "Lainnya"
+            jurusan_id = form.cleaned_data.get('jurusan_id', '')
+            jurusan_manual = form.cleaned_data.get('jurusan_manual', '').strip()
+            
+            instance = form.save(commit=False)
+            
+            # Kalau "lainnya" dipilih, override jurusan_sekolah dengan teks manual
+            if jurusan_id == 'lainnya' and jurusan_manual:
+                instance.jurusan_sekolah = jurusan_manual
+            elif jurusan_id:
+                # Ambil label dari JURUSAN_CHOICES
+                jurusan_dict = dict(ProfilPendaftar.JURUSAN_CHOICES)
+                instance.jurusan_sekolah = jurusan_dict.get(jurusan_id, jurusan_id)
+            
+            instance.save()
             messages.success(request, 'Data pendidikan berhasil disimpan.')
             return redirect('pendaftaran:profil_foto')
     else:

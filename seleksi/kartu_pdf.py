@@ -551,7 +551,14 @@ def buat_formulir_pendaftaran(pendaftaran):
     if y > 4.0*cm:
         y = judul_seksi('F. Sumber Informasi PMB', y)
         y -= 0.2*cm
-        sumber = profil.get_sumber_informasi_display() if profil and profil.sumber_informasi else '-'
+      # Sumber informasi multi-select: convert kode → label, join dengan koma
+        sumber = '-'
+        if profil and profil.sumber_informasi:
+            from pendaftaran.models import ProfilPendaftar as PP
+            sumber_map = dict(PP.SUMBER_INFO_CHOICES)
+            labels = [sumber_map.get(s, s) for s in (profil.sumber_informasi or [])]
+            if labels:
+                sumber = ', '.join(labels)
         if profil and profil.sumber_informasi_lain:
             sumber += f' ({profil.sumber_informasi_lain})'
         y = baris('Sumber Informasi', sumber, 1.0*cm, y)
