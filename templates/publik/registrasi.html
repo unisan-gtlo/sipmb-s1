@@ -182,4 +182,109 @@
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- === JAVASCRIPT: FILTER DINAMIS JALUR → GELOMBANG → PRODI  === -->
+<!-- ============================================================ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selJalur     = document.getElementById('id_jalur');
+    const selGelombang = document.getElementById('id_gelombang');
+    const selProdi1    = document.getElementById('id_prodi_pilihan_1');
+    const selProdi2    = document.getElementById('id_prodi_pilihan_2');
+
+    // Safety check
+    if (!selJalur || !selGelombang || !selProdi1 || !selProdi2) {
+        console.warn('[Filter Registrasi] Beberapa dropdown tidak ditemukan, cek ID element.');
+        return;
+    }
+
+    // Helper: reset dropdown ke placeholder
+    function resetSelect(sel, placeholder) {
+        sel.innerHTML = `<option value="">${placeholder}</option>`;
+    }
+
+    // =====================================================
+    // 1. JALUR BERUBAH → Filter Gelombang + Reset Prodi
+    // =====================================================
+    selJalur.addEventListener('change', function() {
+        const jalurId = this.value;
+
+        resetSelect(selGelombang, '-- Pilih Gelombang --');
+        resetSelect(selProdi1,    '-- Pilih Program Studi Pilihan 1 --');
+        resetSelect(selProdi2,    '-- Pilih Program Studi Pilihan 2 (Opsional) --');
+
+        if (!jalurId) return;
+
+        fetch(`/accounts/api/gelombang-by-jalur/?jalur_id=${jalurId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.gelombangs && data.gelombangs.length > 0) {
+                    data.gelombangs.forEach(g => {
+                        selGelombang.add(new Option(g.label, g.id));
+                    });
+                } else {
+                    resetSelect(selGelombang, '-- Belum ada gelombang aktif --');
+                }
+            })
+            .catch(err => console.error('[Filter] Error fetch gelombang:', err));
+    });
+
+    // =====================================================
+    // 2. GELOMBANG BERUBAH → Filter Prodi 1 & 2
+    // =====================================================
+    selGelombang.addEventListener('change', function() {
+        const gelombangId = this.value;
+
+        resetSelect(selProdi1, '-- Pilih Program Studi Pilihan 1 --');
+        resetSelect(selProdi2, '-- Pilih Program Studi Pilihan 2 (Opsional) --');
+
+        if (!gelombangId) return;
+
+        fetch(`/accounts/api/prodi-by-gelombang/?gelombang_id=${gelombangId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.prodis && data.prodis.length > 0) {
+                    data.prodis.forEach(p => {
+                        selProdi1.add(new Option(p.label, p.id));
+                        selProdi2.add(new Option(p.label, p.id));
+                    });
+                } else {
+                    resetSelect(selProdi1, '-- Belum ada prodi aktif --');
+                    resetSelect(selProdi2, '-- Belum ada prodi aktif --');
+                }
+            })
+            .catch(err => console.error('[Filter] Error fetch prodi:', err));
+    });
+
+    // =====================================================
+    // 3. PRODI 1 DIPILIH → Exclude Dari Prodi 2
+    // =====================================================
+    selProdi1.addEventListener('change', function() {
+        const selectedProdi1 = this.value;
+
+        // Re-enable semua option dulu
+        Array.from(selProdi2.options).forEach(opt => {
+            opt.disabled = false;
+            opt.hidden   = false;
+            opt.style.color = '';
+        });
+
+        if (selectedProdi1) {
+            // Hide & disable option yang sama dengan Prodi 1
+            Array.from(selProdi2.options).forEach(opt => {
+                if (opt.value === selectedProdi1) {
+                    opt.disabled = true;
+                    opt.hidden   = true;
+                    opt.style.color = '#ccc';
+                }
+            });
+
+            // Kalau Prodi 2 kebetulan sama, reset
+            if (selProdi2.value === selectedProdi1) {
+                selProdi2.value = '';
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
