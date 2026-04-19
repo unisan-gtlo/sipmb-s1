@@ -117,6 +117,13 @@
 <script>
 const API_KAB     = "{% url 'accounts:api_kabupaten_kota' %}";
 const API_SEKOLAH = "{% url 'accounts:api_sekolah' %}";
+// Helper function (harus di-define di atas sebelum dipakai)
+function resetSelect(id, label) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.innerHTML = `<option value="">${label}</option>`;
+  }
+}
 
 // Provinsi sekolah → Kab/Kota sekolah
 document.getElementById('id_sekolah_provinsi').addEventListener('change', function() {
