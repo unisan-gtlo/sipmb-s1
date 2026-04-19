@@ -207,6 +207,89 @@ class ProfilPendaftar(models.Model):
         ('PINDAHAN', 'Mahasiswa Pindahan'),
     ]
 
+    # Jurusan sekolah (hardcoded per jenjang)
+    JURUSAN_CHOICES = [
+        # SMA / MA / PAKET_C
+        ('sma_ipa',       'IPA (Ilmu Pengetahuan Alam)'),
+        ('sma_ips',       'IPS (Ilmu Pengetahuan Sosial)'),
+        ('sma_bahasa',    'Bahasa & Sastra'),
+        ('sma_agama',     'Ilmu Agama'),
+        
+        # SMK / MAK - Teknologi & Rekayasa
+        ('smk_tkj',       'TKJ - Teknik Komputer & Jaringan'),
+        ('smk_rpl',       'RPL - Rekayasa Perangkat Lunak'),
+        ('smk_multimedia','Multimedia / DKV'),
+        ('smk_t_elektro', 'Teknik Elektronika'),
+        ('smk_t_mesin',   'Teknik Mesin'),
+        ('smk_t_otomotif','Teknik Otomotif / TKR'),
+        ('smk_t_listrik', 'Teknik Instalasi Listrik'),
+        ('smk_t_bangunan','Teknik Bangunan / Konstruksi'),
+        ('smk_t_kimia',   'Teknik Kimia'),
+        
+        # SMK / MAK - Bisnis & Manajemen
+        ('smk_akuntansi', 'Akuntansi & Keuangan'),
+        ('smk_pemasaran', 'Pemasaran / Bisnis Daring'),
+        ('smk_adm',       'Administrasi Perkantoran / OTKP'),
+        
+        # SMK / MAK - Pariwisata
+        ('smk_perhotelan','Perhotelan / UPW'),
+        ('smk_boga',      'Tata Boga / Kuliner'),
+        ('smk_busana',    'Tata Busana / Fashion'),
+        ('smk_kecantikan','Tata Kecantikan'),
+        
+        # SMK / MAK - Kesehatan
+        ('smk_keperawatan','Keperawatan'),
+        ('smk_farmasi',   'Farmasi'),
+        ('smk_analis',    'Analis Kesehatan / TLM'),
+        
+        # SMK / MAK - Pertanian / Perikanan
+        ('smk_pertanian', 'Agribisnis / Pertanian'),
+        ('smk_perikanan', 'Perikanan / Kelautan'),
+        ('smk_peternakan','Peternakan'),
+        
+        # SMK / MAK - Lainnya
+        ('smk_seni',      'Seni / Desain'),
+        ('smk_broadcast', 'Broadcasting / Perfilman'),
+        
+        # Manual
+        ('lainnya',       'Lainnya / Tulis Manual'),
+    ]
+    
+    # Mapping jenjang (jenis_sekolah.kode) → list kode jurusan yang valid
+    JURUSAN_PER_JENJANG = {
+        'SMA': [
+            'sma_ipa', 'sma_ips', 'sma_bahasa', 'sma_agama', 'lainnya',
+        ],
+        'MA': [
+            'sma_ipa', 'sma_ips', 'sma_bahasa', 'sma_agama', 'lainnya',
+        ],
+        'PAKET_C': [
+            'sma_ipa', 'sma_ips', 'lainnya',
+        ],
+        'SMK': [
+            'smk_tkj', 'smk_rpl', 'smk_multimedia',
+            'smk_t_elektro', 'smk_t_mesin', 'smk_t_otomotif', 'smk_t_listrik',
+            'smk_t_bangunan', 'smk_t_kimia',
+            'smk_akuntansi', 'smk_pemasaran', 'smk_adm',
+            'smk_perhotelan', 'smk_boga', 'smk_busana', 'smk_kecantikan',
+            'smk_keperawatan', 'smk_farmasi', 'smk_analis',
+            'smk_pertanian', 'smk_perikanan', 'smk_peternakan',
+            'smk_seni', 'smk_broadcast',
+            'lainnya',
+        ],
+        'MAK': [
+            'smk_tkj', 'smk_rpl', 'smk_multimedia',
+            'smk_t_elektro', 'smk_t_mesin', 'smk_t_otomotif', 'smk_t_listrik',
+            'smk_t_bangunan', 'smk_t_kimia',
+            'smk_akuntansi', 'smk_pemasaran', 'smk_adm',
+            'smk_perhotelan', 'smk_boga', 'smk_busana', 'smk_kecantikan',
+            'smk_keperawatan', 'smk_farmasi', 'smk_analis',
+            'smk_pertanian', 'smk_perikanan', 'smk_peternakan',
+            'smk_seni', 'smk_broadcast',
+            'lainnya',
+        ],
+    }
+    
     ukuran_baju = models.CharField(
         max_length=5, choices=UKURAN_BAJU_CHOICES, blank=True,
         help_text='Ukuran baju untuk kebutuhan almamater/seragam'
