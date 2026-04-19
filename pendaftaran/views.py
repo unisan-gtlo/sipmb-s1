@@ -22,12 +22,19 @@ def profil_diri(request):
     if not pendaftaran:
         messages.warning(request, 'Anda belum memiliki data pendaftaran.')
         return redirect('dashboard:index')
-
     profil, _ = ProfilPendaftar.objects.get_or_create(pendaftaran=pendaftaran)
-
     if request.method == 'POST':
         form = ProfilDiriForm(request.POST, instance=profil)
         if form.is_valid():
+            # Sync nama_lengkap ke User (first_name + last_name)
+            nama_baru = form.cleaned_data.get('nama_lengkap', '').strip()
+            if nama_baru and nama_baru != request.user.nama_lengkap:
+                # Split nama: kata pertama = first_name, sisanya = last_name
+                parts = nama_baru.split(' ', 1)
+                request.user.first_name = parts[0]
+                request.user.last_name = parts[1] if len(parts) > 1 else ''
+                request.user.save(update_fields=['first_name', 'last_name'])
+            
             form.save()
             messages.success(request, 'Data diri berhasil disimpan.')
             return redirect('pendaftaran:profil_ortu')
@@ -46,9 +53,7 @@ def profil_ortu(request):
     pendaftaran = _get_pendaftaran(request.user)
     if not pendaftaran:
         return redirect('dashboard:index')
-
     profil, _ = ProfilPendaftar.objects.get_or_create(pendaftaran=pendaftaran)
-
     if request.method == 'POST':
         form = ProfilOrtuForm(request.POST, instance=profil)
         if form.is_valid():
@@ -57,14 +62,12 @@ def profil_ortu(request):
             return redirect('pendaftaran:profil_pendidikan')
     else:
         form = ProfilOrtuForm(instance=profil)
-
     return render(request, 'pendaftaran/profil_ortu.html', {
         'form':        form,
         'pendaftaran': pendaftaran,
         'profil':      profil,
         'tab_aktif':   'ortu',
     })
-
 
 @login_required
 def profil_pendidikan(request):

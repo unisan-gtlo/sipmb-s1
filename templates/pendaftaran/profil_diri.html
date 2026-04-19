@@ -15,6 +15,20 @@
   </div>
 
   <div class="row g-3 mb-4">
+    <div class="col-12">
+      <label class="form-label">Nama Lengkap <span class="text-danger">*</span>
+        <small class="text-muted ms-2">(sesuai ijazah/akte kelahiran)</small>
+      </label>
+      {{ form.nama_lengkap }}
+      {% if form.nama_lengkap.errors %}
+        <div class="text-danger mt-1" style="font-size:.8rem">{{ form.nama_lengkap.errors.0 }}</div>
+      {% endif %}
+      <div style="font-size:.75rem;color:#94a3b8;margin-top:4px">
+        <i class="bi bi-info-circle me-1"></i>
+        Pastikan nama ini <strong>BENAR</strong>. Nama akan tercetak di kartu peserta dan dokumen resmi.
+      </div>
+    </div>
+    
     <div class="col-md-6">
       <label class="form-label">NIK <span class="text-danger">*</span></label>
       {{ form.nik }}

@@ -7,6 +7,15 @@ from master.models import JalurPenerimaan, GelombangPenerimaan, ProdiPMB
 
 class ProfilDiriForm(forms.ModelForm):
 
+    # Field nama_lengkap (sync dari/ke User.nama_lengkap)
+    nama_lengkap = forms.CharField(
+        max_length=200,
+        label='Nama Lengkap',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nama lengkap sesuai ijazah/akte kelahiran',
+        })
+    )
     provinsi_id = forms.ChoiceField(
         choices=[('', '-- Pilih Provinsi --')],
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_provinsi'})
@@ -89,6 +98,13 @@ class ProfilDiriForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Pre-fill nama_lengkap dari User
+        if self.instance and self.instance.pendaftaran_id:
+            try:
+                self.fields['nama_lengkap'].initial = self.instance.pendaftaran.user.nama_lengkap
+            except Exception:
+                pass
+                
         # ----- Isi choices provinsi & agama (selalu) -----
         try:
             provinsi_list = get_provinsi()

@@ -4,12 +4,50 @@ from master.models import JalurPenerimaan, GelombangPenerimaan, ProdiPMB
 import uuid
 from utils.validators import validate_image, validate_document_or_image
 
-def generate_no_pendaftaran():
-    """Generate nomor pendaftaran unik: PMB-S1-2025-XXXXX"""
+def generate_no_pendaftaran(status_masuk='PDB', tahun=None):
+    """
+    Generate nomor pendaftaran format: YYYY-XX-NNNN
+    
+    XX = 01 (PDB) atau 02 (PINDAHAN)
+    NNNN = counter per status_masuk per tahun (mulai 0001)
+    
+    Contoh:
+      2026-01-0001  → PDB pendaftar pertama
+      2026-02-0001  → PINDAHAN pendaftar pertama
+      2026-01-0002  → PDB pendaftar kedua
+    """
     import datetime
-    tahun = datetime.datetime.now().year
-    uid   = str(uuid.uuid4()).upper()[:5]
-    return f'PMB-S1-{tahun}-{uid}'
+    from django.apps import apps
+    
+    tahun = tahun or datetime.datetime.now().year
+    
+    # Mapping status ke kode numerik
+    KODE_STATUS = {
+        'PDB':      '01',
+        'PINDAHAN': '02',
+    }
+    kode = KODE_STATUS.get(status_masuk, '01')
+    
+    prefix = f'{tahun}-{kode}-'
+    
+    # Lookup model via apps (avoid circular import)
+    Pendaftaran = apps.get_model('pendaftaran', 'Pendaftaran')
+    
+    # Cari nomor terakhir untuk prefix ini
+    last = Pendaftaran.objects.filter(
+        no_pendaftaran__startswith=prefix
+    ).order_by('-no_pendaftaran').first()
+    
+    if last:
+        try:
+            last_seq = int(last.no_pendaftaran.split('-')[-1])
+            next_seq = last_seq + 1
+        except (ValueError, IndexError):
+            next_seq = 1
+    else:
+        next_seq = 1
+    
+    return f'{prefix}{next_seq:04d}'
 
 
 class Pendaftaran(models.Model):
@@ -50,6 +88,38 @@ class Pendaftaran(models.Model):
         verbose_name = 'Pendaftaran'
         verbose_name_plural = 'Pendaftaran'
 
+    def save(self, *args, **kwargs):
+        """
+        Override save untuk:
+        1. Auto-determine status_masuk dari jalur.kode_jalur
+        2. Generate no_pendaftaran dengan format YYYY-XX-NNNN kalau belum ada
+        3. Sync status_masuk ke profil setelah save
+        """
+        # Tentukan status_masuk dari jalur
+        status_masuk = 'PDB'
+        if self.jalur_id:
+            try:
+                kode_jalur = (self.jalur.kode_jalur or '').upper()
+                if 'PINDAH' in kode_jalur:
+                    status_masuk = 'PINDAHAN'
+            except Exception:
+                pass
+        
+        # Generate no_pendaftaran dengan format baru kalau belum ada
+        if not self.no_pendaftaran:
+            self.no_pendaftaran = generate_no_pendaftaran(status_masuk=status_masuk)
+        
+        super().save(*args, **kwargs)
+        
+        # Sync status_masuk ke profil (setelah Pendaftaran punya ID)
+        try:
+            profil = self.profil
+            if profil.status_masuk != status_masuk:
+                profil.status_masuk = status_masuk
+                profil.save(update_fields=['status_masuk'])
+        except Exception:
+            pass
+    
     def __str__(self):
         return f'{self.no_pendaftaran} — {self.user.nama_lengkap}'
 
@@ -132,13 +202,24 @@ class ProfilPendaftar(models.Model):
         ('TIDAK_SEKOLAH','Tidak Sekolah'),
     ]
 
+    STATUS_MASUK_CHOICES = [
+        ('PDB',      'Penerimaan Mahasiswa Baru'),
+        ('PINDAHAN', 'Mahasiswa Pindahan'),
+    ]
+
     ukuran_baju = models.CharField(
         max_length=5, choices=UKURAN_BAJU_CHOICES, blank=True,
         help_text='Ukuran baju untuk kebutuhan almamater/seragam'
     )
 
     pendaftaran     = models.OneToOneField(Pendaftaran, on_delete=models.CASCADE, related_name='profil')
-
+    # Status masuk (auto-set dari jalur pendaftaran)
+    status_masuk    = models.CharField(
+        max_length=10,
+        choices=STATUS_MASUK_CHOICES,
+        default='PDB',
+        verbose_name='Status Masuk'
+    )
     # Data diri
     nik             = models.CharField(max_length=16, blank=True)
     tempat_lahir    = models.CharField(max_length=100, blank=True)
@@ -214,6 +295,7 @@ class ProfilPendaftar(models.Model):
         verbose_name = 'Profil Pendaftar'
         verbose_name_plural = 'Profil Pendaftar'
 
+    
     def __str__(self):
         return f'Profil — {self.pendaftaran.no_pendaftaran}'
 
