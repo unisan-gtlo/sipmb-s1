@@ -162,21 +162,50 @@ def generate_kwitansi_pdf(konfirmasi):
 
     # ========== TTD AREA ==========
     ttd_x = W - 80 * mm
-    ttd_top = 42 * mm
+    ttd_top = 44 * mm
 
     c.setFont("Helvetica", 9)
     c.drawString(ttd_x, ttd_top, f"Gorontalo, {format_tgl_id(tgl_konfirmasi)}")
-    c.drawString(ttd_x, ttd_top - 4 * mm, "Panitia PMB UNISAN")
+    c.drawString(ttd_x, ttd_top - 4 * mm, "Bendahara Panitia PMB UNISAN")
 
+    # Ambil data bendahara dari PengaturanSistem
+    try:
+        from master.models import PengaturanSistem
+        pengaturan = PengaturanSistem.get()
+    except Exception:
+        pengaturan = None
+
+    nama_bendahara = 'Panitia PMB'
+    nip_bendahara = ''
+    ttd_drawn = False
+
+    if pengaturan:
+        nama_bendahara = pengaturan.nama_bendahara_pmb or nama_bendahara
+        nip_bendahara = pengaturan.nip_bendahara_pmb or ''
+
+        if pengaturan.ttd_bendahara_pmb:
+            try:
+                c.drawImage(
+                    ImageReader(pengaturan.ttd_bendahara_pmb.path),
+                    ttd_x, ttd_top - 24 * mm,
+                    width=40 * mm, height=20 * mm,
+                    preserveAspectRatio=True, mask='auto',
+                )
+                ttd_drawn = True
+            except Exception:
+                pass
+
+    # Fallback garis TTD kalau file TTD belum diupload
+    if not ttd_drawn:
+        c.setFont("Helvetica", 10)
+        c.drawString(ttd_x, ttd_top - 22 * mm, "______________________")
+
+    # Nama + NIP bendahara
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(ttd_x, ttd_top - 22 * mm, "______________________")
-
-    c.setFont("Helvetica", 9)
-    admin_name = (
-        konfirmasi.dikonfirmasi_oleh.get_full_name()
-        if konfirmasi.dikonfirmasi_oleh else "Panitia PMB"
-    )
-    c.drawString(ttd_x, ttd_top - 26 * mm, f"({admin_name})")
+    c.drawString(ttd_x, ttd_top - 26 * mm, nama_bendahara)
+    if nip_bendahara:
+        c.setFont("Helvetica", 8)
+        c.drawString(ttd_x, ttd_top - 30 * mm, f"NIK: {nip_bendahara}")
 
     # ========== FOOTER ==========
     c.setFont("Helvetica-Oblique", 7)

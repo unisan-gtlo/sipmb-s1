@@ -113,6 +113,17 @@ class PengaturanSistemAdmin(admin.ModelAdmin):
         ('Info Pejabat', {
             'fields': ('nama_rektor', 'nama_wakil_rektor')
         }),
+         # ← TAMBAH DI SINI
+        ('Info Panitia PMB', {
+          'fields': (
+            ('nama_ketua_pmb', 'nip_ketua_pmb'),
+            'ttd_ketua_pmb',
+            ('nama_bendahara_pmb', 'nip_bendahara_pmb'),
+            'ttd_bendahara_pmb',
+        ),
+            'description': 'Nama & TTD digital untuk dokumen resmi. Nama Bendahara otomatis dipakai di kwitansi pembayaran.',
+         }),
+
         ('Kontak PMB', {
             'fields': ('no_telepon_pmb', 'email_pmb', 'whatsapp_pmb', 'alamat_kampus')
         }),

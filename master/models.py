@@ -80,6 +80,7 @@ class GelombangPenerimaan(models.Model):
     kuota_total       = models.IntegerField(default=0)
     status            = models.CharField(max_length=15, choices=STATUS_CHOICES, default='belum_buka')
     keterangan        = models.TextField(blank=True)
+   
 
     class Meta:
         db_table    = 'pmb\".\"gelombang_penerimaan'
@@ -192,6 +193,15 @@ class PengaturanSistem(models.Model):
     no_rekening          = models.CharField(max_length=50, blank=True)
     atas_nama            = models.CharField(max_length=200, blank=True)
 
+     # ========== PANITIA PMB ==========
+    nama_ketua_pmb     = models.CharField(max_length=200, blank=True, help_text="Nama lengkap dengan gelar — untuk TTD dokumen resmi (SK, undangan, dll)")
+    nip_ketua_pmb      = models.CharField(max_length=30, blank=True, help_text="NIP / NIDN / ID identitas")
+    ttd_ketua_pmb      = models.ImageField(upload_to='ttd/', blank=True, null=True, help_text="PNG transparan untuk TTD digital, max 1 MB")
+
+    nama_bendahara_pmb = models.CharField(max_length=200, blank=True, help_text="Nama lengkap dengan gelar — untuk TTD kwitansi pembayaran")
+    nip_bendahara_pmb  = models.CharField(max_length=30, blank=True, help_text="NIP / NIDN / ID identitas")
+    ttd_bendahara_pmb  = models.ImageField(upload_to='ttd/', blank=True, null=True, help_text="PNG transparan untuk TTD digital, max 1 MB")
+    
     class Meta:
         db_table    = 'pmb\".\"pengaturan_sistem'
         verbose_name = 'Pengaturan Sistem'
