@@ -1,0 +1,32 @@
+{% extends 'pendaftaran/base_profil.html' %}
+
+{% block title %}Menuju Halaman Pembayaran...{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 500px;">
+  <div class="card shadow-sm border-0">
+    <div class="card-body text-center p-5">
+      <div class="spinner-border text-primary mb-3" role="status" style="width:3rem;height:3rem">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <h5>Mengarahkan ke halaman pembayaran...</h5>
+      <p class="text-muted mb-4">
+        Anda akan diarahkan ke halaman pembayaran Duitku dalam beberapa detik.
+      </p>
+      <div class="small text-muted">
+        Tidak otomatis? 
+        <a href="{{ payment_url }}" class="btn btn-primary btn-sm ms-2">
+          <i class="bi bi-arrow-right"></i> Klik di sini
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto redirect after 800ms
+  setTimeout(function() {
+    window.location.href = "{{ payment_url|escapejs }}";
+  }, 800);
+</script>
+{% endblock %}

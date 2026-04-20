@@ -201,7 +201,12 @@ def duitku_create(request, kode_bayar):
     tagihan.status = 'menunggu_konfirmasi'
     tagihan.save(update_fields=['status', 'updated_at'])
 
-    return redirect(result['payment_url'])
+    # Simpan URL di session, render halaman transisi yang JS redirect
+    # (bypass potential CSP issues dengan server-side 302 redirect)
+    return render(request, 'pembayaran/duitku_redirect.html', {
+        'payment_url': result['payment_url'],
+        'merchant_order_id': result['merchant_order_id'],
+    })
 
 
 @login_required
