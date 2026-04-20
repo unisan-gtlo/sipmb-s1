@@ -13,7 +13,42 @@ ABU      = colors.HexColor('#64748b')
 ABU_MUDA = colors.HexColor('#f1f5f9')
 HITAM    = colors.HexColor('#1e1e2e')
 
+def get_logo_path():
+    """
+    Ambil path logo dengan prioritas:
+    1. PengaturanSistem.logo (upload lewat admin)
+    2. SIMDA institusi['logo']
+    3. Default static/assets/logo_unisan.png
+    """
+    try:
+        from master.models import PengaturanSistem
+        p = PengaturanSistem.get()
+        if p and p.logo:
+            try:
+                if os.path.exists(p.logo.path):
+                    return p.logo.path
+            except Exception:
+                pass
+    except Exception:
+        pass
 
+    try:
+        from utils.simda_reader import get_institusi
+        inst = get_institusi() or {}
+        logo_file = inst.get('logo', '')
+        if logo_file:
+            path = os.path.join(settings.BASE_DIR, 'static', 'assets', logo_file)
+            if os.path.exists(path):
+                return path
+    except Exception:
+        pass
+
+    default = os.path.join(settings.BASE_DIR, 'static', 'assets', 'logo_unisan.png')
+    if os.path.exists(default):
+        return default
+
+    return None
+    
 def buat_kartu_peserta(pendaftaran, jadwal=None):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
@@ -35,20 +70,18 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
     institusi    = get_institusi()
     nama_kampus  = institusi.get('nama_resmi', 'Universitas Ichsan Gorontalo')
     nama_singkat = institusi.get('nama_singkat', 'UNISAN')
-    logo_file    = institusi.get('logo', '')
 
     logo_loaded = False
-    if logo_file:
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'assets', logo_file)
-        if os.path.exists(logo_path):
-            try:
-                img = ImageReader(logo_path)
-                c.drawImage(img, 1.0*cm, tinggi - 3.8*cm,
-                        2.8*cm, 2.8*cm,
-                        preserveAspectRatio=True, mask='auto')
-                logo_loaded = True
-            except Exception:
-                pass
+    logo_path = get_logo_path()
+    if logo_path:
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(img, 1.0*cm, tinggi - 3.8*cm,
+                    2.8*cm, 2.8*cm,
+                    preserveAspectRatio=True, mask='auto')
+            logo_loaded = True
+        except Exception:
+            pass
 
     if not logo_loaded:
         c.setFillColor(colors.white)
@@ -346,18 +379,18 @@ def buat_formulir_pendaftaran(pendaftaran):
 
     # ===== HEADER =====
     # Logo - naikkan posisi
+    # Logo
     logo_loaded = False
-    if logo_file:
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'assets', logo_file)
-        if os.path.exists(logo_path):
-            try:
-                img = ImageReader(logo_path)
-                c.drawImage(img, 1.0*cm, tinggi - 3.0*cm,
-                        2.5*cm, 2.5*cm,
-                        preserveAspectRatio=True, mask='auto')
-                logo_loaded = True
-            except:
-                pass
+    logo_path = get_logo_path()
+    if logo_path:
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(img, 1.0*cm, tinggi - 3.0*cm,
+                    2.5*cm, 2.5*cm,
+                    preserveAspectRatio=True, mask='auto')
+            logo_loaded = True
+        except Exception:
+            pass
 
     if not logo_loaded:
         c.setFillColor(UNGU)
