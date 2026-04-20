@@ -1,4 +1,5 @@
 {% extends 'pendaftaran/base_profil.html' %}
+{% load static %}
 {% load humanize %}
 
 {% block title %}Pilih Metode Bayar — {{ tagihan.kode_bayar }}{% endblock %}
@@ -49,16 +50,20 @@
     {% for kategori_group in metode_by_kategori %}
       <div class="text-muted small fw-bold mt-3 mb-2">{{ kategori_group.grouper }}</div>
       <div class="row g-2">
-        {% for kode, label, kategori, icon in kategori_group.list %}
+        {% for kode, label, kategori, icon, logo_file in kategori_group.list %}
           <div class="col-md-6">
             <label class="metode-card d-block" style="cursor:pointer">
               <input type="radio" name="payment_method" value="{{ kode }}" class="d-none metode-radio" required>
-              <div class="border rounded p-3 d-flex align-items-center" 
+              <div class="border rounded p-3 d-flex align-items-center"
                    style="transition: all .15s;">
-                <div class="me-3 rounded text-center fw-bold" 
-                     style="width:48px;height:48px;line-height:48px;
-                            background:#f1f5f9;color:#475569;font-size:.75rem">
-                  {{ icon }}
+                <div class="me-3 d-flex align-items-center justify-content-center bg-white rounded border"
+                     style="width:64px;height:48px;padding:4px">
+                  <img src="{% static 'img/duitku/' %}{{ logo_file }}"
+                       alt="{{ label }}"
+                       style="max-height:32px;max-width:56px;object-fit:contain"
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+                  <div class="fw-bold text-muted small align-items-center justify-content-center"
+                       style="display:none;width:100%;height:100%">{{ icon }}</div>
                 </div>
                 <div class="flex-grow-1">
                   <div class="fw-semibold">{{ label }}</div>
@@ -96,7 +101,7 @@
   box-shadow: 0 0 0 2px #3b82f6;
 }
 .metode-card input:checked + div .metode-check::before {
-  content: "\f26b"; /* bi-check-circle-fill */
+  content: "\f26b";
   color: #3b82f6;
 }
 .metode-card:hover div {

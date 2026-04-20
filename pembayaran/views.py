@@ -113,21 +113,22 @@ def duitku_pilih_metode(request, kode_bayar):
 
     # Daftar metode yang ditampilkan ke maba
     METODE_LIST = [
-        # kode, label, kategori, icon_text
-        ('BC', 'BCA Virtual Account', 'Virtual Account', 'BCA'),
-        ('M2', 'Mandiri Virtual Account', 'Virtual Account', 'MDR'),
-        ('I1', 'BNI Virtual Account', 'Virtual Account', 'BNI'),
-        ('B1', 'CIMB Niaga Virtual Account', 'Virtual Account', 'CIMB'),
-        ('BT', 'Permata Virtual Account', 'Virtual Account', 'PERMATA'),
-        ('A1', 'ATM Bersama', 'Virtual Account', 'ATM'),
-        ('SP', 'ShopeePay', 'E-Wallet', 'SP'),
-        ('OV', 'OVO', 'E-Wallet', 'OVO'),
-        ('DA', 'DANA', 'E-Wallet', 'DANA'),
-        ('LF', 'LinkAja', 'E-Wallet', 'LINK'),
-        ('NQ', 'QRIS', 'QRIS', 'QR'),
-        ('SL', 'Indomaret', 'Gerai Retail', 'INDO'),
-        ('FT', 'Alfamart', 'Gerai Retail', 'ALFA'),
-        ('VC', 'Credit Card', 'Kartu Kredit', 'CC'),
+        ('BC', 'BCA Virtual Account', 'Virtual Account', 'BCA', 'bca.svg'),
+        ('M2', 'Mandiri Virtual Account', 'Virtual Account', 'MDR', 'mandiri.png'),
+        ('I1', 'BNI Virtual Account', 'Virtual Account', 'BNI', 'bni.png'),
+        ('BR', 'BRI Virtual Account', 'Virtual Account', 'BRI', 'bri.png'),
+        ('BV', 'BSI Virtual Account', 'Virtual Account', 'BSI', 'bsi.png'),
+        ('B1', 'CIMB Niaga Virtual Account', 'Virtual Account', 'CIMB', 'cimb.png'),
+        ('BT', 'Permata Virtual Account', 'Virtual Account', 'PERMATA', 'permata.png'),
+        ('A1', 'ATM Bersama', 'Virtual Account', 'ATM', 'atm_bersama.png'),
+        ('SP', 'ShopeePay', 'E-Wallet', 'SP', 'shopeepay.png'),
+        ('OV', 'OVO', 'E-Wallet', 'OVO', 'ovo.png'),
+        ('DA', 'DANA', 'E-Wallet', 'DANA', 'dana.png'),
+        ('LF', 'LinkAja', 'E-Wallet', 'LINK', 'linkaja.png'),
+        ('NQ', 'QRIS', 'QRIS', 'QR', 'qris.png'),
+        ('SL', 'Indomaret', 'Gerai Retail', 'INDO', 'indomaret.png'),
+        ('FT', 'Alfamart', 'Gerai Retail', 'ALFA', 'alfamart.png'),
+        ('VC', 'Credit Card', 'Kartu Kredit', 'CC', 'credit_card.png'),
     ]
 
     return render(request, 'pembayaran/duitku_pilih.html', {
