@@ -3,7 +3,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Count, Q
+
+from datetime import date, timedelta
+from django.db.models import Sum, Count, Q
+from pembayaran.models import Tagihan, KonfirmasiPembayaran
 
 from pendaftaran.models import Pendaftaran, ProfilPendaftar
 from dokumen.models import DokumenPendaftar
@@ -1524,4 +1527,420 @@ def pembayaran_kwitansi(request, pk):
     buffer = generate_kwitansi_pdf(konfirmasi)
     response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="Kwitansi-{konfirmasi.tagihan.kode_bayar}.pdf"'
+    return response
+
+# ========================== LAPORAN PEMBAYARAN ==========================
+
+def _filter_laporan(request):
+    """Ambil filter dari GET params & return queryset KonfirmasiPembayaran + metadata."""
+    today = date.today()
+    
+    # Default: 30 hari terakhir
+    dari_str = request.GET.get('dari', '')
+    sampai_str = request.GET.get('sampai', '')
+    jalur_id = request.GET.get('jalur', '')
+    gelombang_id = request.GET.get('gelombang', '')
+    metode = request.GET.get('metode', '')
+
+    try:
+        dari = date.fromisoformat(dari_str) if dari_str else today - timedelta(days=30)
+    except ValueError:
+        dari = today - timedelta(days=30)
+    try:
+        sampai = date.fromisoformat(sampai_str) if sampai_str else today
+    except ValueError:
+        sampai = today
+
+    # Query dasar: hanya konfirmasi yang sudah dikonfirmasi (lunas)
+    qs = KonfirmasiPembayaran.objects.filter(
+        status='dikonfirmasi',
+        tgl_bayar__gte=dari,
+        tgl_bayar__lte=sampai,
+    ).select_related(
+        'tagihan',
+        'tagihan__pendaftaran',
+        'tagihan__pendaftaran__user',
+        'tagihan__pendaftaran__jalur',
+        'tagihan__pendaftaran__gelombang',
+        'tagihan__pendaftaran__prodi_pilihan_1',
+    ).order_by('-tgl_bayar', '-tgl_konfirmasi')
+
+    # Filter opsional
+    if jalur_id:
+        qs = qs.filter(tagihan__pendaftaran__jalur_id=jalur_id)
+    if gelombang_id:
+        qs = qs.filter(tagihan__pendaftaran__gelombang_id=gelombang_id)
+    if metode:
+        qs = qs.filter(metode_bayar=metode)
+
+    return {
+        'qs': qs,
+        'dari': dari,
+        'sampai': sampai,
+        'jalur_id': jalur_id,
+        'gelombang_id': gelombang_id,
+        'metode': metode,
+    }
+
+
+@login_required
+def laporan_pembayaran(request):
+    """Halaman laporan penerimaan pembayaran dengan filter."""
+    if not request.user.is_staff:
+        return redirect('dashboard:calon_maba')
+
+    filters = _filter_laporan(request)
+    qs = filters['qs']
+
+    # Ringkasan
+    total_count = qs.count()
+    total_amount = qs.aggregate(t=Sum('jumlah_bayar'))['t'] or 0
+
+    # Breakdown per metode
+    breakdown = qs.values('metode_bayar').annotate(
+        count=Count('id'),
+        total=Sum('jumlah_bayar'),
+    ).order_by('-total')
+
+    # Data tambahan untuk filter dropdown
+    from master.models import JalurPenerimaan, GelombangPenerimaan
+    jalur_list = JalurPenerimaan.objects.filter(status='aktif').order_by('urutan', 'nama_jalur')
+    gelombang_list = GelombangPenerimaan.objects.select_related('jalur').order_by('-tahun_akademik', 'tgl_buka')
+
+    context = {
+        'konfirmasi_list': qs,
+        'total_count': total_count,
+        'total_amount': total_amount,
+        'breakdown': breakdown,
+        'dari': filters['dari'],
+        'sampai': filters['sampai'],
+        'jalur_id': filters['jalur_id'],
+        'gelombang_id': filters['gelombang_id'],
+        'metode': filters['metode'],
+        'jalur_list': jalur_list,
+        'gelombang_list': gelombang_list,
+        'METODE_CHOICES': KonfirmasiPembayaran.METODE_CHOICES,
+    }
+    return render(request, 'admin_pmb/laporan_pembayaran.html', context)
+
+
+@login_required
+def laporan_pembayaran_excel(request):
+    """Export Excel: Ringkasan + Detail."""
+    if not request.user.is_staff:
+        return redirect('dashboard:calon_maba')
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+
+    filters = _filter_laporan(request)
+    qs = filters['qs']
+    dari = filters['dari']
+    sampai = filters['sampai']
+
+    wb = openpyxl.Workbook()
+
+    # ===== Sheet 1: Ringkasan =====
+    ws1 = wb.active
+    ws1.title = "Ringkasan"
+
+    header_font = Font(name='Calibri', size=14, bold=True, color='FFFFFF')
+    header_fill = PatternFill('solid', fgColor='2563EB')
+    total_font = Font(bold=True, size=11)
+    thin = Side(border_style='thin', color='CCCCCC')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    ws1['A1'] = 'LAPORAN PENERIMAAN PEMBAYARAN PMB UNISAN'
+    ws1['A1'].font = header_font
+    ws1['A1'].fill = header_fill
+    ws1['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws1.merge_cells('A1:D1')
+    ws1.row_dimensions[1].height = 28
+
+    ws1['A2'] = f'Periode: {dari.strftime("%d %b %Y")}  s/d  {sampai.strftime("%d %b %Y")}'
+    ws1.merge_cells('A2:D2')
+    ws1['A2'].alignment = Alignment(horizontal='center')
+    ws1['A2'].font = Font(italic=True, color='6B7280')
+
+    # Total
+    ws1['A4'] = 'Total Transaksi:'
+    ws1['B4'] = qs.count()
+    ws1['A5'] = 'Total Nominal:'
+    ws1['B5'] = float(qs.aggregate(t=Sum('jumlah_bayar'))['t'] or 0)
+    ws1['B5'].number_format = '"Rp "#,##0'
+    ws1['A4'].font = total_font
+    ws1['A5'].font = total_font
+
+    # Breakdown per metode
+    ws1['A7'] = 'BREAKDOWN PER METODE'
+    ws1['A7'].font = Font(bold=True, size=12)
+    ws1.merge_cells('A7:D7')
+
+    row = 8
+    headers = ['Metode', 'Jumlah Transaksi', 'Total Nominal', '%']
+    for col, h in enumerate(headers, start=1):
+        cell = ws1.cell(row=row, column=col, value=h)
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill('solid', fgColor='E5E7EB')
+        cell.border = border
+
+    total_for_pct = float(qs.aggregate(t=Sum('jumlah_bayar'))['t'] or 1)
+    METODE_DISPLAY = dict(KonfirmasiPembayaran.METODE_CHOICES)
+    for b in qs.values('metode_bayar').annotate(c=Count('id'), t=Sum('jumlah_bayar')).order_by('-t'):
+        row += 1
+        total = float(b['t'] or 0)
+        ws1.cell(row=row, column=1, value=METODE_DISPLAY.get(b['metode_bayar'], b['metode_bayar'])).border = border
+        ws1.cell(row=row, column=2, value=b['c']).border = border
+        c = ws1.cell(row=row, column=3, value=total)
+        c.number_format = '"Rp "#,##0'
+        c.border = border
+        pct = (total / total_for_pct * 100) if total_for_pct else 0
+        c = ws1.cell(row=row, column=4, value=f"{pct:.1f}%")
+        c.alignment = Alignment(horizontal='right')
+        c.border = border
+
+    # Width
+    for col, w in zip('ABCD', [22, 18, 22, 10]):
+        ws1.column_dimensions[col].width = w
+
+    # ===== Sheet 2: Detail =====
+    ws2 = wb.create_sheet('Detail Transaksi')
+    cols = ['No', 'Tgl Bayar', 'Kode Tagihan', 'Nama Pendaftar', 'No Pendaftaran',
+            'Jalur', 'Gelombang', 'Prodi', 'Metode', 'Bank Asal', 'Atas Nama',
+            'No Transaksi', 'Jumlah', 'Dikonfirmasi']
+
+    for col, h in enumerate(cols, start=1):
+        cell = ws2.cell(row=1, column=col, value=h)
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill('solid', fgColor='2563EB')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = border
+
+    for i, k in enumerate(qs, start=1):
+        row = i + 1
+        p = k.tagihan.pendaftaran
+        ws2.cell(row=row, column=1, value=i)
+        ws2.cell(row=row, column=2, value=k.tgl_bayar)
+        ws2.cell(row=row, column=2).number_format = 'DD-MM-YYYY'
+        ws2.cell(row=row, column=3, value=k.tagihan.kode_bayar)
+        ws2.cell(row=row, column=4, value=p.user.get_full_name() or p.user.username)
+        ws2.cell(row=row, column=5, value=p.no_pendaftaran)
+        ws2.cell(row=row, column=6, value=p.jalur.nama if p.jalur else '-')
+        ws2.cell(row=row, column=7, value=p.gelombang.nama if p.gelombang else '-')
+        ws2.cell(row=row, column=8, value=p.prodi_pilihan_1.nama_prodi if p.prodi_pilihan_1 else '-')
+        ws2.cell(row=row, column=9, value=METODE_DISPLAY.get(k.metode_bayar, k.metode_bayar))
+        ws2.cell(row=row, column=10, value=k.bank_asal or '-')
+        ws2.cell(row=row, column=11, value=k.atas_nama_pengirim or '-')
+        ws2.cell(row=row, column=12, value=k.no_transaksi or '-')
+        c = ws2.cell(row=row, column=13, value=float(k.jumlah_bayar))
+        c.number_format = '"Rp "#,##0'
+        ws2.cell(row=row, column=14, value=k.tgl_konfirmasi.strftime('%d-%m-%Y %H:%M') if k.tgl_konfirmasi else '-')
+
+        for col in range(1, 15):
+            ws2.cell(row=row, column=col).border = border
+
+    # Total row
+    last_row = qs.count() + 2
+    ws2.cell(row=last_row, column=12, value='TOTAL').font = Font(bold=True)
+    ws2.cell(row=last_row, column=12).alignment = Alignment(horizontal='right')
+    c = ws2.cell(row=last_row, column=13, value=float(qs.aggregate(t=Sum('jumlah_bayar'))['t'] or 0))
+    c.number_format = '"Rp "#,##0'
+    c.font = Font(bold=True)
+    c.fill = PatternFill('solid', fgColor='FEF3C7')
+
+    # Auto-width
+    widths = [5, 12, 18, 28, 18, 14, 14, 25, 14, 12, 22, 20, 15, 18]
+    for col, w in zip('ABCDEFGHIJKLMN', widths):
+        ws2.column_dimensions[col].width = w
+    ws2.freeze_panes = 'A2'
+
+    # Response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f'Laporan_Pembayaran_{dari.strftime("%Y%m%d")}_{sampai.strftime("%Y%m%d")}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def laporan_pembayaran_pdf(request):
+    """Export PDF laporan — A4 landscape dengan TTD bendahara."""
+    if not request.user.is_staff:
+        return redirect('dashboard:calon_maba')
+
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+    from reportlab.lib.utils import ImageReader
+    from django.http import HttpResponse
+    from django.utils import timezone
+    import os
+    from django.conf import settings
+
+    filters = _filter_laporan(request)
+    qs = filters['qs']
+    dari = filters['dari']
+    sampai = filters['sampai']
+
+    response = HttpResponse(content_type='application/pdf')
+    filename = f'Laporan_Pembayaran_{dari.strftime("%Y%m%d")}_{sampai.strftime("%Y%m%d")}.pdf'
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+        topMargin=1.2*cm, bottomMargin=1.2*cm,
+    )
+
+    story = []
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle('title', parent=styles['Title'],
+                                  fontName='Helvetica-Bold', fontSize=14,
+                                  alignment=TA_CENTER, spaceAfter=4)
+    subtitle_style = ParagraphStyle('subtitle', parent=styles['Normal'],
+                                     fontName='Helvetica', fontSize=10,
+                                     alignment=TA_CENTER, textColor=colors.grey)
+
+    story.append(Paragraph("LAPORAN PENERIMAAN PEMBAYARAN PMB UNISAN", title_style))
+    story.append(Paragraph(
+        f"Periode: {dari.strftime('%d %B %Y')} s/d {sampai.strftime('%d %B %Y')}",
+        subtitle_style
+    ))
+    story.append(Spacer(1, 0.4*cm))
+
+    # Ringkasan box
+    total_count = qs.count()
+    total_amount = float(qs.aggregate(t=Sum('jumlah_bayar'))['t'] or 0)
+
+    ringkasan_data = [
+        ['Total Transaksi', f'{total_count:,}', 'Total Nominal', f'Rp {total_amount:,.0f}'.replace(',', '.')],
+    ]
+    t = Table(ringkasan_data, colWidths=[4*cm, 4*cm, 4*cm, 6*cm])
+    t.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F3F4F6')),
+        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor('#F3F4F6')),
+        ('FONT', (0, 0), (0, -1), 'Helvetica-Bold', 10),
+        ('FONT', (2, 0), (2, -1), 'Helvetica-Bold', 10),
+        ('FONT', (1, 0), (1, -1), 'Helvetica', 10),
+        ('FONT', (3, 0), (3, -1), 'Helvetica-Bold', 11),
+        ('TEXTCOLOR', (3, 0), (3, -1), colors.HexColor('#059669')),
+        ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.HexColor('#E5E7EB')),
+        ('PADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 0.5*cm))
+
+    # Tabel detail
+    header = ['No', 'Tgl Bayar', 'Kode', 'Pendaftar', 'Jalur / Gel.', 'Metode', 'Jumlah']
+    data = [header]
+
+    METODE_DISPLAY = dict(KonfirmasiPembayaran.METODE_CHOICES)
+    for i, k in enumerate(qs, start=1):
+        p = k.tagihan.pendaftaran
+        nama = (p.user.get_full_name() or p.user.username)[:28]
+        jalur_gel = f"{p.jalur.nama[:8] if p.jalur else '-'} / {p.gelombang.nama[:14] if p.gelombang else '-'}"
+        data.append([
+            str(i),
+            k.tgl_bayar.strftime('%d-%m-%Y') if k.tgl_bayar else '-',
+            k.tagihan.kode_bayar,
+            nama,
+            jalur_gel,
+            METODE_DISPLAY.get(k.metode_bayar, k.metode_bayar),
+            f'Rp {float(k.jumlah_bayar):,.0f}'.replace(',', '.'),
+        ])
+
+    # Total row
+    data.append(['', '', '', '', '', 'TOTAL', f'Rp {total_amount:,.0f}'.replace(',', '.')])
+
+    table = Table(data, colWidths=[1*cm, 2.5*cm, 3.5*cm, 6*cm, 5*cm, 3*cm, 3.5*cm], repeatRows=1)
+    table.setStyle(TableStyle([
+        # Header
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 9),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        # Body
+        ('FONT', (0, 1), (-1, -2), 'Helvetica', 8.5),
+        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+        ('ALIGN', (1, 1), (1, -1), 'CENTER'),
+        ('ALIGN', (-1, 1), (-1, -1), 'RIGHT'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#F9FAFB')]),
+        # Total
+        ('FONT', (0, -1), (-1, -1), 'Helvetica-Bold', 9.5),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#FEF3C7')),
+        ('LINEABOVE', (0, -1), (-1, -1), 1, colors.grey),
+        # Grid
+        ('GRID', (0, 0), (-1, -2), 0.25, colors.HexColor('#E5E7EB')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('PADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(table)
+
+    # TTD Bendahara
+    story.append(Spacer(1, 0.8*cm))
+
+    try:
+        from master.models import PengaturanSistem
+        pengaturan = PengaturanSistem.get()
+    except Exception:
+        pengaturan = None
+
+    nama_bendahara = (pengaturan.nama_bendahara_pmb if pengaturan else '') or 'Bendahara Panitia PMB'
+    nip_bendahara = (pengaturan.nip_bendahara_pmb if pengaturan else '') or ''
+    ttd_img_path = None
+    if pengaturan and pengaturan.ttd_bendahara_pmb:
+        try:
+            if os.path.exists(pengaturan.ttd_bendahara_pmb.path):
+                ttd_img_path = pengaturan.ttd_bendahara_pmb.path
+        except Exception:
+            pass
+
+    today_str = timezone.localdate().strftime('%d %B %Y')
+    ttd_content = [
+        Paragraph(f'Gorontalo, {today_str}', ParagraphStyle(
+            'r', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT
+        )),
+        Paragraph('Bendahara Panitia PMB UNISAN', ParagraphStyle(
+            'r2', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT
+        )),
+    ]
+    if ttd_img_path:
+        ttd_content.append(Spacer(1, 0.2*cm))
+        img = Image(ttd_img_path, width=4*cm, height=1.8*cm)
+        img.hAlign = 'RIGHT'
+        ttd_content.append(img)
+    else:
+        ttd_content.append(Spacer(1, 2*cm))
+
+    ttd_content.append(Paragraph(
+        f'<b>{nama_bendahara}</b>',
+        ParagraphStyle('r3', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT)
+    ))
+    if nip_bendahara:
+        ttd_content.append(Paragraph(
+            f'NIP. {nip_bendahara}',
+            ParagraphStyle('r4', parent=styles['Normal'], fontSize=9, alignment=TA_RIGHT, textColor=colors.grey)
+        ))
+
+    ttd_table = Table(
+        [['', ttd_content]],
+        colWidths=[14*cm, 10*cm],
+    )
+    ttd_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    story.append(ttd_table)
+
+    doc.build(story)
     return response

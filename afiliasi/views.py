@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
 
+
 from .models import Recruiter, KomisiReferral, PencairanKomisi, PengaturanAfiliasi
 from pendaftaran.models import Pendaftaran
 

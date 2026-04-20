@@ -36,4 +36,7 @@ urlpatterns = [
     path('cetak-kartu/massal/',    views.cetak_kartu_massal, name='cetak_kartu_massal'),
     path('cetak-formulir/<int:pk>/', views.cetak_formulir_admin, name='cetak_formulir'),
     path('pembayaran/<int:pk>/kwitansi/', views.pembayaran_kwitansi, name='pembayaran_kwitansi'),
+    path('laporan/pembayaran/', views.laporan_pembayaran, name='laporan_pembayaran'),
+    path('laporan/pembayaran/excel/', views.laporan_pembayaran_excel, name='laporan_pembayaran_excel'),
+    path('laporan/pembayaran/pdf/', views.laporan_pembayaran_pdf, name='laporan_pembayaran_pdf'),
 ]

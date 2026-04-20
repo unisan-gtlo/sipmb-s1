@@ -1,0 +1,174 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% load humanize %}
+
+{% block title %}Laporan Pembayaran{% endblock %}
+{% block nav_laporan_pembayaran %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-1"><i class="bi bi-cash-stack"></i> Laporan Penerimaan Pembayaran</h4>
+      <div class="text-muted small">Rekap pembayaran yang sudah dikonfirmasi</div>
+    </div>
+    <div>
+      <a href="{% url 'admin_pmb:laporan_pembayaran_excel' %}?{{ request.GET.urlencode }}"
+         class="btn btn-success">
+        <i class="bi bi-file-earmark-excel"></i> Export Excel
+      </a>
+      <a href="{% url 'admin_pmb:laporan_pembayaran_pdf' %}?{{ request.GET.urlencode }}"
+         class="btn btn-danger" target="_blank">
+        <i class="bi bi-file-earmark-pdf"></i> Export PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <form method="get" class="card shadow-sm border-0 mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Dari Tanggal</label>
+          <input type="date" name="dari" value="{{ dari|date:'Y-m-d' }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Sampai Tanggal</label>
+          <input type="date" name="sampai" value="{{ sampai|date:'Y-m-d' }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Jalur</label>
+          <select name="jalur" class="form-select form-select-sm">
+            <option value="">— Semua —</option>
+            {% for j in jalur_list %}
+              <option value="{{ j.id }}" {% if jalur_id == j.id|stringformat:"s" %}selected{% endif %}>{{ j.nama_jalur }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Gelombang</label>
+          <select name="gelombang" class="form-select form-select-sm">
+            <option value="">— Semua —</option>
+            {% for g in gelombang_list %}
+              <option value="{{ g.id }}" {% if gelombang_id == g.id|stringformat:"s" %}selected{% endif %}>
+                {{ g.nama_gelombang }} ({{ g.tahun_akademik }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Metode</label>
+          <select name="metode" class="form-select form-select-sm">
+            <option value="">— Semua —</option>
+            {% for k, v in METODE_CHOICES %}
+              <option value="{{ k }}" {% if metode == k %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary btn-sm w-100">
+            <i class="bi bi-funnel"></i> Filter
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Ringkasan -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <div class="text-muted small">Total Transaksi</div>
+          <div class="h3 mb-0 text-primary">{{ total_count }}</div>
+          <div class="text-muted small mt-2">
+            Periode {{ dari|date:"d M Y" }} - {{ sampai|date:"d M Y" }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <div class="text-muted small">Total Nominal Diterima</div>
+          <div class="h3 mb-0 text-success">Rp {{ total_amount|floatformat:0|intcomma }}</div>
+          <div class="text-muted small mt-2">Status: Dikonfirmasi</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <div class="text-muted small mb-2">Breakdown per Metode</div>
+          {% for b in breakdown %}
+          <div class="d-flex justify-content-between small">
+            <span>{{ b.metode_bayar|default:"-"|capfirst }}</span>
+            <span class="fw-bold">{{ b.count }} × Rp {{ b.total|floatformat:0|intcomma }}</span>
+          </div>
+          {% empty %}
+          <div class="text-muted small">Tidak ada data</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Transaksi -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-0 pt-3">
+      <h6 class="mb-0">Detail Transaksi ({{ total_count }})</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th class="small">No</th>
+              <th class="small">Tgl Bayar</th>
+              <th class="small">Kode</th>
+              <th class="small">Nama Pendaftar</th>
+              <th class="small">Jalur / Gelombang</th>
+              <th class="small">Metode</th>
+              <th class="small text-end">Jumlah</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in konfirmasi_list %}
+            <tr>
+              <td class="small">{{ forloop.counter }}</td>
+              <td class="small">{{ k.tgl_bayar|date:"d-m-Y" }}</td>
+              <td class="small font-monospace">{{ k.tagihan.kode_bayar }}</td>
+              <td class="small">
+                <div>{{ k.tagihan.pendaftaran.user.get_full_name|default:k.tagihan.pendaftaran.user.username }}</div>
+                <div class="text-muted" style="font-size:.75rem">{{ k.tagihan.pendaftaran.no_pendaftaran }}</div>
+              </td>
+              <td class="small">
+                {{ k.tagihan.pendaftaran.jalur.nama|default:"-" }}
+                <div class="text-muted" style="font-size:.75rem">{{ k.tagihan.pendaftaran.gelombang.nama_gelombang|default:"-" }}</div>
+              </td>
+              <td class="small">{{ k.get_metode_bayar_display }}</td>
+              <td class="small text-end fw-bold">Rp {{ k.jumlah_bayar|floatformat:0|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="bi bi-inbox"></i> Tidak ada data pembayaran pada periode ini.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if konfirmasi_list %}
+          <tfoot class="table-warning">
+            <tr>
+              <td colspan="6" class="text-end fw-bold">TOTAL</td>
+              <td class="text-end fw-bold">Rp {{ total_amount|floatformat:0|intcomma }}</td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
