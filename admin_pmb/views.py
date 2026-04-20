@@ -265,12 +265,143 @@ def verif_tolak(request, dok_id):
 def pembayaran(request):
     if not cek_admin(request.user):
         return redirect('dashboard:index')
-    return render(request, 'admin_pmb/placeholder.html', {
-        'page_title': 'Pembayaran',
+
+    from django.core.paginator import Paginator
+    from django.db.models import Count, Q, Sum
+    from pembayaran.models import KonfirmasiPembayaran
+
+    status = request.GET.get('status', 'menunggu')
+    q = (request.GET.get('q') or '').strip()
+
+    qs = KonfirmasiPembayaran.objects.select_related(
+        'tagihan',
+        'tagihan__pendaftaran',
+        'tagihan__pendaftaran__user',
+        'tagihan__pendaftaran__jalur',
+        'rekening_tujuan',
+        'dikonfirmasi_oleh',
+    ).order_by('-created_at')
+
+    if status in ('menunggu', 'dikonfirmasi', 'ditolak'):
+        qs = qs.filter(status=status)
+
+    if q:
+        qs = qs.filter(
+            Q(tagihan__kode_bayar__icontains=q)
+            | Q(tagihan__pendaftaran__no_pendaftaran__icontains=q)
+            | Q(atas_nama_pengirim__icontains=q)
+            | Q(no_transaksi__icontains=q)
+        )
+
+    stats = KonfirmasiPembayaran.objects.aggregate(
+        total=Count('id'),
+        menunggu=Count('id', filter=Q(status='menunggu')),
+        dikonfirmasi=Count('id', filter=Q(status='dikonfirmasi')),
+        ditolak=Count('id', filter=Q(status='ditolak')),
+        total_diterima=Sum('jumlah_bayar', filter=Q(status='dikonfirmasi')),
+    )
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'admin_pmb/pembayaran.html', {
+        'page_obj': page_obj,
+        'status_active': status,
+        'q': q,
+        'stats': stats,
+        'page_title': 'Verifikasi Pembayaran',
         **get_sidebar_counts()
     })
 
+@login_required
+def pembayaran_detail(request, pk):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
 
+    from django.contrib import messages
+    from django.shortcuts import get_object_or_404
+    from django.utils import timezone
+    from pembayaran.models import KonfirmasiPembayaran
+
+    konfirmasi = get_object_or_404(
+        KonfirmasiPembayaran.objects.select_related(
+            'tagihan',
+            'tagihan__pendaftaran',
+            'tagihan__pendaftaran__user',
+            'tagihan__pendaftaran__jalur',
+            'tagihan__pendaftaran__gelombang',
+            'rekening_tujuan',
+            'dikonfirmasi_oleh',
+        ),
+        pk=pk,
+    )
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        catatan = (request.POST.get('catatan_admin') or '').strip()
+
+        if konfirmasi.status != 'menunggu':
+            messages.warning(request, "Konfirmasi ini sudah diproses sebelumnya.")
+            return redirect('admin_pmb:pembayaran_detail', pk=pk)
+
+        tagihan = konfirmasi.tagihan
+
+        if action == 'approve':
+            konfirmasi.status = 'dikonfirmasi'
+            konfirmasi.catatan_admin = catatan
+            konfirmasi.dikonfirmasi_oleh = request.user
+            konfirmasi.tgl_konfirmasi = timezone.now()
+            konfirmasi.save()
+
+            tagihan.status = 'lunas'
+            tagihan.save(update_fields=['status', 'updated_at'])
+
+            KonfirmasiPembayaran.objects.filter(
+                tagihan=tagihan, status='menunggu',
+            ).exclude(pk=konfirmasi.pk).update(
+                status='ditolak',
+                catatan_admin='Auto-rejected: konfirmasi lain sudah disetujui.',
+                dikonfirmasi_oleh=request.user,
+                tgl_konfirmasi=timezone.now(),
+            )
+
+            messages.success(
+                request,
+                f"Pembayaran {tagihan.kode_bayar} berhasil dikonfirmasi sebagai LUNAS."
+            )
+            # TODO Step 6: trigger notifikasi 'konfirmasi_pembayaran'
+            return redirect('admin_pmb:pembayaran')
+
+        elif action == 'reject':
+            if not catatan:
+                messages.error(request, "Catatan alasan penolakan wajib diisi.")
+                return redirect('admin_pmb:pembayaran_detail', pk=pk)
+
+            konfirmasi.status = 'ditolak'
+            konfirmasi.catatan_admin = catatan
+            konfirmasi.dikonfirmasi_oleh = request.user
+            konfirmasi.tgl_konfirmasi = timezone.now()
+            konfirmasi.save()
+
+            has_other_active = tagihan.konfirmasi.filter(
+                status__in=('menunggu', 'dikonfirmasi')
+            ).exists()
+            if not has_other_active:
+                tagihan.status = 'belum_bayar'
+                tagihan.save(update_fields=['status', 'updated_at'])
+
+            messages.success(
+                request,
+                "Konfirmasi pembayaran ditolak. Maba bisa upload ulang bukti."
+            )
+            return redirect('admin_pmb:pembayaran')
+
+    return render(request, 'admin_pmb/pembayaran_detail.html', {
+        'konfirmasi': konfirmasi,
+        'tagihan': konfirmasi.tagihan,
+        'page_title': f'Verifikasi {konfirmasi.tagihan.kode_bayar}',
+        **get_sidebar_counts()
+    })
 
 @login_required
 def seleksi(request):

@@ -12,6 +12,7 @@ urlpatterns = [
     path('verifikasi/<int:dok_id>/acc/',  views.verif_acc,        name='verif_acc'),
     path('verifikasi/<int:dok_id>/tolak/',views.verif_tolak,      name='verif_tolak'),
     path('pembayaran/',                   views.pembayaran,       name='pembayaran'),
+    path('pembayaran/<int:pk>/', views.pembayaran_detail, name='pembayaran_detail'),
     path('seleksi/',                      views.seleksi,          name='seleksi'),
     path('seleksi/tambah/',               views.seleksi_tambah,   name='seleksi_tambah'),
     path('seleksi/<int:pk>/',             views.seleksi_detail,   name='seleksi_detail'),

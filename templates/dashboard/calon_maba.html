@@ -265,6 +265,66 @@
       </div>
       {% endif %}
 
+      <!-- PEMBAYARAN -->
+      {% if tagihan_aktif %}
+      <div class="card-modern p-3 mb-3">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <i class="bi bi-credit-card"
+               style="font-size:18px;
+                      color:{% if tagihan_aktif.status == 'lunas' %}#10b981{% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}#3b82f6{% else %}#f59e0b{% endif %}"></i>
+            <div style="font-size:.9rem;font-weight:600">Pembayaran</div>
+          </div>
+          {% if tagihan_aktif.status == 'lunas' %}
+            <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.7rem">✓ Lunas</span>
+          {% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}
+            <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:.7rem">Menunggu</span>
+          {% else %}
+            <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.7rem">Belum Bayar</span>
+          {% endif %}
+        </div>
+
+        <div style="font-size:.75rem;color:#64748b;margin-bottom:4px">{{ tagihan_aktif.get_jenis_display }}</div>
+        <div style="font-size:1.25rem;font-weight:700;color:#1e293b;margin-bottom:12px">
+          Rp {{ tagihan_aktif.jumlah|floatformat:0 }}
+        </div>
+
+        {% if tagihan_aktif.status == 'lunas' %}
+          <div style="font-size:.75rem;color:#10b981;margin-bottom:10px">
+            <i class="bi bi-check-circle-fill"></i> Pembayaran telah dikonfirmasi.
+          </div>
+          <a href="/pembayaran/{{ tagihan_aktif.kode_bayar }}/"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;
+                    background:#f1f5f9;color:#475569;padding:10px;border-radius:8px;
+                    text-decoration:none;font-size:.875rem;font-weight:600">
+            <i class="bi bi-receipt"></i> Lihat Bukti
+          </a>
+        {% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}
+          <div style="font-size:.75rem;color:#3b82f6;margin-bottom:10px">
+            <i class="bi bi-hourglass-split"></i> Admin sedang memverifikasi bukti transfer.
+          </div>
+          <a href="/pembayaran/{{ tagihan_aktif.kode_bayar }}/"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;
+                    background:linear-gradient(135deg,#3b82f6,#2563eb);
+                    color:white;padding:10px;border-radius:8px;
+                    text-decoration:none;font-size:.875rem;font-weight:600">
+            <i class="bi bi-eye"></i> Lihat Status
+          </a>
+        {% else %}
+          <div style="font-size:.75rem;color:#64748b;margin-bottom:10px">
+            Jatuh tempo: <strong>{{ tagihan_aktif.tgl_jatuh_tempo|date:"d M Y" }}</strong>
+          </div>
+          <a href="/pembayaran/{{ tagihan_aktif.kode_bayar }}/"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;
+                    background:linear-gradient(135deg,#f59e0b,#d97706);
+                    color:white;padding:10px;border-radius:8px;
+                    text-decoration:none;font-size:.875rem;font-weight:600">
+            <i class="bi bi-credit-card"></i> Bayar Sekarang
+          </a>
+        {% endif %}
+      </div>
+      {% endif %}
+      
       <!-- FORMULIR PENDAFTARAN -->
       <div class="card-modern p-3 mb-3">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">

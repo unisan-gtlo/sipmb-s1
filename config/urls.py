@@ -21,6 +21,8 @@ urlpatterns = [
     path('sinta/',        include('chatbot.urls',     namespace='chatbot')),
     path('admin-pmb/',    include('admin_pmb.urls',   namespace='admin_pmb')),
     path('afiliasi/', include('afiliasi.urls',     namespace='afiliasi')),
+    path('pembayaran/', include('pembayaran.urls')),
+   
 ]
 
 if settings.DEBUG:

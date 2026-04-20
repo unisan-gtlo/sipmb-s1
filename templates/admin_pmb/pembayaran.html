@@ -1,0 +1,175 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% load humanize %}
+
+{% block title %}Verifikasi Pembayaran — Admin PMB{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="mb-1"><i class="bi bi-cash-stack"></i> Verifikasi Pembayaran</h4>
+      <small class="text-muted">Verifikasi bukti transfer calon maba</small>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- STATS -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Menunggu Verifikasi</div>
+          <div class="h3 mb-0 text-warning">{{ stats.menunggu|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Dikonfirmasi (Lunas)</div>
+          <div class="h3 mb-0 text-success">{{ stats.dikonfirmasi|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Ditolak</div>
+          <div class="h3 mb-0 text-danger">{{ stats.ditolak|default:0 }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Total Diterima</div>
+          <div class="h3 mb-0 text-primary">Rp {{ stats.total_diterima|default:0|floatformat:0|intcomma }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER & SEARCH -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label small text-muted mb-1">Cari</label>
+          <input type="text" name="q" value="{{ q }}" class="form-control"
+                 placeholder="Kode bayar / no pendaftaran / nama pengirim / no transaksi">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1">Status</label>
+          <select name="status" class="form-select">
+            <option value="menunggu" {% if status_active == 'menunggu' %}selected{% endif %}>Menunggu</option>
+            <option value="dikonfirmasi" {% if status_active == 'dikonfirmasi' %}selected{% endif %}>Dikonfirmasi</option>
+            <option value="ditolak" {% if status_active == 'ditolak' %}selected{% endif %}>Ditolak</option>
+            <option value="semua" {% if status_active == 'semua' %}selected{% endif %}>Semua</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Tgl Kirim</th>
+            <th>Kode Bayar</th>
+            <th>Pendaftar</th>
+            <th>Pengirim</th>
+            <th class="text-end">Jumlah</th>
+            <th>Metode</th>
+            <th>Status</th>
+            <th class="text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in page_obj %}
+          <tr>
+            <td class="small">{{ k.created_at|date:"d M Y H:i" }}</td>
+            <td>
+              <div class="font-monospace small">{{ k.tagihan.kode_bayar }}</div>
+              <div class="small text-muted">{{ k.tagihan.pendaftaran.no_pendaftaran }}</div>
+            </td>
+            <td>
+              {{ k.tagihan.pendaftaran.user.get_full_name|default:k.tagihan.pendaftaran.user.email }}
+              <div class="small text-muted">{{ k.tagihan.pendaftaran.jalur.nama_jalur|default:"-" }}</div>
+            </td>
+            <td>
+              {{ k.atas_nama_pengirim|default:"—" }}
+              {% if k.bank_asal %}<div class="small text-muted">{{ k.bank_asal }}</div>{% endif %}
+            </td>
+            <td class="text-end fw-bold">Rp {{ k.jumlah_bayar|floatformat:0|intcomma }}</td>
+            <td class="small">{{ k.get_metode_bayar_display }}</td>
+            <td>
+              {% if k.status == 'menunggu' %}
+                <span class="badge bg-warning text-dark">Menunggu</span>
+              {% elif k.status == 'dikonfirmasi' %}
+                <span class="badge bg-success">Dikonfirmasi</span>
+              {% elif k.status == 'ditolak' %}
+                <span class="badge bg-danger">Ditolak</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{% url 'admin_pmb:pembayaran_detail' pk=k.pk %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-eye"></i> Detail
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              Tidak ada data konfirmasi pembayaran.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white">
+      <nav>
+        <ul class="pagination pagination-sm mb-0 justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status_active }}&q={{ q }}">
+                Sebelumnya
+              </a>
+            </li>
+          {% endif %}
+          <li class="page-item active">
+            <span class="page-link">Hal {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+          </li>
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status_active }}&q={{ q }}">
+                Berikutnya
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

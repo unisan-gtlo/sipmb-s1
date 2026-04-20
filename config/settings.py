@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'notifikasi',
     'dashboard',
     'admin_pmb',
+    'django.contrib.humanize', 
     
    
 ]

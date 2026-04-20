@@ -1,0 +1,271 @@
+{% extends 'pendaftaran/base_profil.html' %}
+{% load humanize %}
+
+{% block title %}{{ tagihan.kode_bayar }} — Pembayaran{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'dashboard:calon_maba' %}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'pembayaran:daftar' %}">Pembayaran</a></li>
+      <li class="breadcrumb-item active">{{ tagihan.kode_bayar }}</li>
+    </ol>
+  </nav>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- STATUS BANNER -->
+  {% if tagihan.status == 'lunas' %}
+    <div class="alert alert-success d-flex align-items-center">
+      <i class="bi bi-check-circle-fill fs-3 me-3"></i>
+      <div>
+        <strong>Pembayaran Lunas</strong><br>
+        <small>Biaya pendaftaran Anda sudah terkonfirmasi. Lanjutkan ke tahap berikutnya.</small>
+      </div>
+    </div>
+  {% elif tagihan.status == 'menunggu_konfirmasi' %}
+    <div class="alert alert-info d-flex align-items-center">
+      <i class="bi bi-hourglass-split fs-3 me-3"></i>
+      <div>
+        <strong>Menunggu Verifikasi Admin</strong><br>
+        <small>Bukti transfer sudah kami terima. Admin akan verifikasi dalam 1×24 jam kerja.</small>
+      </div>
+    </div>
+  {% elif tagihan.status == 'expired' %}
+    <div class="alert alert-secondary d-flex align-items-center">
+      <i class="bi bi-clock-history fs-3 me-3"></i>
+      <div>
+        <strong>Tagihan Expired</strong><br>
+        <small>Silakan hubungi panitia PMB untuk info lebih lanjut.</small>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- INFO TAGIHAN -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="text-muted small">Kode Pembayaran</div>
+          <div class="h5 font-monospace mb-3">{{ tagihan.kode_bayar }}</div>
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="text-muted small">Nama Pendaftar</div>
+              <div>{{ tagihan.pendaftaran.get_nama|default:tagihan.pendaftaran.user.get_full_name }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="text-muted small">No. Pendaftaran</div>
+              <div class="font-monospace">{{ tagihan.pendaftaran.no_pendaftaran }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="text-muted small">Jenis Tagihan</div>
+              <div>{{ tagihan.get_jenis_display }}</div>
+            </div>
+            <div class="col-sm-6">
+              <div class="text-muted small">Jatuh Tempo</div>
+              <div><strong>{{ tagihan.tgl_jatuh_tempo|date:"d M Y" }}</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 text-md-end mt-4 mt-md-0">
+          <div class="text-muted small">Total Bayar</div>
+          <div class="display-6 fw-bold text-primary">
+            Rp {{ tagihan.jumlah|floatformat:0|intcomma }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if bisa_upload %}
+  <!-- REKENING TUJUAN -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white border-0 pt-3">
+      <h5 class="mb-0"><i class="bi bi-bank"></i> Rekening Tujuan Transfer</h5>
+      <small class="text-muted">Transfer ke salah satu rekening resmi berikut:</small>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        {% for rek in rekening_aktif %}
+          <div class="col-md-6">
+            <div class="border rounded p-3 h-100">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-bold">{{ rek.nama_bank }}</div>
+                  <div class="h5 font-monospace mb-1">{{ rek.no_rekening }}</div>
+                  <div class="text-muted small">a.n. {{ rek.atas_nama }}</div>
+                  {% if rek.cabang %}
+                    <div class="text-muted small">{{ rek.cabang }}</div>
+                  {% endif %}
+                </div>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        onclick="navigator.clipboard.writeText('{{ rek.no_rekening }}').then(()=>{this.innerHTML='<i class=\'bi bi-check\'></i> OK'})">
+                  <i class="bi bi-clipboard"></i> Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="alert alert-warning mt-3 mb-0 small">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Penting:</strong> transfer sesuai jumlah tagihan
+        <strong>Rp {{ tagihan.jumlah|floatformat:0|intcomma }}</strong>
+        lalu upload bukti transfer di form di bawah.
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM UPLOAD BUKTI -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white border-0 pt-3">
+      <h5 class="mb-0"><i class="bi bi-cloud-upload"></i> Upload Bukti Transfer</h5>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Metode Pembayaran</label>
+            {{ form.metode_bayar }}
+            {{ form.metode_bayar.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Rekening Tujuan <span class="text-danger">*</span></label>
+            {{ form.rekening_tujuan }}
+            {{ form.rekening_tujuan.errors }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ form.bank_asal.label }}</label>
+            {{ form.bank_asal }}
+            {{ form.bank_asal.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">{{ form.atas_nama_pengirim.label }}</label>
+            {{ form.atas_nama_pengirim }}
+            {{ form.atas_nama_pengirim.errors }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">{{ form.jumlah_bayar.label }} <span class="text-danger">*</span></label>
+            {{ form.jumlah_bayar }}
+            {{ form.jumlah_bayar.errors }}
+            <small class="text-muted">Harus sesuai jumlah tagihan</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">{{ form.tgl_bayar.label }} <span class="text-danger">*</span></label>
+            {{ form.tgl_bayar }}
+            {{ form.tgl_bayar.errors }}
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">{{ form.no_transaksi.label }}</label>
+            {{ form.no_transaksi }}
+            {{ form.no_transaksi.errors }}
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">{{ form.bukti_bayar.label }} <span class="text-danger">*</span></label>
+            {{ form.bukti_bayar }}
+            {{ form.bukti_bayar.errors }}
+            <small class="text-muted">Format JPG/PNG, maksimal 5 MB. Pastikan nominal dan tanggal terbaca jelas.</small>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">Catatan (opsional)</label>
+            {{ form.catatan_pengirim }}
+            {{ form.catatan_pengirim.errors }}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+          <a href="{% url 'pembayaran:daftar' %}" class="btn btn-outline-secondary me-2">Kembali</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send"></i> Kirim Bukti Transfer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% elif has_pending %}
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i>
+      Anda sudah mengirim bukti transfer. Silakan menunggu verifikasi admin.
+      Jika ingin mengirim ulang, hubungi panitia PMB dulu.
+    </div>
+  {% elif not rekening_aktif.exists %}
+    <div class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle"></i>
+      Belum ada rekening tujuan yang aktif. Silakan hubungi panitia PMB.
+    </div>
+  {% endif %}
+
+  <!-- RIWAYAT KONFIRMASI -->
+  {% if konfirmasi_history %}
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-0 pt-3">
+      <h5 class="mb-0"><i class="bi bi-clock-history"></i> Riwayat Pengiriman Bukti</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Tgl Kirim</th>
+              <th>Tgl Transfer</th>
+              <th>Jumlah</th>
+              <th>Bank Asal</th>
+              <th>Status</th>
+              <th>Bukti</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in konfirmasi_history %}
+            <tr>
+              <td class="small">{{ k.created_at|date:"d M Y H:i" }}</td>
+              <td>{{ k.tgl_bayar|date:"d M Y" }}</td>
+              <td>Rp {{ k.jumlah_bayar|floatformat:0|intcomma }}</td>
+              <td>{{ k.bank_asal|default:"—" }}</td>
+              <td>
+                {% if k.status == 'menunggu' %}
+                  <span class="badge bg-warning text-dark">Menunggu</span>
+                {% elif k.status == 'dikonfirmasi' %}
+                  <span class="badge bg-success">Dikonfirmasi</span>
+                {% elif k.status == 'ditolak' %}
+                  <span class="badge bg-danger">Ditolak</span>
+                  {% if k.catatan_admin %}
+                    <div class="small text-danger mt-1">{{ k.catatan_admin }}</div>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td>
+                {% if k.bukti_bayar %}
+                  <a href="{{ k.bukti_bayar.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-image"></i> Lihat
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

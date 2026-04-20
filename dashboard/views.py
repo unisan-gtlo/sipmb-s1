@@ -35,11 +35,23 @@ def calon_maba(request):
         pendaftaran = None
         profil      = None
 
+    # Ambil tagihan aktif (biaya pendaftaran)
+    tagihan_aktif = None
+    if pendaftaran:
+        from pembayaran.models import Tagihan
+        tagihan_aktif = (
+            Tagihan.objects
+            .filter(pendaftaran=pendaftaran, jenis='biaya_pendaftaran')
+            .order_by('-created_at')
+            .first()
+        )
+
     context = {
-        'user':        user,
-        'pengaturan':  pengaturan,
-        'pendaftaran': pendaftaran,
-        'profil':      profil,
+        'user':          user,
+        'pengaturan':    pengaturan,
+        'pendaftaran':   pendaftaran,
+        'profil':        profil,
+        'tagihan_aktif': tagihan_aktif,
     }
     return render(request, 'dashboard/calon_maba.html', context)
 
