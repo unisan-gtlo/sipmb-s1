@@ -156,3 +156,40 @@ class KonfirmasiPembayaran(models.Model):
 
     def __str__(self):
         return f"{self.tagihan.kode_bayar} — {self.get_status_display()}"
+
+class TransaksiDuitku(models.Model):
+    """Log transaksi Duitku — 1 tagihan bisa punya banyak transaksi (retry)."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('failed', 'Failed'),
+        ('expired', 'Expired'),
+    ]
+
+    tagihan = models.ForeignKey(
+        Tagihan,
+        on_delete=models.CASCADE,
+        related_name='transaksi_duitku',
+    )
+    merchant_order_id = models.CharField(max_length=50, unique=True, db_index=True)
+    reference = models.CharField(max_length=100, blank=True, db_index=True)
+    payment_method = models.CharField(max_length=10)
+    payment_url = models.URLField(max_length=500, blank=True)
+    va_number = models.CharField(max_length=50, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=0)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending', db_index=True)
+    signature = models.CharField(max_length=100, blank=True)
+
+    callback_payload = models.JSONField(null=True, blank=True)
+    tgl_paid = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Transaksi Duitku"
+        verbose_name_plural = "Transaksi Duitku"
+
+    def __str__(self):
+        return f"{self.merchant_order_id} — {self.get_status_display()}"

@@ -30,7 +30,10 @@ def calon_maba(request):
     # Ambil data pendaftaran
     try:
         pendaftaran = Pendaftaran.objects.get(user=user)
-        profil      = pendaftaran.profil
+        try:
+            profil = pendaftaran.profil
+        except Exception:
+            profil = None
     except Pendaftaran.DoesNotExist:
         pendaftaran = None
         profil      = None

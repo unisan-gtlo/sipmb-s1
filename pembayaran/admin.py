@@ -1,7 +1,7 @@
 # pembayaran/admin.py
 from django.contrib import admin
 from .models import RekeningTujuan, Tagihan, KonfirmasiPembayaran
-
+from .models import TransaksiDuitku
 
 @admin.register(RekeningTujuan)
 class RekeningTujuanAdmin(admin.ModelAdmin):
@@ -35,3 +35,15 @@ class KonfirmasiPembayaranAdmin(admin.ModelAdmin):
     search_fields = ('tagihan__kode_bayar', 'tagihan__pendaftaran__no_pendaftaran', 'atas_nama_pengirim', 'no_transaksi')
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('tagihan', 'rekening_tujuan')
+
+
+
+
+@admin.register(TransaksiDuitku)
+class TransaksiDuitkuAdmin(admin.ModelAdmin):
+    list_display = ('merchant_order_id', 'tagihan', 'payment_method', 'amount', 'status', 'created_at')
+    list_filter = ('status', 'payment_method', 'created_at')
+    search_fields = ('merchant_order_id', 'reference', 'tagihan__kode_bayar')
+    readonly_fields = ('merchant_order_id', 'reference', 'signature', 'callback_payload',
+                       'created_at', 'updated_at')
+    raw_id_fields = ('tagihan',)

@@ -1,0 +1,70 @@
+{% extends 'pendaftaran/base_profil.html' %}
+{% load humanize %}
+
+{% block title %}Status Pembayaran{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 600px;">
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body text-center p-5">
+
+      {% if transaksi.status == 'paid' %}
+        <i class="bi bi-check-circle-fill text-success" style="font-size:4rem"></i>
+        <h3 class="mt-3 mb-2 text-success">Pembayaran Berhasil</h3>
+        <p class="text-muted">Terima kasih, pembayaran Anda telah kami terima.</p>
+      {% elif transaksi %}
+        <i class="bi bi-hourglass-split text-primary" style="font-size:4rem"></i>
+        <h3 class="mt-3 mb-2 text-primary">Pembayaran Sedang Diproses</h3>
+        <p class="text-muted">
+          Kami sedang memverifikasi pembayaran Anda.
+          Status akan update otomatis dalam beberapa menit setelah pembayaran terkonfirmasi.
+        </p>
+      {% else %}
+        <i class="bi bi-exclamation-triangle text-warning" style="font-size:4rem"></i>
+        <h3 class="mt-3 mb-2">Transaksi Tidak Ditemukan</h3>
+        <p class="text-muted">
+          Kami tidak menemukan data transaksi ini di sistem kami.
+        </p>
+      {% endif %}
+
+      {% if transaksi %}
+      <div class="bg-light rounded p-3 mt-4 text-start">
+        <div class="row small">
+          <div class="col-5 text-muted">Kode Bayar</div>
+          <div class="col-7 font-monospace">{{ tagihan.kode_bayar }}</div>
+        </div>
+        <div class="row small mt-2">
+          <div class="col-5 text-muted">Reference</div>
+          <div class="col-7 font-monospace">{{ transaksi.reference }}</div>
+        </div>
+        <div class="row small mt-2">
+          <div class="col-5 text-muted">Jumlah</div>
+          <div class="col-7 fw-bold">Rp {{ transaksi.amount|floatformat:0|intcomma }}</div>
+        </div>
+        <div class="row small mt-2">
+          <div class="col-5 text-muted">Status</div>
+          <div class="col-7">
+            <span class="badge bg-{% if transaksi.status == 'paid' %}success{% elif transaksi.status == 'pending' %}primary{% else %}secondary{% endif %}">
+              {{ transaksi.get_status_display }}
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="mt-4">
+        <a href="{% url 'dashboard:calon_maba' %}" class="btn btn-primary">
+          <i class="bi bi-house"></i> Kembali ke Dashboard
+        </a>
+        {% if tagihan %}
+        <a href="{% url 'pembayaran:detail' kode_bayar=tagihan.kode_bayar %}" class="btn btn-outline-secondary">
+          Lihat Detail Tagihan
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -11,3 +11,4 @@ urlpatterns = [
     path('kartu-peserta/', views.cetak_kartu_maba, name='cetak_kartu'),
     path('formulir/', views.cetak_formulir, name='cetak_formulir'),
 ]
+
