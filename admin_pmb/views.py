@@ -1507,3 +1507,21 @@ def cetak_formulir_admin(request, pk):
         f'inline; filename="formulir_{pendaftaran.no_pendaftaran}.pdf"'
     )
     return response
+
+@login_required
+def pembayaran_kwitansi(request, pk):
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+    from django.http import HttpResponse, Http404
+    from django.shortcuts import get_object_or_404
+    from pembayaran.models import KonfirmasiPembayaran
+    from pembayaran.pdf import generate_kwitansi_pdf
+
+    konfirmasi = get_object_or_404(
+        KonfirmasiPembayaran.objects.filter(status='dikonfirmasi'),
+        pk=pk,
+    )
+    buffer = generate_kwitansi_pdf(konfirmasi)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="Kwitansi-{konfirmasi.tagihan.kode_bayar}.pdf"'
+    return response

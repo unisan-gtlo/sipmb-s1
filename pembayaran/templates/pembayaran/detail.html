@@ -25,13 +25,21 @@
 
   <!-- STATUS BANNER -->
   {% if tagihan.status == 'lunas' %}
-    <div class="alert alert-success d-flex align-items-center">
-      <i class="bi bi-check-circle-fill fs-3 me-3"></i>
-      <div>
-        <strong>Pembayaran Lunas</strong><br>
-        <small>Biaya pendaftaran Anda sudah terkonfirmasi. Lanjutkan ke tahap berikutnya.</small>
+    <div class="alert alert-success d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-check-circle-fill fs-3 me-3"></i>
+        <div>
+          <strong>Pembayaran Lunas</strong><br>
+          <small>Biaya pendaftaran Anda sudah terkonfirmasi. Lanjutkan ke tahap berikutnya.</small>
+        </div>
       </div>
+      <a href="{% url 'pembayaran:kwitansi' kode_bayar=tagihan.kode_bayar %}"
+         target="_blank"
+         class="btn btn-success">
+        <i class="bi bi-printer"></i> Cetak Kwitansi
+      </a>
     </div>
+  
   {% elif tagihan.status == 'menunggu_konfirmasi' %}
     <div class="alert alert-info d-flex align-items-center">
       <i class="bi bi-hourglass-split fs-3 me-3"></i>

@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import UploadBuktiForm
 from .models import RekeningTujuan, Tagihan
-
+from django.http import Http404, HttpResponse
+from .pdf import generate_kwitansi_pdf
 
 
 @login_required
@@ -75,3 +76,23 @@ def detail_tagihan(request, kode_bayar):
         'has_pending': has_pending,
         'form': form,
     })
+
+@login_required
+def kwitansi(request, kode_bayar):
+    """Cetak kwitansi PDF — hanya untuk tagihan lunas milik maba sendiri."""
+    tagihan = get_object_or_404(
+        Tagihan.objects.select_related('pendaftaran', 'pendaftaran__user'),
+        kode_bayar=kode_bayar,
+        pendaftaran__user=request.user,
+    )
+    if tagihan.status != 'lunas':
+        raise Http404("Kwitansi hanya tersedia untuk tagihan yang sudah lunas.")
+
+    konfirmasi = tagihan.konfirmasi.filter(status='dikonfirmasi').order_by('-tgl_konfirmasi').first()
+    if not konfirmasi:
+        raise Http404("Data konfirmasi tidak ditemukan.")
+
+    buffer = generate_kwitansi_pdf(konfirmasi)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="Kwitansi-{tagihan.kode_bayar}.pdf"'
+    return response

@@ -35,4 +35,5 @@ urlpatterns = [
     path('cetak-kartu/<int:pk>/',  views.cetak_kartu,        name='cetak_kartu'),
     path('cetak-kartu/massal/',    views.cetak_kartu_massal, name='cetak_kartu_massal'),
     path('cetak-formulir/<int:pk>/', views.cetak_formulir_admin, name='cetak_formulir'),
+    path('pembayaran/<int:pk>/kwitansi/', views.pembayaran_kwitansi, name='pembayaran_kwitansi'),
 ]
