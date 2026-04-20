@@ -19,11 +19,17 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
     c = canvas.Canvas(buffer, pagesize=A4)
     lebar, tinggi = A4
 
+    # Ambil pengaturan untuk TTD ketua panitia
+    try:
+        from master.models import PengaturanSistem
+        pengaturan = PengaturanSistem.get()
+    except Exception:
+        pengaturan = None
+
     # ===== HEADER BACKGROUND =====
     c.setFillColor(UNGU)
     c.rect(0, tinggi - 4.5*cm, lebar, 4.5*cm, fill=1, stroke=0)
 
-    
     # ===== LOGO KAMPUS =====
     from utils.simda_reader import get_institusi
     institusi    = get_institusi()
@@ -33,9 +39,7 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
 
     logo_loaded = False
     if logo_file:
-        logo_path = os.path.join(
-            settings.BASE_DIR, 'static', 'assets', logo_file
-        )
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'assets', logo_file)
         if os.path.exists(logo_path):
             try:
                 img = ImageReader(logo_path)
@@ -43,55 +47,54 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
                         2.8*cm, 2.8*cm,
                         preserveAspectRatio=True, mask='auto')
                 logo_loaded = True
-            except Exception as e:
+            except Exception:
                 pass
 
     if not logo_loaded:
         c.setFillColor(colors.white)
         c.circle(2.2*cm, tinggi - 2.5*cm, 1.1*cm, fill=1, stroke=0)
         c.setFillColor(UNGU)
-        c.setFont('Helvetica-Bold', 10)
+        c.setFont('Helvetica-Bold', 11)
         c.drawCentredString(2.2*cm, tinggi - 2.6*cm, nama_singkat[:4])
 
     # ===== TEKS HEADER =====
     c.setFillColor(colors.white)
-    c.setFont('Helvetica-Bold', 15)
+    c.setFont('Helvetica-Bold', 16)
     c.drawCentredString(lebar/2 + 1*cm, tinggi - 1.4*cm,
                         'UNIVERSITAS ICHSAN GORONTALO')
-    c.setFont('Helvetica', 10)
+    c.setFont('Helvetica', 11)
     c.drawCentredString(lebar/2 + 1*cm, tinggi - 2.1*cm,
                         'Jl. Achmad Nadjamuddin No. 17, Kota Gorontalo')
 
     c.setFillColor(colors.HexColor('#fbbf24'))
-    c.setFont('Helvetica-Bold', 13)
+    c.setFont('Helvetica-Bold', 15)
     c.drawCentredString(lebar/2 + 1*cm, tinggi - 2.9*cm,
                         'KARTU PESERTA SELEKSI PMB')
 
     try:
-        from master.models import PengaturanSistem
         tahun = PengaturanSistem.get().tahun_akademik_aktif
-    except:
+    except Exception:
         tahun = '2025/2026'
 
     c.setFillColor(colors.white)
-    c.setFont('Helvetica', 10)
+    c.setFont('Helvetica', 11)
     c.drawCentredString(lebar/2 + 1*cm, tinggi - 3.6*cm,
                         f'TAHUN AKADEMIK {tahun}')
 
     # ===== NOMOR KARTU =====
     try:
-        kartu   = pendaftaran.kartu
+        kartu    = pendaftaran.kartu
         no_kartu = kartu.no_kartu
-    except:
+    except Exception:
         no_kartu = f'PMB-{pendaftaran.no_pendaftaran}'
 
     c.setFillColor(colors.HexColor('#fef3c7'))
     c.roundRect(1.5*cm, tinggi - 6.3*cm, lebar - 3*cm, 1.5*cm, 6, fill=1, stroke=0)
     c.setFillColor(colors.HexColor('#92400e'))
-    c.setFont('Helvetica-Bold', 9)
+    c.setFont('Helvetica-Bold', 11)
     c.drawCentredString(lebar/2, tinggi - 5.2*cm, 'NOMOR PESERTA')
     c.setFillColor(HITAM)
-    c.setFont('Helvetica-Bold', 20)
+    c.setFont('Helvetica-Bold', 22)
     c.drawCentredString(lebar/2, tinggi - 6.0*cm, no_kartu)
 
     # ===== FOTO =====
@@ -112,11 +115,11 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
                 raise Exception()
         else:
             raise Exception()
-    except:
+    except Exception:
         c.setFillColor(ABU_MUDA)
         c.rect(foto_x, foto_y, foto_w, foto_h, fill=1, stroke=0)
         c.setFillColor(ABU)
-        c.setFont('Helvetica', 8)
+        c.setFont('Helvetica', 9)
         c.drawCentredString(foto_x + foto_w/2, foto_y + foto_h/2, 'FOTO')
 
     c.setStrokeColor(UNGU)
@@ -134,7 +137,7 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
         tgl_lahir    = profil.tgl_lahir.strftime('%d %B %Y') if profil.tgl_lahir else '-'
         jk           = profil.get_jenis_kelamin_display() if profil.jenis_kelamin else '-'
         asal_sekolah = (profil.asal_sekolah or '-')[:38]
-    except:
+    except Exception:
         nama         = pendaftaran.user.get_full_name()
         nik          = '-'
         tgl_lahir    = '-'
@@ -143,45 +146,45 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
 
     def label_nilai(label, nilai, y):
         c.setFillColor(ABU)
-        c.setFont('Helvetica', 8)
+        c.setFont('Helvetica', 10)
         c.drawString(dx, y, label)
         c.setStrokeColor(ABU_MUDA)
         c.setLineWidth(0.5)
-        c.line(dx, y - 0.1*cm, lebar - 1.5*cm, y - 0.1*cm)
+        c.line(dx, y - 0.15*cm, lebar - 1.5*cm, y - 0.15*cm)
         c.setFillColor(HITAM)
-        c.setFont('Helvetica-Bold', 10)
-        c.drawString(dx, y - 0.55*cm, str(nilai))
+        c.setFont('Helvetica-Bold', 12)
+        c.drawString(dx, y - 0.65*cm, str(nilai))
 
-    label_nilai('Nama Lengkap', nama,         dy)
-    label_nilai('NIK',          nik,          dy - 1.1*cm)
-    label_nilai('Tgl Lahir / JK', f'{tgl_lahir}  |  {jk}', dy - 2.2*cm)
-    label_nilai('Asal Sekolah', asal_sekolah, dy - 3.3*cm)
+    label_nilai('Nama Lengkap',   nama,                           dy)
+    label_nilai('NIK',            nik,                            dy - 1.2*cm)
+    label_nilai('Tgl Lahir / JK', f'{tgl_lahir}  |  {jk}',        dy - 2.4*cm)
+    label_nilai('Asal Sekolah',   asal_sekolah,                   dy - 3.6*cm)
 
     # ===== GARIS PEMISAH =====
     c.setStrokeColor(UNGU)
     c.setLineWidth(0.8)
-    c.line(1.5*cm, tinggi - 12.0*cm, lebar - 1.5*cm, tinggi - 12.0*cm)
+    c.line(1.5*cm, tinggi - 12.2*cm, lebar - 1.5*cm, tinggi - 12.2*cm)
 
     # ===== INFO PENDAFTARAN =====
-    iy = tinggi - 12.8*cm
+    iy = tinggi - 13.0*cm
     col_w = (lebar - 3.3*cm) / 2
 
     def kotak(label, nilai, x, y, w):
         c.setFillColor(ABU_MUDA)
-        c.roundRect(x, y - 0.8*cm, w, 1.3*cm, 5, fill=1, stroke=0)
+        c.roundRect(x, y - 0.9*cm, w, 1.5*cm, 5, fill=1, stroke=0)
         c.setFillColor(UNGU)
-        c.setFont('Helvetica-Bold', 7.5)
-        c.drawString(x + 0.2*cm, y + 0.25*cm, label.upper())
+        c.setFont('Helvetica-Bold', 9)
+        c.drawString(x + 0.2*cm, y + 0.3*cm, label.upper())
         c.setFillColor(HITAM)
-        c.setFont('Helvetica-Bold', 9.5)
-        c.drawString(x + 0.2*cm, y - 0.45*cm, str(nilai)[:28] if nilai else '-')
+        c.setFont('Helvetica-Bold', 11)
+        c.drawString(x + 0.2*cm, y - 0.5*cm, str(nilai)[:28] if nilai else '-')
 
     kotak('No. Pendaftaran', pendaftaran.no_pendaftaran,
           1.5*cm, iy, col_w)
     kotak('Jalur Penerimaan', pendaftaran.jalur.nama_jalur,
           1.5*cm + col_w + 0.3*cm, iy, col_w)
 
-    iy -= 1.7*cm
+    iy -= 1.9*cm
     kotak('Program Studi', pendaftaran.prodi_pilihan_1.nama_prodi,
           1.5*cm, iy, col_w)
     kotak('Gelombang', pendaftaran.gelombang.nama_gelombang,
@@ -189,27 +192,26 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
 
     # ===== JADWAL SELEKSI =====
     if jadwal:
-        iy -= 1.7*cm
+        iy -= 1.9*cm
         c.setFillColor(UNGU)
-        c.roundRect(1.5*cm, iy - 0.8*cm, lebar - 3*cm, 1.3*cm, 5, fill=1, stroke=0)
+        c.roundRect(1.5*cm, iy - 0.9*cm, lebar - 3*cm, 1.5*cm, 5, fill=1, stroke=0)
         c.setFillColor(colors.white)
-        c.setFont('Helvetica-Bold', 8)
-        c.drawString(1.7*cm, iy + 0.25*cm, 'JADWAL SELEKSI')
+        c.setFont('Helvetica-Bold', 9)
+        c.drawString(1.7*cm, iy + 0.3*cm, 'JADWAL SELEKSI')
         teks = (f'{jadwal.get_jenis_seleksi_display()} | '
                 f'{jadwal.tgl_seleksi.strftime("%d %B %Y")} | '
                 f'{jadwal.jam_mulai.strftime("%H:%M")}-'
                 f'{jadwal.jam_selesai.strftime("%H:%M")} WIB')
         if jadwal.lokasi:
             teks += f' | {jadwal.lokasi}'
-        c.setFont('Helvetica-Bold', 9)
-        c.drawString(1.7*cm, iy - 0.45*cm, teks[:65])
+        c.setFont('Helvetica-Bold', 10)
+        c.drawString(1.7*cm, iy - 0.5*cm, teks[:65])
 
     # ===== TATA TERTIB =====
-    # Posisi tetap dari bawah agar tidak tabrakan dengan TTD
-    tt_y = 9.5*cm  # dari bawah halaman
+    tt_y = 10.5*cm
 
     c.setFillColor(HITAM)
-    c.setFont('Helvetica-Bold', 9)
+    c.setFont('Helvetica-Bold', 10.5)
     c.drawString(1.5*cm, tt_y, 'TATA TERTIB PESERTA SELEKSI:')
 
     rules = [
@@ -220,41 +222,68 @@ def buat_kartu_peserta(pendaftaran, jadwal=None):
         '5. Terlambat >15 menit tidak diperkenankan masuk.',
         '6. Ikuti petunjuk panitia selama seleksi berlangsung.',
     ]
-    c.setFont('Helvetica', 8.5)
+    c.setFont('Helvetica', 10)
     c.setFillColor(ABU)
     for i, r in enumerate(rules):
-        c.drawString(1.5*cm, tt_y - (i+1)*0.45*cm, r)
+        c.drawString(1.5*cm, tt_y - (i+1)*0.5*cm, r)
 
     # ===== TANDA TANGAN =====
-    # Posisi tetap dari bawah
-    ttd_y = 2.5*cm
+    ttd_y = 2.8*cm
 
-    
-    # TTD Panitia (kanan) — tanpa bingkai
-    c.setFillColor(ABU)
-    c.setFont('Helvetica', 8)
-    c.drawCentredString(lebar - 4*cm, ttd_y + 3.0*cm, 'Panitia PMB UNISAN')
-
-    # Garis TTD
-    c.setStrokeColor(HITAM)
-    c.setLineWidth(0.7)
-    c.line(lebar - 6.5*cm, ttd_y + 0.5*cm, lebar - 1.5*cm, ttd_y + 0.5*cm)
-    c.setFillColor(ABU)
-    c.setFont('Helvetica', 8)
-    c.drawCentredString(lebar - 4*cm, ttd_y + 0.2*cm, 'Panitia PMB UNISAN')
-
-    # TTD Peserta (kiri)
+    # ------ Peserta (kiri) ------
     c.setFillColor(HITAM)
-    c.setFont('Helvetica', 8.5)
-    c.drawString(1.5*cm, ttd_y + 3.0*cm, 'Gorontalo, .............................')
-    c.drawString(1.5*cm, ttd_y + 2.3*cm, 'Peserta,')
-    c.drawString(1.5*cm, ttd_y + 0.3*cm, '(__________________________)')
+    c.setFont('Helvetica', 10)
+    c.drawString(1.5*cm, ttd_y + 3.5*cm, 'Gorontalo, ..............................')
+    c.drawString(1.5*cm, ttd_y + 3.0*cm, 'Peserta,')
+    c.setStrokeColor(HITAM)
+    c.setLineWidth(0.5)
+    c.line(1.5*cm, ttd_y + 0.4*cm, 6.5*cm, ttd_y + 0.4*cm)
+    c.setFont('Helvetica-Bold', 10)
+    c.drawCentredString(4.0*cm, ttd_y + 0.0*cm, f' {nama} ')
+
+    # ------ Ketua Panitia (kanan) ------
+    nama_ketua = 'Panitia PMB'
+    nip_ketua = ''
+    ttd_img_drawn = False
+
+    if pengaturan:
+        nama_ketua = pengaturan.nama_ketua_pmb or nama_ketua
+        nip_ketua = pengaturan.nip_ketua_pmb or ''
+        if pengaturan.ttd_ketua_pmb:
+            try:
+                c.drawImage(
+                    ImageReader(pengaturan.ttd_ketua_pmb.path),
+                    lebar - 6.5*cm, ttd_y + 0.6*cm,
+                    5.0*cm, 2.5*cm,
+                    preserveAspectRatio=True, mask='auto',
+                )
+                ttd_img_drawn = True
+            except Exception:
+                pass
+
+    tgl_str = __import__('datetime').datetime.now().strftime('%d %B %Y')
+    c.setFillColor(HITAM)
+    c.setFont('Helvetica', 10)
+    c.drawString(lebar - 6.5*cm, ttd_y + 3.5*cm, f'Gorontalo, {tgl_str}')
+    c.drawString(lebar - 6.5*cm, ttd_y + 3.0*cm, 'Ketua Panitia PMB UNISAN')
+
+    if not ttd_img_drawn:
+        c.setStrokeColor(HITAM)
+        c.setLineWidth(0.5)
+        c.line(lebar - 6.5*cm, ttd_y + 0.4*cm, lebar - 1.5*cm, ttd_y + 0.4*cm)
+
+    c.setFont('Helvetica-Bold', 10)
+    c.drawCentredString(lebar - 4*cm, ttd_y + 0.0*cm, nama_ketua)
+    if nip_ketua:
+        c.setFont('Helvetica', 9)
+        c.setFillColor(ABU)
+        c.drawCentredString(lebar - 4*cm, ttd_y - 0.4*cm, f'NIDN. {nip_ketua}')
 
     # ===== FOOTER =====
     c.setFillColor(UNGU)
     c.rect(0, 0, lebar, 1.0*cm, fill=1, stroke=0)
     c.setFillColor(colors.white)
-    c.setFont('Helvetica', 7.5)
+    c.setFont('Helvetica', 8)
     c.drawCentredString(lebar/2, 0.35*cm,
         f'PMB UNISAN {tahun}  |  pmb.unisan.ac.id  |  '
         f'Kartu ini hanya berlaku untuk keperluan seleksi PMB UNISAN Gorontalo')
@@ -355,40 +384,7 @@ def buat_formulir_pendaftaran(pendaftaran):
     c.setLineWidth(0.5)
     c.line(1.0*cm, tinggi - 3.3*cm, lebar - 1.0*cm, tinggi - 3.3*cm)
 
-    # Foto 3x4 — di dalam area DATA PENDAFTARAN, sebelah kanan
-    foto_w = 2.8*cm
-    foto_h = 3.7*cm
-    foto_x = lebar - 1.2*cm - foto_w
-    foto_y = tinggi - 3.3*cm - foto_h  # tepat di bawah garis header
-
-    foto_loaded = False
-    if profil and profil.foto:
-        foto_path = os.path.join(settings.MEDIA_ROOT, str(profil.foto))
-        if os.path.exists(foto_path):
-            try:
-                img = ImageReader(foto_path)
-                c.drawImage(img, foto_x, foto_y, foto_w, foto_h,
-                        preserveAspectRatio=False, mask='auto')
-                foto_loaded = True
-            except:
-                pass
-
-    if not foto_loaded:
-        c.setFillColor(ABU_MUDA)
-        c.rect(foto_x, foto_y, foto_w, foto_h, fill=1, stroke=0)
-        c.setFillColor(ABU)
-        c.setFont('Helvetica', 7)
-        c.drawCentredString(foto_x + foto_w/2, foto_y + foto_h/2 + 0.2*cm, 'PAS FOTO')
-        c.drawCentredString(foto_x + foto_w/2, foto_y + foto_h/2 - 0.3*cm, '3 x 4')
-
-    c.setStrokeColor(HITAM)
-    c.setLineWidth(1)
-    c.rect(foto_x, foto_y, foto_w, foto_h, fill=0, stroke=1)
-
-    # Label foto
-    c.setFillColor(ABU)
-    c.setFont('Helvetica', 7)
-    c.drawCentredString(foto_x + foto_w/2, foto_y - 0.3*cm, 'Pas Foto 3x4')
+    
 
     # Posisi awal konten — setelah garis header
     y = tinggi - 3.6*cm
@@ -401,7 +397,7 @@ def buat_formulir_pendaftaran(pendaftaran):
         c.drawString(1.2*cm, y - 0.18*cm, teks.upper())
         return y - 0.7*cm
 
-    def baris(label, nilai, x, y, lebar_label=4.5*cm, lebar_nilai=None):
+    def baris(label, nilai, x, y, lebar_label=3.5*cm, lebar_nilai=None):
         if lebar_nilai is None:
             lebar_nilai = lebar - x - 1.0*cm - lebar_label
         c.setFillColor(ABU)
@@ -508,16 +504,31 @@ def buat_formulir_pendaftaran(pendaftaran):
     y = judul_seksi('D. Data Orang Tua / Wali', y)
     y -= 0.2*cm
 
+    # --- Ayah ---
     y = baris2('Nama Ayah',
                profil.nama_ayah if profil else '-',
                'Pekerjaan Ayah',
                profil.pekerjaan_ayah if profil else '-',
                y)
+    y = baris2('Pendidikan Ayah',
+               profil.get_pendidikan_ayah_display() if profil and profil.pendidikan_ayah else '-',
+               'No. HP Ayah',
+               profil.no_hp_ayah if profil and profil.no_hp_ayah else '-',
+               y)
+
+    # --- Ibu ---
     y = baris2('Nama Ibu',
                profil.nama_ibu if profil else '-',
                'Pekerjaan Ibu',
                profil.pekerjaan_ibu if profil else '-',
                y)
+    y = baris2('Pendidikan Ibu',
+               profil.get_pendidikan_ibu_display() if profil and profil.pendidikan_ibu else '-',
+               'No. HP Ibu',
+               profil.no_hp_ibu if profil and profil.no_hp_ibu else '-',
+               y)
+
+    # --- Wali ---
     y = baris2('Nama Wali',
                profil.nama_wali if profil and profil.nama_wali else '-',
                'No. HP Ortu/Wali',
@@ -567,26 +578,60 @@ def buat_formulir_pendaftaran(pendaftaran):
     # ===== TANDA TANGAN =====
     ttd_y = 2.8*cm
 
+    # Ambil data ketua dari Pengaturan
+    try:
+        from master.models import PengaturanSistem
+        pengaturan = PengaturanSistem.get()
+    except Exception:
+        pengaturan = None
+
+    nama_ketua = 'Panitia PMB'
+    nip_ketua = ''
+    ttd_img_drawn = False
+
+    if pengaturan:
+        nama_ketua = pengaturan.nama_ketua_pmb or nama_ketua
+        nip_ketua = pengaturan.nip_ketua_pmb or ''
+        if pengaturan.ttd_ketua_pmb:
+            try:
+                c.drawImage(
+                    ImageReader(pengaturan.ttd_ketua_pmb.path),
+                    lebar - 6.5*cm, ttd_y + 0.6*cm,
+                    5.0*cm, 2.0*cm,
+                    preserveAspectRatio=True, mask='auto',
+                )
+                ttd_img_drawn = True
+            except Exception:
+                pass
+
     c.setFillColor(HITAM)
     c.setFont('Helvetica', 8.5)
 
-    # TTD Peserta (kiri)
+    # ------ Peserta (kiri) ------
     c.drawString(1.5*cm, ttd_y + 2.5*cm, 'Yang Bertanda Tangan,')
     c.drawString(1.5*cm, ttd_y + 2.0*cm, 'Peserta')
     c.setStrokeColor(HITAM)
     c.setLineWidth(0.5)
     c.line(1.5*cm, ttd_y + 0.4*cm, 6.0*cm, ttd_y + 0.4*cm)
-    c.setFont('Helvetica', 8)
-    c.drawCentredString(3.75*cm, ttd_y + 0.1*cm,
-                        f'( {nama} )')
+    c.setFont('Helvetica-Bold', 9)
+    c.drawCentredString(3.75*cm, ttd_y + 0.1*cm, f' {nama} ')
 
-    # TTD Panitia (kanan)
+    # ------ Ketua Panitia (kanan) ------
     c.setFont('Helvetica', 8.5)
     c.drawString(lebar - 6.5*cm, ttd_y + 2.5*cm, 'Mengetahui,')
-    c.drawString(lebar - 6.5*cm, ttd_y + 2.0*cm, 'Panitia PMB UNISAN')
-    c.line(lebar - 6.5*cm, ttd_y + 0.4*cm, lebar - 1.5*cm, ttd_y + 0.4*cm)
-    c.setFont('Helvetica', 8)
-    c.drawCentredString(lebar - 4.0*cm, ttd_y + 0.1*cm, '(............................)')
+    c.drawString(lebar - 6.5*cm, ttd_y + 2.0*cm, 'Ketua Panitia PMB UNISAN')
+
+    if not ttd_img_drawn:
+        c.setStrokeColor(HITAM)
+        c.setLineWidth(0.5)
+        c.line(lebar - 6.5*cm, ttd_y + 0.4*cm, lebar - 1.5*cm, ttd_y + 0.4*cm)
+
+    c.setFont('Helvetica-Bold', 9)
+    c.drawCentredString(lebar - 4.0*cm, ttd_y + 0.05*cm, nama_ketua)
+    if nip_ketua:
+        c.setFont('Helvetica', 8)
+        c.setFillColor(ABU)
+        c.drawCentredString(lebar - 4.0*cm, ttd_y - 0.35*cm, f'NIDN. {nip_ketua}')
 
     # ===== FOOTER =====
     c.setFillColor(UNGU)
@@ -596,7 +641,49 @@ def buat_formulir_pendaftaran(pendaftaran):
     c.drawCentredString(lebar/2, 0.35*cm,
         f'Formulir Pendaftaran PMB UNISAN {tahun}  |  '
         f'Dicetak: {__import__("datetime").datetime.now().strftime("%d/%m/%Y %H:%M")}  |  '
-        f'pmb.unisan-g.id')
+        f'pmb.unisan.ac.id')
+
+    # ===== FOTO PESERTA (render terakhir agar tidak tertimpa garis) =====
+    foto_w = 2.8*cm
+    foto_h = 3.7*cm
+    foto_x = lebar - 1.2*cm - foto_w
+    foto_y = tinggi - 3.5*cm - foto_h
+
+    # Frame putih sebagai latar (supaya garis di belakang tidak tembus)
+    c.setFillColor(colors.white)
+    c.rect(foto_x - 0.1*cm, foto_y - 0.1*cm,
+           foto_w + 0.2*cm, foto_h + 0.2*cm,
+           fill=1, stroke=0)
+
+    foto_loaded = False
+    if profil and profil.foto:
+        foto_path = os.path.join(settings.MEDIA_ROOT, str(profil.foto))
+        if os.path.exists(foto_path):
+            try:
+                img = ImageReader(foto_path)
+                c.drawImage(img, foto_x, foto_y, foto_w, foto_h,
+                        preserveAspectRatio=False, mask='auto')
+                foto_loaded = True
+            except Exception:
+                pass
+
+    if not foto_loaded:
+        c.setFillColor(ABU_MUDA)
+        c.rect(foto_x, foto_y, foto_w, foto_h, fill=1, stroke=0)
+        c.setFillColor(ABU)
+        c.setFont('Helvetica', 8)
+        c.drawCentredString(foto_x + foto_w/2, foto_y + foto_h/2 + 0.2*cm, 'PAS FOTO')
+        c.drawCentredString(foto_x + foto_w/2, foto_y + foto_h/2 - 0.3*cm, '3 x 4')
+
+    # Bingkai foto warna ungu (konsisten dengan kartu peserta)
+    c.setStrokeColor(UNGU)
+    c.setLineWidth(1.5)
+    c.rect(foto_x, foto_y, foto_w, foto_h, fill=0, stroke=1)
+
+    # Label di bawah foto
+    c.setFillColor(ABU)
+    c.setFont('Helvetica', 7)
+    c.drawCentredString(foto_x + foto_w/2, foto_y - 0.3*cm, 'Pas Foto 3x4')
 
     # ===== WATERMARK =====
     c.saveState()
