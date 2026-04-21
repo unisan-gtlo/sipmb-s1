@@ -138,9 +138,11 @@ def dashboard_recruiter(request):
         recruiter=recruiter
     ).select_related('pendaftaran__user').order_by('-tgl_komisi')[:10]
 
-    # Ambil 4 template flyer aktif untuk section "Bagikan Flyer"
-    from .models import TemplateFlyer
+    # Ambil 4 template flyer aktif + timestamp konten untuk cache-bust
+    from .models import TemplateFlyer, KontenFlyer
     templates_flyer = TemplateFlyer.objects.filter(is_aktif=True).order_by('urutan')
+    konten_flyer = KontenFlyer.get_aktif()
+    konten_flyer_ts = int(konten_flyer.diubah_pada.timestamp())
 
     link_referral = f"{request.scheme}://{request.get_host()}/accounts/daftar/?ref={recruiter.kode_referral}"
 
@@ -158,6 +160,7 @@ def dashboard_recruiter(request):
         'komisi_list':     komisi_list,
         'link_referral':   link_referral,
         'templates_flyer': templates_flyer,
+        'konten_flyer_ts': konten_flyer_ts,
     }
     return render(request, 'afiliasi/dashboard_recruiter.html', context)
 
@@ -227,7 +230,6 @@ def _get_base_url(request):
 
 @login_required
 @require_GET
-@cache_control(private=True, max_age=3600)
 def flyer_preview(request, kode_template):
     """Preview flyer inline (untuk <img src=...>)."""
     from afiliasi.models import TemplateFlyer
@@ -240,7 +242,8 @@ def flyer_preview(request, kode_template):
     png_bytes = gen.get_png_bytes(kode_template)
 
     response = HttpResponse(png_bytes, content_type='image/png')
-    response['Cache-Control'] = 'private, max-age=3600'
+    # Cache 60 detik di browser; server sudah cache via FileBasedCache
+    response['Cache-Control'] = 'private, max-age=60'
     return response
 
 

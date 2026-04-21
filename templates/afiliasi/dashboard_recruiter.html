@@ -116,10 +116,21 @@
           <div style="font-size:.9rem;font-weight:600">
             <i class="bi bi-image me-1" style="color:#667eea"></i>Bagikan Flyer Promosi
           </div>
-          <span style="font-size:.7rem;background:linear-gradient(135deg,#667eea,#764ba2);
-                       color:white;padding:2px 10px;border-radius:10px;font-weight:600">
-            Baru
-          </span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button type="button" onclick="refreshFlyers()"
+                    id="btn-refresh-flyers"
+                    title="Muat ulang thumbnail jika admin baru mengubah konten"
+                    style="background:#f1f5f9;border:none;color:#667eea;
+                           width:28px;height:28px;border-radius:50%;cursor:pointer;
+                           font-size:.8rem;display:flex;align-items:center;justify-content:center;
+                           transition:all .2s">
+              <i class="bi bi-arrow-clockwise" id="refresh-icon"></i>
+            </button>
+            <span style="font-size:.7rem;background:linear-gradient(135deg,#667eea,#764ba2);
+                         color:white;padding:2px 10px;border-radius:10px;font-weight:600">
+              Baru
+            </span>
+          </div>
         </div>
         <div style="font-size:.75rem;color:#94a3b8;margin-bottom:16px">
           Flyer sudah lengkap dengan nama &amp; QR code referral Anda. Siap dibagikan ke media sosial.
@@ -457,5 +468,58 @@ function closeFlyerModal(event) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeFlyerModal();
 });
+
+// Refresh thumbnail dengan cache-busting timestamp
+function refreshFlyers() {
+  const btn = document.getElementById('btn-refresh-flyers');
+  const icon = document.getElementById('refresh-icon');
+
+  // Spin icon selama loading
+  icon.style.animation = 'spin 0.6s linear infinite';
+  btn.disabled = true;
+
+  // Tambah ?v=timestamp ke semua <img> thumbnail flyer
+  const timestamp = Date.now();
+  const imgs = document.querySelectorAll('.flyer-thumb-wrapper img');
+  let loaded = 0;
+
+  if (imgs.length === 0) {
+    icon.style.animation = '';
+    btn.disabled = false;
+    return;
+  }
+
+  imgs.forEach(function(img) {
+    const baseUrl = img.src.split('?')[0];
+    const newSrc = baseUrl + '?v=' + timestamp;
+
+    const tempImg = new Image();
+    tempImg.onload = tempImg.onerror = function() {
+      img.src = newSrc;
+      loaded++;
+      if (loaded === imgs.length) {
+        // Semua selesai - stop animasi
+        setTimeout(function() {
+          icon.style.animation = '';
+          btn.disabled = false;
+
+          // Visual feedback sukses
+          icon.className = 'bi bi-check-lg';
+          setTimeout(function() {
+            icon.className = 'bi bi-arrow-clockwise';
+          }, 1200);
+        }, 200);
+      }
+    };
+    tempImg.src = newSrc;
+  });
+}
+
+// Style animasi spin untuk icon refresh
+(function() {
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } #btn-refresh-flyers:hover:not(:disabled) { background: #e0e7ff !important; } #btn-refresh-flyers:disabled { opacity: 0.6; cursor: wait; }';
+  document.head.appendChild(style);
+})();
 </script>
 {% endblock %}
