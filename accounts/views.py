@@ -14,6 +14,63 @@ from master.models import GelombangPenerimaan, ProdiPMB
 from pendaftaran.models import Pendaftaran, ProfilPendaftar, TokenAktivasi
 from konten.models import Pengumuman, Testimoni, MitraKerjasama, MediaSosial, DokumenDownload, BrosurFakultas, FAQ
 
+# ============================================================
+# MASTER WARNA FAKULTAS — dipakai di:
+# - Halaman beranda publik (section Fakultas & Prodi)
+# - Halaman publik /prodi/
+# - Dashboard admin PMB (grafik pendaftar per prodi)
+# Kode fakultas harus sama persis dengan kode_fakultas di SIMDA.
+# ============================================================
+WARNA_FAKULTAS = {
+    'FK':    {
+        'gradient': 'linear-gradient(135deg,#1d4ed8,#3b82f6)',
+        'light': '#dbeafe', 'text': '#1d4ed8',
+        'icon': 'laptop'
+    },
+    'FE':    {
+        'gradient': 'linear-gradient(135deg,#b45309,#f59e0b)',
+        'light': '#fef3c7', 'text': '#b45309',
+        'icon': 'graph-up-arrow'
+    },
+    'FP':    {
+        'gradient': 'linear-gradient(135deg,#15803d,#22c55e)',
+        'light': '#dcfce7', 'text': '#15803d',
+        'icon': 'tree'
+    },
+    'FH':    {
+        'gradient': 'linear-gradient(135deg,#b91c1c,#ef4444)',
+        'light': '#fee2e2', 'text': '#b91c1c',
+        'icon': 'briefcase'
+    },
+    'FISIP': {
+        'gradient': 'linear-gradient(135deg,#6d28d9,#a78bfa)',
+        'light': '#ede9fe', 'text': '#6d28d9',
+        'icon': 'people'
+    },
+    'FT':    {
+        'gradient': 'linear-gradient(135deg,#c2410c,#f97316)',
+        'light': '#ffedd5', 'text': '#c2410c',
+        'icon': 'gear'
+    },
+    'S2':    {
+        'gradient': 'linear-gradient(135deg,#0f766e,#14b8a6)',
+        'light': '#ccfbf1', 'text': '#0f766e',
+        'icon': 'mortarboard'
+    },
+}
+
+WARNA_FALLBACK = {
+    'gradient': 'linear-gradient(135deg,#64748b,#94a3b8)',
+    'light': '#f1f5f9', 'text': '#475569',
+    'icon': 'building'
+}
+
+
+def warna_fakultas(kode_fakultas):
+    """Ambil dict warna berdasarkan kode fakultas. Fallback abu-abu."""
+    if not kode_fakultas:
+        return WARNA_FALLBACK
+    return WARNA_FAKULTAS.get(kode_fakultas.upper(), WARNA_FALLBACK)
 
 logger = logging.getLogger(__name__)
 
@@ -243,43 +300,7 @@ def beranda(request):
     dokumen_list       = DokumenDownload.objects.filter(status='aktif').order_by('urutan')[:4]
     faq_list = FAQ.objects.filter(status='aktif').order_by('urutan')
     # Warna per fakultas
-    warna_map = {
-        'FK':    {
-            'gradient': 'linear-gradient(135deg,#1d4ed8,#3b82f6)',
-            'light': '#dbeafe', 'text': '#1d4ed8',
-            'icon': 'laptop'
-        },
-        'FE':    {
-            'gradient': 'linear-gradient(135deg,#b45309,#f59e0b)',
-            'light': '#fef3c7', 'text': '#b45309',
-            'icon': 'graph-up-arrow'
-        },
-        'FP':    {
-            'gradient': 'linear-gradient(135deg,#15803d,#22c55e)',
-            'light': '#dcfce7', 'text': '#15803d',
-            'icon': 'tree'
-        },
-        'FH':    {
-            'gradient': 'linear-gradient(135deg,#b91c1c,#ef4444)',
-            'light': '#fee2e2', 'text': '#b91c1c',
-            'icon': 'briefcase'
-        },
-        'FISIP': {
-            'gradient': 'linear-gradient(135deg,#6d28d9,#a78bfa)',
-            'light': '#ede9fe', 'text': '#6d28d9',
-            'icon': 'people'
-        },
-        'FT':    {
-            'gradient': 'linear-gradient(135deg,#c2410c,#f97316)',
-            'light': '#ffedd5', 'text': '#c2410c',
-            'icon': 'gear'
-        },
-        'S2':    {
-            'gradient': 'linear-gradient(135deg,#0f766e,#14b8a6)',
-            'light': '#ccfbf1', 'text': '#0f766e',
-            'icon': 'mortarboard'
-        },
-    }
+    warna_map = WARNA_FAKULTAS
 
     try:
         fakultas_raw = get_fakultas()

@@ -12,7 +12,7 @@ from pendaftaran.models import Pendaftaran, ProfilPendaftar
 from dokumen.models import DokumenPendaftar
 from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem
 from chatbot.models import KnowledgeBase
-
+from accounts.views import WARNA_FAKULTAS, warna_fakultas
 logger = logging.getLogger(__name__)
 
 
@@ -51,10 +51,34 @@ def dashboard(request):
         'jalur__nama_jalur'
     ).annotate(total=Count('id')).order_by('-total')
 
-    # Per prodi
-    per_prodi = Pendaftaran.objects.values(
-        'prodi_pilihan_1__nama_prodi'
+    # Per prodi (+ warna per fakultas)
+    from accounts.views import warna_fakultas
+    per_prodi_qs = Pendaftaran.objects.values(
+        'prodi_pilihan_1__nama_prodi',
+        'prodi_pilihan_1__kode_fakultas',
     ).annotate(total=Count('id')).order_by('-total')[:8]
+
+    # Siapkan data untuk chart + legend
+    per_prodi = []
+    warna_prodi_list = []
+    for p in per_prodi_qs:
+        kode_fak = p['prodi_pilihan_1__kode_fakultas']
+        w = warna_fakultas(kode_fak)
+        per_prodi.append({
+            'prodi_pilihan_1__nama_prodi': p['prodi_pilihan_1__nama_prodi'],
+            'total': p['total'],
+            'kode_fakultas': kode_fak,
+            'warna': w['text'],
+        })
+        warna_prodi_list.append(w['text'])
+
+    # Legend fakultas — hanya yang muncul di chart
+    from accounts.views import WARNA_FAKULTAS
+    kode_fakultas_muncul = {p['kode_fakultas'] for p in per_prodi if p['kode_fakultas']}
+    legend_fakultas = [
+        {'kode': k, 'hex': WARNA_FAKULTAS[k]['text']}
+        for k in kode_fakultas_muncul if k in WARNA_FAKULTAS
+    ]
 
     # 10 terbaru
     terbaru = Pendaftaran.objects.select_related(
@@ -69,6 +93,8 @@ def dashboard(request):
         'lulus': lulus, 'daftar_ulang': daftar_ulang,
         'draft': draft, 'tidak_lulus': tidak_lulus,
         'per_jalur': per_jalur, 'per_prodi': per_prodi,
+        'warna_prodi_list': warna_prodi_list,
+        'legend_fakultas': legend_fakultas,
         'terbaru': terbaru, 'pengaturan': pengaturan,
         **get_sidebar_counts(),
     }
@@ -603,10 +629,32 @@ def laporan(request):
     total_lulus     = Pendaftaran.objects.filter(status='LULUS_SELEKSI').count()
     total_daftar_ulang = Pendaftaran.objects.filter(status='DAFTAR_ULANG').count()
 
-    # Per prodi
-    per_prodi = Pendaftaran.objects.values(
-        'prodi_pilihan_1__nama_prodi'
+    # Per prodi (+ warna per fakultas)
+    from accounts.views import warna_fakultas, WARNA_FAKULTAS
+    per_prodi_qs = Pendaftaran.objects.values(
+        'prodi_pilihan_1__nama_prodi',
+        'prodi_pilihan_1__kode_fakultas',
     ).annotate(total=Count('id')).order_by('-total')
+
+    per_prodi = []
+    warna_prodi_list = []
+    for p in per_prodi_qs:
+        kode_fak = p['prodi_pilihan_1__kode_fakultas']
+        w = warna_fakultas(kode_fak)
+        per_prodi.append({
+            'prodi_pilihan_1__nama_prodi': p['prodi_pilihan_1__nama_prodi'],
+            'total': p['total'],
+            'kode_fakultas': kode_fak,
+            'warna': w['text'],
+        })
+        warna_prodi_list.append(w['text'])
+
+    # Legend fakultas — hanya yang muncul di chart
+    kode_fakultas_muncul = {p['kode_fakultas'] for p in per_prodi if p['kode_fakultas']}
+    legend_fakultas = [
+        {'kode': k, 'hex': WARNA_FAKULTAS[k]['text']}
+        for k in kode_fakultas_muncul if k in WARNA_FAKULTAS
+    ]
 
     # Per jalur
     per_jalur = Pendaftaran.objects.values(
@@ -701,6 +749,8 @@ def laporan(request):
         'per_agama':          per_agama,
         'per_bulan':          per_bulan,
         'tabs':               tabs,
+        'warna_prodi_list':  warna_prodi_list,
+        'legend_fakultas':   legend_fakultas,
         **get_sidebar_counts(),
     }
     return render(request, 'admin_pmb/laporan.html', context)
