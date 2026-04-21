@@ -116,6 +116,24 @@ DATABASES = {
     },
 }
 
+# ============================================================
+# CACHE — FileBasedCache agar shared antar gunicorn worker
+# ============================================================
+
+import os
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'django_cache'),
+        'TIMEOUT': 60 * 60 * 24,  # default 24 jam
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+            'CULL_FREQUENCY': 3,
+        },
+    }
+}
+
 # =============================================================
 # AUTH & AXES
 # =============================================================

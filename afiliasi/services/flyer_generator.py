@@ -339,7 +339,45 @@ class FlyerGenerator:
             self.konten.website_display,
             font=font_web, fill=(130, 130, 130, 255)
         )
+        # Info kontak PMB di bawah QR (jika nomor WA diisi admin)
+        if self.konten.nomor_wa_pmb:
+            info_y = qr_y + qr_size + 30
 
+            # Garis pemisah tipis
+            draw.line(
+                [(60, info_y), (W - 60, info_y)],
+                fill=(230, 230, 230, 255), width=1
+            )
+
+            info_y += 20
+
+            # Icon WA (lingkaran hijau WhatsApp)
+            icon_size = 32
+            draw.ellipse(
+                [(60, info_y), (60 + icon_size, info_y + icon_size)],
+                fill=(37, 211, 102, 255)
+            )
+            # Huruf W di tengah icon
+            font_icon = self._font('bold', 18)
+            draw.text(
+                (60 + 9, info_y + 5),
+                'W', font=font_icon, fill=(255, 255, 255, 255)
+            )
+
+            # Label + nomor
+            font_info_lbl = self._font('regular', 20)
+            draw.text(
+                (60 + icon_size + 14, info_y - 2),
+                'Info & Pendaftaran PMB:',
+                font=font_info_lbl, fill=(130, 130, 130, 255)
+            )
+
+            font_info_wa = self._font('semibold', 24)
+            draw.text(
+                (60 + icon_size + 14, info_y + 20),
+                self.konten.nomor_wa_pmb,
+                font=font_info_wa, fill=(60, 60, 60, 255)
+            )
     # ---------- RENDER TEMPLATES ----------
 
     def render_story(self):
