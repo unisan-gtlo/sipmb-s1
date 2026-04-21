@@ -1,0 +1,104 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Setup Prodi per Gelombang{% endblock %}
+
+{% block content %}
+<div style="padding:24px">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div>
+      <h4 style="margin:0;font-weight:700;color:#1e293b">
+        <i class="bi bi-grid-3x3-gap-fill" style="color:#667eea"></i>
+        Setup Prodi per Gelombang
+      </h4>
+      <div style="font-size:.85rem;color:#64748b;margin-top:4px">
+        Pilih gelombang untuk setup prodi yang tersedia (mode bulk matrix).
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div style="background:{% if msg.tags == 'error' %}#fee2e2{% else %}#d1fae5{% endif %};
+                color:{% if msg.tags == 'error' %}#991b1b{% else %}#065f46{% endif %};
+                padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:.875rem">
+      {{ msg }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <div style="background:#f8f9ff;border-left:4px solid #667eea;padding:14px 18px;
+              border-radius:8px;margin-bottom:20px;font-size:.85rem;color:#475569">
+    <i class="bi bi-info-circle me-1" style="color:#667eea"></i>
+    <strong>Tips:</strong> Gunakan fitur ini untuk input cepat banyak prodi sekaligus.
+    Prodi diambil otomatis dari master SIMDA ({{ total_prodi_master }} prodi tersedia).
+    Bisa juga clone setting dari gelombang lain untuk menghemat waktu.
+  </div>
+
+  <div class="row g-3">
+    {% for g in gelombang_list %}
+    {% with progress=g.total_prodi|default:0 %}
+    <div class="col-md-6">
+      <div style="background:white;border-radius:14px;padding:20px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .2s"
+           onmouseover="this.style.boxShadow='0 4px 16px rgba(102,126,234,.2)'"
+           onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-weight:700;font-size:1rem;color:#1e293b">
+              {{ g.nama_gelombang }}
+            </div>
+            <div style="font-size:.8rem;color:#64748b;margin-top:2px">
+              {{ g.jalur.nama_jalur }} — {{ g.tahun_akademik }}
+            </div>
+          </div>
+          <span style="font-size:.7rem;padding:3px 10px;border-radius:10px;
+            {% if g.status == 'buka' %}background:#d1fae5;color:#065f46
+            {% elif g.status == 'belum_buka' %}background:#fef3c7;color:#92400e
+            {% elif g.status == 'ditutup' %}background:#fee2e2;color:#991b1b
+            {% else %}background:#e2e8f0;color:#475569{% endif %}">
+            {{ g.get_status_display }}
+          </span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;color:#64748b;margin-bottom:6px">
+          <span>{{ g.tgl_buka|date:"d M Y" }} - {{ g.tgl_tutup|date:"d M Y" }}</span>
+          <span>
+            <strong style="color:{% if progress > 0 %}#10b981{% else %}#94a3b8{% endif %}">
+              {{ progress }}/{{ total_prodi_master }} prodi
+            </strong>
+          </span>
+        </div>
+
+        <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;margin-bottom:14px">
+          {% widthratio progress total_prodi_master 100 as percent %}
+          <div style="height:100%;border-radius:3px;width:{{ percent }}%;
+                      background:linear-gradient(135deg,#667eea,#764ba2)"></div>
+        </div>
+
+        <a href="{% url 'admin_pmb:setup_prodi_matrix' g.id %}"
+           style="display:block;text-align:center;
+                  background:linear-gradient(135deg,#667eea,#764ba2);
+                  color:white;padding:9px;border-radius:8px;
+                  text-decoration:none;font-weight:600;font-size:.85rem">
+          {% if progress > 0 %}
+            <i class="bi bi-pencil-square me-1"></i> Edit Setup
+          {% else %}
+            <i class="bi bi-plus-circle me-1"></i> Setup Prodi
+          {% endif %}
+        </a>
+      </div>
+    </div>
+    {% endwith %}
+    {% empty %}
+    <div class="col-12">
+      <div style="background:white;border-radius:14px;padding:40px;text-align:center;color:#94a3b8">
+        Belum ada gelombang. Tambahkan gelombang dulu di
+        <a href="/admin/master/gelombangpenerimaan/" style="color:#667eea">Django Admin → Gelombang</a>.
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

@@ -5,6 +5,41 @@
 {% block page_sub %}Kelola data master PMB UNISAN{% endblock %}
 
 {% block content %}
+<!-- BULK SETUP PRODI - SHORTCUT -->
+<div style="background:white;border-radius:14px;padding:20px;margin-bottom:16px;
+            border:2px solid #667eea;
+            box-shadow:0 4px 14px rgba(102,126,234,.15);position:relative">
+  <div style="position:absolute;top:-10px;right:16px;
+              background:linear-gradient(135deg,#10b981,#059669);
+              color:white;padding:3px 10px;border-radius:10px;
+              font-size:.65rem;font-weight:700;letter-spacing:.5px">
+    🚀 LEBIH CEPAT
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div style="width:56px;height:56px;border-radius:12px;
+                background:linear-gradient(135deg,#667eea,#764ba2);
+                display:flex;align-items:center;justify-content:center;
+                font-size:24px;flex-shrink:0;color:white">
+      <i class="bi bi-grid-3x3-gap-fill"></i>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:1rem;font-weight:700;color:#1e1e2e;margin-bottom:2px">
+        Setup Prodi per Gelombang (Bulk Matrix)
+      </div>
+      <div style="font-size:.8rem;color:#64748b">
+        Input semua prodi sekaligus dengan tabel matrix. Bisa clone dari gelombang lain.
+        <strong style="color:#667eea">Recommended</strong> untuk setup cepat banyak prodi.
+      </div>
+    </div>
+    <a href="{% url 'admin_pmb:setup_prodi_list' %}"
+       style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+              padding:10px 20px;border-radius:8px;text-decoration:none;
+              font-size:.85rem;font-weight:600;white-space:nowrap">
+      Buka Setup →
+    </a>
+  </div>
+</div>
+
 
 <!-- MENU MASTER -->
 <div class="row g-3 mb-4">
