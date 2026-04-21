@@ -138,6 +138,10 @@ def dashboard_recruiter(request):
         recruiter=recruiter
     ).select_related('pendaftaran__user').order_by('-tgl_komisi')[:10]
 
+    # Ambil 4 template flyer aktif untuk section "Bagikan Flyer"
+    from .models import TemplateFlyer
+    templates_flyer = TemplateFlyer.objects.filter(is_aktif=True).order_by('urutan')
+
     link_referral = f"{request.scheme}://{request.get_host()}/accounts/daftar/?ref={recruiter.kode_referral}"
 
     context = {
@@ -153,6 +157,7 @@ def dashboard_recruiter(request):
         'referral_list':   referral_list,
         'komisi_list':     komisi_list,
         'link_referral':   link_referral,
+        'templates_flyer': templates_flyer,
     }
     return render(request, 'afiliasi/dashboard_recruiter.html', context)
 
@@ -190,3 +195,91 @@ def request_pencairan(request):
             messages.success(request, f'Request pencairan Rp {jumlah:,.0f} berhasil!')
 
     return redirect('afiliasi:dashboard')
+
+# ============================================================
+# FLYER GENERATOR VIEWS
+# ============================================================
+
+from django.http import HttpResponse, Http404
+from django.views.decorators.http import require_GET
+from django.views.decorators.cache import cache_control
+
+
+def _get_recruiter_aktif(request):
+    """Helper: ambil Recruiter aktif milik user yang login.
+
+    Raise Http404 jika user belum jadi recruiter atau status tidak aktif.
+    """
+    if not hasattr(request.user, 'recruiter'):
+        raise Http404("Anda belum terdaftar sebagai recruiter.")
+
+    recruiter = request.user.recruiter
+    if recruiter.status != 'aktif':
+        raise Http404("Akun recruiter belum aktif atau telah dinonaktifkan.")
+
+    return recruiter
+
+
+def _get_base_url(request):
+    """Build base URL dari request agar QR code link mengikuti domain aktual."""
+    return f"{request.scheme}://{request.get_host()}"
+
+
+@login_required
+@require_GET
+@cache_control(private=True, max_age=3600)
+def flyer_preview(request, kode_template):
+    """Preview flyer inline (untuk <img src=...>)."""
+    from afiliasi.models import TemplateFlyer
+    from afiliasi.services.flyer_generator import FlyerGenerator
+
+    recruiter = _get_recruiter_aktif(request)
+    get_object_or_404(TemplateFlyer, kode=kode_template, is_aktif=True)
+
+    gen = FlyerGenerator(recruiter, base_url=_get_base_url(request))
+    png_bytes = gen.get_png_bytes(kode_template)
+
+    response = HttpResponse(png_bytes, content_type='image/png')
+    response['Cache-Control'] = 'private, max-age=3600'
+    return response
+
+
+@login_required
+@require_GET
+def flyer_download_png(request, kode_template):
+    """Download PNG dengan header attachment."""
+    from afiliasi.models import TemplateFlyer
+    from afiliasi.services.flyer_generator import FlyerGenerator
+
+    recruiter = _get_recruiter_aktif(request)
+    get_object_or_404(TemplateFlyer, kode=kode_template, is_aktif=True)
+
+    gen = FlyerGenerator(recruiter, base_url=_get_base_url(request))
+    png_bytes = gen.get_png_bytes(kode_template)
+
+    filename = f"flyer-pmb-unisan-{kode_template}-{recruiter.kode_referral}.png"
+    response = HttpResponse(png_bytes, content_type='image/png')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+@require_GET
+def flyer_download_pdf(request, kode_template):
+    """Download PDF (khusus template 'cetak' dalam ukuran A5)."""
+    from afiliasi.models import TemplateFlyer
+    from afiliasi.services.flyer_generator import FlyerGenerator
+
+    if kode_template != 'cetak':
+        raise Http404("PDF hanya tersedia untuk template 'cetak'.")
+
+    recruiter = _get_recruiter_aktif(request)
+    get_object_or_404(TemplateFlyer, kode=kode_template, is_aktif=True)
+
+    gen = FlyerGenerator(recruiter, base_url=_get_base_url(request))
+    pdf_bytes = gen.get_pdf_bytes(kode_template)
+
+    filename = f"flyer-pmb-unisan-cetak-{recruiter.kode_referral}.pdf"
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
