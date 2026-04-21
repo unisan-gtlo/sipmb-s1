@@ -39,4 +39,10 @@ urlpatterns = [
     path('laporan/pembayaran/', views.laporan_pembayaran, name='laporan_pembayaran'),
     path('laporan/pembayaran/excel/', views.laporan_pembayaran_excel, name='laporan_pembayaran_excel'),
     path('laporan/pembayaran/pdf/', views.laporan_pembayaran_pdf, name='laporan_pembayaran_pdf'),
+    # Setup Prodi per Gelombang (Bulk Matrix)
+    path('setup-prodi/', views.setup_prodi_list, name='setup_prodi_list'),
+    path('setup-prodi/<int:gelombang_id>/', views.setup_prodi_matrix, name='setup_prodi_matrix'),
+    path('setup-prodi/<int:gelombang_id>/clone/', views.setup_prodi_clone, name='setup_prodi_clone'),
+
+
 ]

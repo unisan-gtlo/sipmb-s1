@@ -1944,3 +1944,131 @@ def laporan_pembayaran_pdf(request):
 
     doc.build(story)
     return response
+
+# ============================================================
+# SETUP PRODI per GELOMBANG (Bulk Matrix Editor)
+# ============================================================
+
+from master.models import ProdiPMB
+from master.services.setup_prodi import (
+    get_matrix_prodi,
+    save_matrix_prodi,
+    clone_prodi_gelombang,
+    get_gelombang_with_count,
+)
+
+
+@login_required
+def setup_prodi_list(request):
+    """List semua gelombang dengan jumlah prodi yang sudah disetup."""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    gelombang_list = get_gelombang_with_count()
+
+    # Hitung total prodi master untuk reference progress
+    from utils.simda_reader import get_program_studi
+    total_prodi_master = len(get_program_studi())
+
+    return render(request, 'admin_pmb/setup_prodi_list.html', {
+        **get_sidebar_counts(),
+        'gelombang_list':     gelombang_list,
+        'total_prodi_master': total_prodi_master,
+    })
+
+
+@login_required
+def setup_prodi_matrix(request, gelombang_id):
+    """Matrix bulk edit prodi untuk satu gelombang."""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    gelombang = get_object_or_404(GelombangPenerimaan, pk=gelombang_id)
+
+    if request.method == 'POST':
+        # Parse data form
+        kode_list = request.POST.getlist('kode_prodi[]')
+        rows_data = []
+
+        for kode in kode_list:
+            is_checked = request.POST.get(f'check_{kode}') == 'on'
+            rows_data.append({
+                'kode_prodi':    kode,
+                'nama_prodi':    request.POST.get(f'nama_prodi_{kode}', ''),
+                'kode_fakultas': request.POST.get(f'kode_fakultas_{kode}', ''),
+                'nama_fakultas': request.POST.get(f'nama_fakultas_{kode}', ''),
+                'is_checked':    is_checked,
+                'kuota':         request.POST.get(f'kuota_{kode}', 0),
+                'daya_tampung':  request.POST.get(f'daya_tampung_{kode}', 0),
+                'biaya_kuliah':  request.POST.get(f'biaya_kuliah_{kode}', 0),
+                'biaya_spp':     request.POST.get(f'biaya_spp_{kode}', 0),
+            })
+
+        try:
+            counts = save_matrix_prodi(gelombang, rows_data)
+            messages.success(
+                request,
+                f"Berhasil disimpan: {counts['created']} ditambah, "
+                f"{counts['updated']} diupdate, {counts['deleted']} dihapus."
+            )
+        except Exception as e:
+            logger.exception("Gagal save matrix prodi")
+            messages.error(request, f"Gagal menyimpan: {e}")
+
+        return redirect('admin_pmb:setup_prodi_matrix', gelombang_id=gelombang.id)
+
+    matrix = get_matrix_prodi(gelombang)
+
+    # Untuk Clone dropdown — gelombang lain yang punya minimal 1 prodi
+    gelombang_sumber = GelombangPenerimaan.objects.exclude(pk=gelombang.pk)\
+        .filter(prodi_pmb__isnull=False).distinct()\
+        .select_related('jalur').order_by('-tahun_akademik', '-tgl_buka')
+
+    # Stats
+    total_checked = sum(1 for r in matrix if r['is_checked'])
+    total_master = len(matrix)
+
+    return render(request, 'admin_pmb/setup_prodi_matrix.html', {
+        **get_sidebar_counts(),
+        'gelombang':         gelombang,
+        'matrix':            matrix,
+        'gelombang_sumber':  gelombang_sumber,
+        'total_checked':     total_checked,
+        'total_master':      total_master,
+    })
+
+
+@login_required
+def setup_prodi_clone(request, gelombang_id):
+    """Action clone prodi dari gelombang sumber ke target."""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    if request.method != 'POST':
+        return redirect('admin_pmb:setup_prodi_matrix', gelombang_id=gelombang_id)
+
+    target = get_object_or_404(GelombangPenerimaan, pk=gelombang_id)
+    source_id = request.POST.get('source_gelombang_id')
+
+    if not source_id:
+        messages.error(request, "Pilih gelombang sumber terlebih dahulu.")
+        return redirect('admin_pmb:setup_prodi_matrix', gelombang_id=gelombang_id)
+
+    source = get_object_or_404(GelombangPenerimaan, pk=source_id)
+
+    if source.pk == target.pk:
+        messages.error(request, "Gelombang sumber dan target tidak boleh sama.")
+        return redirect('admin_pmb:setup_prodi_matrix', gelombang_id=gelombang_id)
+
+    try:
+        counts = clone_prodi_gelombang(source, target)
+        messages.success(
+            request,
+            f"Berhasil clone dari {source.nama_gelombang}: "
+            f"{counts['created']} ditambah, {counts['updated']} diupdate."
+        )
+    except Exception as e:
+        logger.exception("Gagal clone prodi")
+        messages.error(request, f"Gagal clone: {e}")
+
+    return redirect('admin_pmb:setup_prodi_matrix', gelombang_id=gelombang_id)

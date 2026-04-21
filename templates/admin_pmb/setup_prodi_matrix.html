@@ -1,0 +1,208 @@
+{% extends 'admin_pmb/base_admin.html' %}
+{% block title %}Setup Prodi: {{ gelombang.nama_gelombang }}{% endblock %}
+
+{% block content %}
+<div style="padding:24px">
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div style="background:{% if msg.tags == 'error' %}#fee2e2{% else %}#d1fae5{% endif %};
+                color:{% if msg.tags == 'error' %}#991b1b{% else %}#065f46{% endif %};
+                padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:.875rem">
+      {{ msg }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div>
+      <h4 style="margin:0;font-weight:700;color:#1e293b">
+        Setup Prodi: {{ gelombang.nama_gelombang }}
+      </h4>
+      <div style="font-size:.85rem;color:#64748b;margin-top:4px">
+        {{ gelombang.jalur.nama_jalur }} — {{ gelombang.tahun_akademik }} •
+        <strong style="color:#667eea">{{ total_checked }}/{{ total_master }} prodi terpilih</strong>
+      </div>
+    </div>
+    <a href="{% url 'admin_pmb:setup_prodi_list' %}"
+       style="background:#f1f5f9;color:#475569;padding:8px 16px;border-radius:8px;
+              text-decoration:none;font-size:.85rem">
+      <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+  </div>
+
+  {% if gelombang_sumber %}
+  <div style="background:white;border-radius:12px;padding:16px;margin-bottom:16px;
+              box-shadow:0 2px 8px rgba(0,0,0,.06)">
+    <form method="post" action="{% url 'admin_pmb:setup_prodi_clone' gelombang.id %}"
+          onsubmit="return confirm('Clone akan menambah/update prodi dari gelombang sumber. Lanjutkan?')">
+      {% csrf_token %}
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:.85rem;font-weight:600;color:#475569">
+          <i class="bi bi-files" style="color:#667eea"></i> Clone dari gelombang lain:
+        </div>
+        <select name="source_gelombang_id" required
+                style="flex:1;min-width:280px;border:1.5px solid #e2e8f0;border-radius:8px;
+                       padding:8px 12px;font-size:.85rem">
+          <option value="">— Pilih gelombang sumber —</option>
+          {% for g in gelombang_sumber %}
+          <option value="{{ g.id }}">
+            {{ g.nama_gelombang }} ({{ g.jalur.kode_jalur }} — {{ g.tahun_akademik }})
+          </option>
+          {% endfor %}
+        </select>
+        <button type="submit"
+                style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+                       border:none;border-radius:8px;padding:8px 18px;font-size:.85rem;
+                       font-weight:600;cursor:pointer;white-space:nowrap">
+          <i class="bi bi-files"></i> Terapkan Clone
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <div style="background:#fef9c3;border-left:4px solid #eab308;border-radius:8px;
+              padding:12px 16px;margin-bottom:16px;font-size:.82rem;color:#713f12">
+    <i class="bi bi-lightning-charge-fill"></i>
+    <strong>Bulk Fill:</strong> isi nilai untuk semua prodi yang di-centang sekaligus.
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:.78rem">Kuota: <input type="number" id="bulk-kuota" value="30" min="0"
+              style="width:70px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:5px"></label>
+      <label style="font-size:.78rem">Daya tampung: <input type="number" id="bulk-daya" value="30" min="0"
+              style="width:70px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:5px"></label>
+      <label style="font-size:.78rem">Biaya kuliah: <input type="number" id="bulk-biaya-kuliah" value="0" min="0"
+              style="width:110px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:5px"></label>
+      <label style="font-size:.78rem">Biaya SPP: <input type="number" id="bulk-biaya-spp" value="5000000" min="0"
+              style="width:110px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:5px"></label>
+      <button type="button" onclick="applyBulkFill()"
+              style="background:#eab308;color:white;border:none;border-radius:6px;
+                     padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer">
+        Apply ke yang Dicentang
+      </button>
+    </div>
+  </div>
+
+  <form method="post" id="matrix-form">
+    {% csrf_token %}
+
+    <div style="background:white;border-radius:12px;overflow:hidden;
+                box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:850px">
+          <thead>
+            <tr style="background:#f8f9ff;border-bottom:2px solid #e0e7ff">
+              <th style="padding:10px;text-align:center;font-weight:600;color:#475569;width:40px">
+                <input type="checkbox" id="check-all" onchange="toggleAll(this)">
+              </th>
+              <th style="padding:10px;text-align:left;font-weight:600;color:#475569">Prodi</th>
+              <th style="padding:10px;text-align:left;font-weight:600;color:#475569">Fakultas</th>
+              <th style="padding:10px;text-align:center;font-weight:600;color:#475569;width:90px">Kuota</th>
+              <th style="padding:10px;text-align:center;font-weight:600;color:#475569;width:110px">Daya Tampung</th>
+              <th style="padding:10px;text-align:right;font-weight:600;color:#475569;width:130px">Biaya Kuliah</th>
+              <th style="padding:10px;text-align:right;font-weight:600;color:#475569;width:130px">Biaya SPP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in matrix %}
+            <tr class="prodi-row" data-checked="{{ row.is_checked|yesno:'1,0' }}"
+                style="border-bottom:1px solid #f1f5f9;{% if row.is_checked %}background:#f0fdf4{% endif %}">
+              <td style="padding:8px;text-align:center">
+                <input type="checkbox" name="check_{{ row.kode_prodi }}"
+                       class="row-check" data-kode="{{ row.kode_prodi }}"
+                       {% if row.is_checked %}checked{% endif %}
+                       onchange="toggleRow(this)">
+                <input type="hidden" name="kode_prodi[]" value="{{ row.kode_prodi }}">
+                <input type="hidden" name="nama_prodi_{{ row.kode_prodi }}" value="{{ row.nama_prodi }}">
+                <input type="hidden" name="kode_fakultas_{{ row.kode_prodi }}" value="{{ row.kode_fakultas }}">
+                <input type="hidden" name="nama_fakultas_{{ row.kode_prodi }}" value="{{ row.nama_fakultas }}">
+              </td>
+              <td style="padding:8px">
+                <div style="font-weight:600;color:#1e293b">{{ row.nama_prodi }}</div>
+                <div style="font-size:.7rem;color:#94a3b8">{{ row.kode_prodi }} • {{ row.jenjang }}{% if row.akreditasi %} • Akr: {{ row.akreditasi }}{% endif %}</div>
+              </td>
+              <td style="padding:8px;color:#64748b;font-size:.78rem">{{ row.nama_fakultas }}</td>
+              <td style="padding:8px;text-align:center">
+                <input type="number" name="kuota_{{ row.kode_prodi }}"
+                       class="input-kuota" value="{{ row.kuota }}" min="0"
+                       {% if not row.is_checked %}disabled{% endif %}
+                       style="width:75px;padding:5px 7px;border:1px solid #e2e8f0;
+                              border-radius:6px;text-align:center;font-size:.82rem">
+              </td>
+              <td style="padding:8px;text-align:center">
+                <input type="number" name="daya_tampung_{{ row.kode_prodi }}"
+                       class="input-daya" value="{{ row.daya_tampung }}" min="0"
+                       {% if not row.is_checked %}disabled{% endif %}
+                       style="width:75px;padding:5px 7px;border:1px solid #e2e8f0;
+                              border-radius:6px;text-align:center;font-size:.82rem">
+              </td>
+              <td style="padding:8px;text-align:right">
+                <input type="number" name="biaya_kuliah_{{ row.kode_prodi }}"
+                       class="input-biaya-kuliah" value="{{ row.biaya_kuliah }}" min="0" step="100000"
+                       {% if not row.is_checked %}disabled{% endif %}
+                       style="width:115px;padding:5px 7px;border:1px solid #e2e8f0;
+                              border-radius:6px;text-align:right;font-size:.82rem">
+              </td>
+              <td style="padding:8px;text-align:right">
+                <input type="number" name="biaya_spp_{{ row.kode_prodi }}"
+                       class="input-biaya-spp" value="{{ row.biaya_spp }}" min="0" step="100000"
+                       {% if not row.is_checked %}disabled{% endif %}
+                       style="width:115px;padding:5px 7px;border:1px solid #e2e8f0;
+                              border-radius:6px;text-align:right;font-size:.82rem">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                background:white;padding:14px 18px;border-radius:12px;
+                box-shadow:0 2px 8px rgba(0,0,0,.06)">
+      <div style="font-size:.85rem;color:#64748b">
+        <i class="bi bi-info-circle me-1" style="color:#667eea"></i>
+        Prodi tidak dicentang akan <strong>dihapus</strong> dari gelombang ini saat disimpan.
+      </div>
+      <button type="submit"
+              style="background:linear-gradient(135deg,#10b981,#059669);color:white;
+                     border:none;border-radius:8px;padding:10px 24px;font-size:.9rem;
+                     font-weight:600;cursor:pointer">
+        <i class="bi bi-save"></i> Simpan Semua Perubahan
+      </button>
+    </div>
+  </form>
+
+</div>
+
+<script>
+function toggleAll(master) {
+  document.querySelectorAll('.row-check').forEach(function(cb) {
+    cb.checked = master.checked;
+    toggleRow(cb);
+  });
+}
+
+function toggleRow(checkbox) {
+  const row = checkbox.closest('tr');
+  const inputs = row.querySelectorAll('input[type="number"]');
+  inputs.forEach(function(inp) { inp.disabled = !checkbox.checked; });
+  row.style.background = checkbox.checked ? '#f0fdf4' : '';
+}
+
+function applyBulkFill() {
+  const k = document.getElementById('bulk-kuota').value;
+  const d = document.getElementById('bulk-daya').value;
+  const bk = document.getElementById('bulk-biaya-kuliah').value;
+  const bs = document.getElementById('bulk-biaya-spp').value;
+
+  document.querySelectorAll('.row-check:checked').forEach(function(cb) {
+    const row = cb.closest('tr');
+    row.querySelector('.input-kuota').value = k;
+    row.querySelector('.input-daya').value = d;
+    row.querySelector('.input-biaya-kuliah').value = bk;
+    row.querySelector('.input-biaya-spp').value = bs;
+  });
+}
+</script>
+{% endblock %}

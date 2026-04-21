@@ -211,13 +211,18 @@
     <i class="bi bi-trophy"></i> Hasil Penerimaan
   </a>
 
+  
   <div class="sidebar-section">Konten</div>
   <a href="{% url 'admin_pmb:master' %}" class="sidebar-link {% block nav_master %}{% endblock %}">
     <i class="bi bi-gear"></i> Master Data
   </a>
+  <a href="{% url 'admin_pmb:setup_prodi_list' %}" class="sidebar-link {% block nav_setup_prodi %}{% endblock %}">
+    <i class="bi bi-grid-3x3-gap-fill"></i> Setup Prodi/Gelombang
+  </a>
   <a href="{% url 'admin_pmb:konten' %}" class="sidebar-link {% block nav_konten %}{% endblock %}">
     <i class="bi bi-image"></i> Konten & Promosi
   </a>
+  
   <a href="{% url 'admin_pmb:afiliasi' %}" class="sidebar-link {% block nav_afiliasi %}{% endblock %}">
     <i class="bi bi-person-check"></i> Afiliasi / Recruiter
   </a>
