@@ -63,8 +63,16 @@
   <!-- Chart per prodi -->
   <div class="col-md-7">
     <div class="content-card">
-      <div class="content-card-header">
+      <div class="content-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div class="content-card-title">Pendaftar per Program Studi</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:.75rem;color:#64748b">
+          {% for f in legend_fakultas %}
+            <span style="display:inline-flex;align-items:center">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:{{ f.hex }};margin-right:4px"></span>
+              {{ f.kode }}
+            </span>
+          {% endfor %}
+        </div>
       </div>
       <div style="padding:16px">
         <canvas id="chartProdi" height="220"></canvas>
@@ -147,16 +155,13 @@
 
 {% block extra_js %}
 <script>
-// Chart per prodi
+// Chart per prodi (warna per fakultas)
 const prodiData = {
-  labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+  labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya"|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
   datasets: [{
     label: 'Pendaftar',
     data: [{% for p in per_prodi %}{{ p.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
-    backgroundColor: [
-      '#667eea','#764ba2','#10b981','#f59e0b',
-      '#ef4444','#3b82f6','#8b5cf6','#06b6d4'
-    ],
+    backgroundColor: [{% for w in warna_prodi_list %}'{{ w }}'{% if not forloop.last %},{% endif %}{% endfor %}],
     borderRadius: 6,
   }]
 };

@@ -97,8 +97,16 @@
   <div class="row g-3">
     <div class="col-md-7">
       <div class="content-card">
-        <div class="content-card-header">
+        <div class="content-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div class="content-card-title">Pendaftar per Program Studi</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:.75rem;color:#64748b">
+            {% for f in legend_fakultas %}
+              <span style="display:inline-flex;align-items:center">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:{{ f.hex }};margin-right:4px"></span>
+                {{ f.kode }}
+              </span>
+            {% endfor %}
+          </div>
         </div>
         <div style="padding:16px">
           <canvas id="chartProdi" height="280"></canvas>
@@ -395,11 +403,11 @@ function showTab(id) {
 new Chart(document.getElementById('chartProdi'), {
   type: 'bar',
   data: {
-    labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya"|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
     datasets: [{
       label: 'Pendaftar',
       data: [{% for p in per_prodi %}{{ p.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
-      backgroundColor: WARNA,
+      backgroundColor: [{% for w in warna_prodi_list %}'{{ w }}'{% if not forloop.last %},{% endif %}{% endfor %}],
       borderRadius: 6,
     }]
   },
