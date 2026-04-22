@@ -21,6 +21,26 @@ def cek_admin(user):
         'admin_pmb', 'operator_pmb', 'panitia_seleksi', 'pimpinan'
     ]
 
+def cek_admin_only(user):
+    """Khusus admin_pmb saja (master data, setup prodi, chatbot)."""
+    return user.is_authenticated and user.role == 'admin_pmb'
+
+def cek_admin_operator(user):
+    """Admin + operator (verifikasi, konten, afiliasi, notifikasi)."""
+    return user.is_authenticated and user.role in ['admin_pmb', 'operator_pmb']
+
+def cek_pembayaran(user):
+    """Admin + operator + pimpinan (pimpinan read-only)."""
+    return user.is_authenticated and user.role in ['admin_pmb', 'operator_pmb', 'pimpinan']
+
+def cek_seleksi(user):
+    """Admin + pimpinan + panitia seleksi."""
+    return user.is_authenticated and user.role in ['admin_pmb', 'pimpinan', 'panitia_seleksi']
+
+def cek_cetak(user):
+    """Admin + operator + panitia (cetak kartu/formulir/kwitansi)."""
+    return user.is_authenticated and user.role in ['admin_pmb', 'operator_pmb', 'panitia_seleksi']
+
 
 def get_sidebar_counts():
     """Hitung badge notifikasi untuk sidebar"""
@@ -238,7 +258,7 @@ def ubah_status(request, pk):
 
 @login_required
 def verifikasi(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     dok_list = DokumenPendaftar.objects.filter(
@@ -254,7 +274,7 @@ def verifikasi(request):
 
 @login_required
 def verif_acc(request, dok_id):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
     if request.method == 'POST':
         dok = get_object_or_404(DokumenPendaftar, pk=dok_id)
@@ -277,7 +297,7 @@ def verif_acc(request, dok_id):
 
 @login_required
 def verif_tolak(request, dok_id):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
     if request.method == 'POST':
         dok = get_object_or_404(DokumenPendaftar, pk=dok_id)
@@ -292,7 +312,7 @@ def verif_tolak(request, dok_id):
 
 @login_required
 def pembayaran(request):
-    if not cek_admin(request.user):
+    if not cek_pembayaran(request.user):
         return redirect('dashboard:index')
 
     from django.core.paginator import Paginator
@@ -344,7 +364,7 @@ def pembayaran(request):
 
 @login_required
 def pembayaran_detail(request, pk):
-    if not cek_admin(request.user):
+    if not cek_pembayaran(request.user):
         return redirect('dashboard:index')
 
     from django.contrib import messages
@@ -434,7 +454,7 @@ def pembayaran_detail(request, pk):
 
 @login_required
 def seleksi(request):
-    if not cek_admin(request.user):
+    if not cek_seleksi(request.user):
         return redirect('dashboard:index')
 
     from seleksi.models import JadwalSeleksi
@@ -454,7 +474,7 @@ def seleksi(request):
 
 @login_required
 def hasil(request):
-    if not cek_admin(request.user):
+    if not cek_seleksi(request.user):
         return redirect('dashboard:index')
 
     from seleksi.models import HasilPenerimaan
@@ -519,7 +539,7 @@ def hasil(request):
 
 @login_required
 def master(request):
-    if not cek_admin(request.user):
+    if not cek_admin_only(request.user):
         return redirect('dashboard:index')
 
     from master.models import (JalurPenerimaan, GelombangPenerimaan,
@@ -546,7 +566,7 @@ def master(request):
 
 @login_required
 def konten(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     from konten.models import (Pengumuman, Testimoni, MitraKerjasama,
@@ -579,7 +599,7 @@ def konten(request):
 
 @login_required
 def afiliasi(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     from afiliasi.models import Recruiter, KomisiReferral, PencairanKomisi
@@ -757,7 +777,7 @@ def laporan(request):
 
 @login_required
 def chatbot_kb(request):
-    if not cek_admin(request.user):
+    if not cek_admin_only(request.user):
         return redirect('dashboard:index')
     kb_list = KnowledgeBase.objects.all().order_by('kategori', 'urutan_prioritas')
     return render(request, 'admin_pmb/chatbot_kb.html', {
@@ -767,7 +787,7 @@ def chatbot_kb(request):
 
 @login_required
 def afiliasi(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     from afiliasi.models import Recruiter, KomisiReferral, PencairanKomisi
@@ -800,7 +820,7 @@ def afiliasi(request):
 
 @login_required
 def afiliasi_approve(request, pk):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
     if request.method == 'POST':
         from afiliasi.models import Recruiter
@@ -813,7 +833,7 @@ def afiliasi_approve(request, pk):
 
 @login_required
 def afiliasi_tolak(request, pk):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
     if request.method == 'POST':
         from afiliasi.models import Recruiter
@@ -828,7 +848,7 @@ def afiliasi_tolak(request, pk):
 
 @login_required
 def afiliasi_detail(request, pk):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
     from afiliasi.models import Recruiter, KomisiReferral
     rec = get_object_or_404(Recruiter.objects.select_related('user'), pk=pk)
@@ -843,7 +863,7 @@ def afiliasi_detail(request, pk):
 
 @login_required
 def seleksi_tambah(request):
-    if not cek_admin(request.user):
+    if not cek_seleksi(request.user):
         return redirect('dashboard:index')
 
     from seleksi.models import JadwalSeleksi
@@ -879,7 +899,7 @@ def seleksi_tambah(request):
 
 @login_required
 def seleksi_detail(request, pk):
-    if not cek_admin(request.user):
+    if not cek_seleksi(request.user):
         return redirect('dashboard:index')
 
     from seleksi.models import JadwalSeleksi, PesertaSeleksi
@@ -1300,7 +1320,7 @@ def export_wilayah(request):
 
 @login_required
 def notifikasi(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     from notifikasi.models import TemplateNotifikasi, LogNotifikasi
@@ -1321,7 +1341,7 @@ def notifikasi(request):
 @login_required
 def notifikasi_kirim(request):
     """Kirim notifikasi massal manual"""
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     if request.method == 'POST':
@@ -1350,7 +1370,7 @@ def notifikasi_kirim(request):
 
 @login_required
 def notifikasi(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     from notifikasi.models import TemplateNotifikasi, LogNotifikasi
@@ -1377,7 +1397,7 @@ def notifikasi(request):
 
 @login_required
 def notifikasi_log(request):
-    if not cek_admin(request.user):
+    if not cek_admin_operator(request.user):
         return redirect('dashboard:index')
 
     from notifikasi.models import LogNotifikasi
@@ -1445,7 +1465,7 @@ def notifikasi_log(request):
 @login_required
 def cetak_kartu(request, pk):
     """Cetak kartu peserta satu pendaftar"""
-    if not cek_admin(request.user):
+    if not cek_cetak(request.user):
         return redirect('dashboard:index')
 
     from django.http import HttpResponse
@@ -1490,7 +1510,7 @@ def cetak_kartu(request, pk):
 @login_required
 def cetak_kartu_massal(request):
     """Cetak kartu peserta massal berdasarkan filter"""
-    if not cek_admin(request.user):
+    if not cek_cetak(request.user):
         return redirect('dashboard:index')
 
     from django.http import HttpResponse
@@ -1541,7 +1561,7 @@ def cetak_kartu_massal(request):
 
 @login_required
 def cetak_formulir_admin(request, pk):
-    if not cek_admin(request.user):
+    if not cek_cetak(request.user):
         return redirect('dashboard:index')
 
     from django.http import HttpResponse
@@ -1563,7 +1583,7 @@ def cetak_formulir_admin(request, pk):
 
 @login_required
 def pembayaran_kwitansi(request, pk):
-    if not cek_admin(request.user):
+    if not cek_pembayaran(request.user):
         return redirect('dashboard:index')
     from django.http import HttpResponse, Http404
     from django.shortcuts import get_object_or_404
@@ -1636,7 +1656,7 @@ def _filter_laporan(request):
 @login_required
 def laporan_pembayaran(request):
     """Halaman laporan penerimaan pembayaran dengan filter."""
-    if not request.user.is_staff:
+    if not cek_pembayaran(request.user):
         return redirect('dashboard:calon_maba')
 
     filters = _filter_laporan(request)
@@ -1677,7 +1697,7 @@ def laporan_pembayaran(request):
 @login_required
 def laporan_pembayaran_excel(request):
     """Export Excel: Ringkasan + Detail."""
-    if not request.user.is_staff:
+    if not cek_pembayaran(request.user):
         return redirect('dashboard:calon_maba')
 
     import openpyxl
@@ -1818,7 +1838,7 @@ def laporan_pembayaran_excel(request):
 @login_required
 def laporan_pembayaran_pdf(request):
     """Export PDF laporan — A4 landscape dengan TTD bendahara."""
-    if not request.user.is_staff:
+    if not cek_pembayaran(request.user):
         return redirect('dashboard:calon_maba')
 
     from reportlab.lib.pagesizes import A4, landscape
@@ -2011,7 +2031,7 @@ from master.services.setup_prodi import (
 @login_required
 def setup_prodi_list(request):
     """List semua gelombang dengan jumlah prodi yang sudah disetup."""
-    if not cek_admin(request.user):
+    if not cek_admin_only(request.user):
         return redirect('dashboard:index')
 
     gelombang_list = get_gelombang_with_count()
@@ -2030,7 +2050,7 @@ def setup_prodi_list(request):
 @login_required
 def setup_prodi_matrix(request, gelombang_id):
     """Matrix bulk edit prodi untuk satu gelombang."""
-    if not cek_admin(request.user):
+    if not cek_admin_only(request.user):
         return redirect('dashboard:index')
 
     gelombang = get_object_or_404(GelombangPenerimaan, pk=gelombang_id)
@@ -2091,7 +2111,7 @@ def setup_prodi_matrix(request, gelombang_id):
 @login_required
 def setup_prodi_clone(request, gelombang_id):
     """Action clone prodi dari gelombang sumber ke target."""
-    if not cek_admin(request.user):
+    if not cek_admin_only(request.user):
         return redirect('dashboard:index')
 
     if request.method != 'POST':

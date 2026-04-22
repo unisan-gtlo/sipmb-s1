@@ -195,51 +195,75 @@
       <span class="sidebar-badge">{{ pending_verifikasi }}</span>
     {% endif %}
   </a>
+
+  {% if request.user.is_admin_pmb or request.user.is_operator %}
   <a href="{% url 'admin_pmb:verifikasi' %}" class="sidebar-link {% block nav_verifikasi %}{% endblock %}">
     <i class="bi bi-file-earmark-check"></i> Verifikasi Dokumen
     {% if pending_dokumen > 0 %}
       <span class="sidebar-badge">{{ pending_dokumen }}</span>
     {% endif %}
   </a>
+  {% endif %}
+
+  {% if request.user.is_admin_pmb or request.user.is_operator or request.user.is_pimpinan %}
   <a href="{% url 'admin_pmb:pembayaran' %}" class="sidebar-link {% block nav_pembayaran %}{% endblock %}">
     <i class="bi bi-credit-card"></i> Pembayaran
   </a>
+  {% endif %}
+
+  {% if request.user.is_admin_pmb or request.user.is_pimpinan or request.user.is_panitia %}
   <a href="{% url 'admin_pmb:seleksi' %}" class="sidebar-link {% block nav_seleksi %}{% endblock %}">
     <i class="bi bi-clipboard-check"></i> Seleksi
   </a>
   <a href="{% url 'admin_pmb:hasil' %}" class="sidebar-link {% block nav_hasil %}{% endblock %}">
     <i class="bi bi-trophy"></i> Hasil Penerimaan
   </a>
+  {% endif %}
 
-  
+
+  {% if request.user.is_admin_pmb or request.user.is_operator %}
   <div class="sidebar-section">Konten</div>
+
+  {% if request.user.is_admin_pmb %}
   <a href="{% url 'admin_pmb:master' %}" class="sidebar-link {% block nav_master %}{% endblock %}">
     <i class="bi bi-gear"></i> Master Data
   </a>
   <a href="{% url 'admin_pmb:setup_prodi_list' %}" class="sidebar-link {% block nav_setup_prodi %}{% endblock %}">
     <i class="bi bi-grid-3x3-gap-fill"></i> Setup Prodi/Gelombang
   </a>
+  {% endif %}
+
   <a href="{% url 'admin_pmb:konten' %}" class="sidebar-link {% block nav_konten %}{% endblock %}">
     <i class="bi bi-image"></i> Konten & Promosi
   </a>
-  
+
   <a href="{% url 'admin_pmb:afiliasi' %}" class="sidebar-link {% block nav_afiliasi %}{% endblock %}">
     <i class="bi bi-person-check"></i> Afiliasi / Recruiter
   </a>
+  {% endif %}
 
   <div class="sidebar-section">Laporan</div>
   <a href="{% url 'admin_pmb:laporan' %}" class="sidebar-link {% block nav_laporan %}{% endblock %}">
     <i class="bi bi-file-earmark-bar-graph"></i> Export Laporan
   </a>
+
+  {% if request.user.is_admin_pmb or request.user.is_operator or request.user.is_pimpinan %}
   <a href="{% url 'admin_pmb:laporan_pembayaran' %}" class="sidebar-link {% block nav_laporan_pembayaran %}{% endblock %}">
     <i class="bi bi-cash-stack"></i> Laporan Pembayaran
   </a>
+  {% endif %}
+
+  {% if request.user.is_admin_pmb or request.user.is_operator %}
   <a href="{% url 'admin_pmb:notifikasi' %}" class="sidebar-link {% block nav_notifikasi %}{% endblock %}">
    <i class="bi bi-bell"></i> Notifikasi
   </a>
+  {% endif %}
+
+  {% if request.user.is_admin_pmb %}
   <a href="{% url 'admin_pmb:chatbot_kb' %}" class="sidebar-link {% block nav_chatbot %}{% endblock %}">
     <i class="bi bi-robot"></i> Chatbot SINTA
   </a>
+  {% endif %}
 
   <div class="sidebar-footer">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
