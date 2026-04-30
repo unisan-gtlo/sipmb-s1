@@ -5,6 +5,77 @@ from utils.simda_reader import get_provinsi, get_jurusan_sekolah, get_agama
 from master.models import JalurPenerimaan, GelombangPenerimaan, ProdiPMB
 
 
+# =============================================================
+# CONSTANTS — Choices untuk dropdown form
+# =============================================================
+# Sumber: standar referensi pekerjaan (modifikasi DAPODIK)
+# Format: (value_disimpan_di_db, label_yang_ditampilkan)
+PEKERJAAN_CHOICES = [
+    ('', '-- Pilih Pekerjaan --'),
+    
+    # Pegawai Pemerintah & ASN
+    ('PNS', 'PNS / ASN'),
+    ('TNI', 'TNI'),
+    ('POLRI', 'POLRI'),
+    ('Pejabat Negara', 'Pejabat Negara'),
+    
+    # Pendidik
+    ('Guru', 'Guru'),
+    ('Dosen', 'Dosen'),
+    
+    # Profesi Kesehatan
+    ('Dokter', 'Dokter'),
+    ('Perawat', 'Perawat / Bidan'),
+    ('Tenaga Medis Lain', 'Tenaga Medis Lainnya'),
+    
+    # Profesi Hukum & Keuangan
+    ('Pengacara', 'Pengacara / Notaris'),
+    ('Akuntan', 'Akuntan / Auditor'),
+    
+    # Profesi Lainnya
+    ('Arsitek', 'Arsitek'),
+    ('Konsultan', 'Konsultan'),
+    ('Wartawan', 'Wartawan / Jurnalis'),
+    ('Seniman', 'Seniman / Artis'),
+    
+    # Wiraswasta & Bisnis
+    ('Wiraswasta', 'Wiraswasta / Pengusaha'),
+    ('Pedagang', 'Pedagang'),
+    
+    # Pegawai Swasta
+    ('Karyawan Swasta', 'Karyawan / Pegawai Swasta'),
+    ('Karyawan BUMN', 'Karyawan BUMN'),
+    ('Karyawan Honorer', 'Karyawan Honorer'),
+    
+    # Pertanian & Perikanan
+    ('Petani', 'Petani / Pekebun'),
+    ('Peternak', 'Peternak'),
+    ('Nelayan', 'Nelayan'),
+    
+    # Buruh & Pekerja Lapangan
+    ('Buruh Tani', 'Buruh Tani / Perkebunan'),
+    ('Buruh Bangunan', 'Buruh Bangunan / Konstruksi'),
+    ('Buruh Pabrik', 'Buruh Pabrik / Industri'),
+    ('Buruh Lainnya', 'Buruh Lainnya'),
+    
+    # Transportasi
+    ('Sopir', 'Sopir / Pengemudi'),
+    ('Ojek', 'Ojek / Pengemudi Online'),
+    
+    # Sektor Informal
+    ('Tukang', 'Tukang (Bangunan, Las, Listrik, dll)'),
+    ('PRT', 'Pembantu Rumah Tangga'),
+    ('Satpam', 'Satpam / Security'),
+    
+    # Tidak Bekerja / Lainnya
+    ('IRT', 'Ibu Rumah Tangga'),
+    ('Pensiunan', 'Pensiunan'),
+    ('Tidak Bekerja', 'Tidak Bekerja'),
+    ('Pelajar/Mahasiswa', 'Pelajar / Mahasiswa'),
+    ('Sudah Meninggal', 'Sudah Meninggal'),
+    ('Lainnya', 'Lainnya'),
+]
+
 class ProfilDiriForm(forms.ModelForm):
 
     # Field nama_lengkap (sync dari/ke User.nama_lengkap)
@@ -286,6 +357,20 @@ class ProfilOrtuForm(forms.ModelForm):
         label='Pendidikan Terakhir Ibu',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+    pekerjaan_ayah = forms.ChoiceField(
+        choices=PEKERJAAN_CHOICES,
+        required=False,
+        label='Pekerjaan Ayah',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    pekerjaan_ibu = forms.ChoiceField(
+        choices=PEKERJAAN_CHOICES,
+        required=False,
+        label='Pekerjaan Ibu',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     no_hp_ayah = forms.CharField(
         required=False,
         label='No HP Ayah',
@@ -315,9 +400,7 @@ class ProfilOrtuForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nama lengkap ayah kandung',
             }),
-            'pekerjaan_ayah': forms.TextInput(attrs={
-                'class': 'form-control', 'placeholder': 'Pekerjaan ayah',
-            }),
+            
             'penghasilan_ayah': forms.Select(
                 choices=[
                     ('', '-- Pilih Range Penghasilan --'),
@@ -333,9 +416,7 @@ class ProfilOrtuForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nama lengkap ibu kandung',
             }),
-            'pekerjaan_ibu': forms.TextInput(attrs={
-                'class': 'form-control', 'placeholder': 'Pekerjaan ibu',
-            }),
+            
             'penghasilan_ibu': forms.Select(
                 choices=[
                     ('', '-- Pilih Range Penghasilan --'),
