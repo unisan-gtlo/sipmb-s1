@@ -43,6 +43,11 @@ urlpatterns = [
     path('setup-prodi/', views.setup_prodi_list, name='setup_prodi_list'),
     path('setup-prodi/<int:gelombang_id>/', views.setup_prodi_matrix, name='setup_prodi_matrix'),
     path('setup-prodi/<int:gelombang_id>/clone/', views.setup_prodi_clone, name='setup_prodi_clone'),
-
-
+    
+   
+   # Operator Edit Data Pendaftar (Mini-Deploy 2A)
+    path('pendaftar/<int:pk>/edit/<str:kategori>/', views.edit_data_pendaftar, name='edit_data_pendaftar'),
+    path('pendaftar/<int:pk>/riwayat-edit/',        views.riwayat_edit_pendaftar, name='riwayat_edit_pendaftar'),
 ]
+
+

@@ -1,0 +1,125 @@
+{% extends 'admin_pmb/base_admin.html' %}
+
+
+{% block title %}Edit {{ kategori_label }} - {{ pendaftaran.no_pendaftaran }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_pmb:pendaftar' %}">Daftar Pendaftar</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'admin_pmb:detail_pendaftar' pendaftaran.pk %}">
+                    {{ pendaftaran.no_pendaftaran }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active">Edit {{ kategori_label }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4">
+        <div class="flex-grow-1">
+            <h3 class="mb-1">
+                <i class="bi bi-pencil-square me-2"></i>
+                Edit {{ kategori_label }}
+            </h3>
+            <p class="text-muted mb-0">
+                Pendaftar: <strong>{{ pendaftaran.user.get_full_name|default:pendaftaran.user.username }}</strong>
+                ({{ pendaftaran.no_pendaftaran }})
+            </p>
+        </div>
+        <a href="{% url 'admin_pmb:detail_pendaftar' pendaftaran.pk %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Kembali
+        </a>
+    </div>
+
+    <!-- Warning -->
+    <div class="alert alert-warning border-0 shadow-sm mb-4">
+        <div class="d-flex">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+            <div>
+                <strong>Perhatian:</strong>
+                Setiap perubahan akan dicatat di <strong>audit log</strong> beserta nama operator, 
+                IP address, dan timestamp. Pastikan perubahan sesuai dengan dokumen yang diberikan pendaftar.
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-card-text me-2"></i>
+                    Form {{ kategori_label }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    {% for field in form %}
+                        {% if field.name != 'alasan_edit' %}
+                            <div class="col-md-6">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="text-muted d-block mt-1">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Alasan Edit (separate section) -->
+        <div class="card border-0 shadow-sm mb-4 border-start border-warning border-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-warning">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Alasan Edit (Wajib)
+                </h5>
+            </div>
+            <div class="card-body">
+                <label for="{{ form.alasan_edit.id_for_label }}" class="form-label">
+                    {{ form.alasan_edit.label }} <span class="text-danger">*</span>
+                </label>
+                {{ form.alasan_edit }}
+                {% if form.alasan_edit.help_text %}
+                    <small class="text-muted d-block mt-1">{{ form.alasan_edit.help_text }}</small>
+                {% endif %}
+                {% if form.alasan_edit.errors %}
+                    <div class="text-danger small mt-1">{{ form.alasan_edit.errors|first }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 justify-content-end">
+            <a href="{% url 'admin_pmb:detail_pendaftar' pendaftaran.pk %}" class="btn btn-light">
+                <i class="bi bi-x-circle me-1"></i> Batal
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
