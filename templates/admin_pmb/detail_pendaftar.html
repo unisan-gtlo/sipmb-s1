@@ -220,6 +220,33 @@
           <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center">
             <i class="bi bi-arrow-repeat"></i> Ubah Status
           </button>
+
+    <!-- AKSI OPERATOR (Edit Data + Riwayat) -->
+    {% if request.user.is_admin_pmb or request.user.is_operator %}
+    <div class="content-card mt-3">
+      <div class="content-card-header">
+        <div class="content-card-title">
+          <i class="bi bi-pencil-square me-1"></i> Aksi Operator
+        </div>
+      </div>
+      <div class="content-card-body">
+        <a href="{% url 'admin_pmb:edit_data_pendaftar' pendaftaran.pk 'diri' %}"
+           class="btn-primary-custom" style="display:flex;width:100%;justify-content:center;margin-bottom:8px">
+          <i class="bi bi-person-vcard"></i> Edit Data Diri & Alamat
+        </a>
+        <a href="{% url 'admin_pmb:edit_data_pendaftar' pendaftaran.pk 'ortu' %}"
+           class="btn-primary-custom" style="display:flex;width:100%;justify-content:center;margin-bottom:8px;background:#6c757d">
+          <i class="bi bi-people"></i> Edit Data Orang Tua
+        </a>
+        <a href="{% url 'admin_pmb:riwayat_edit_pendaftar' pendaftaran.pk %}"
+           class="btn-primary-custom" style="display:flex;width:100%;justify-content:center;background:#fd7e14">
+          <i class="bi bi-clock-history"></i> Riwayat Edit Data
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    
     <!-- CETAK KARTU -->
     <div class="content-card mt-3">
       <div class="content-card-header">

@@ -449,3 +449,70 @@ class TokenAktivasi(models.Model):
         from django.utils import timezone
         import datetime
         return timezone.now() > self.tgl_dibuat + datetime.timedelta(hours=24)
+
+class LogEditDataPendaftar(models.Model):
+    """
+    Audit trail untuk perubahan data pendaftar oleh operator/admin.
+    
+    Setiap kali operator edit data maba, sistem otomatis catat:
+    - Siapa yang edit
+    - Kapan
+    - Field apa yang berubah
+    - Nilai sebelum dan sesudah
+    - Alasan edit (wajib diisi operator)
+    """
+    pendaftaran = models.ForeignKey(
+        Pendaftaran,
+        on_delete=models.CASCADE,
+        related_name='log_edit',
+        verbose_name='Pendaftaran'
+    )
+    edited_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='edit_pendaftar_logs',
+        verbose_name='Diedit Oleh'
+    )
+    field_name = models.CharField(
+        max_length=100,
+        verbose_name='Field yang Diubah',
+        help_text='Nama field di database, mis: nik, tempat_lahir'
+    )
+    field_label = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Label Field',
+        help_text='Label display, mis: "Nomor Induk Kependudukan"'
+    )
+    old_value = models.TextField(
+        blank=True,
+        verbose_name='Nilai Sebelum'
+    )
+    new_value = models.TextField(
+        blank=True,
+        verbose_name='Nilai Sesudah'
+    )
+    alasan = models.TextField(
+        verbose_name='Alasan Edit',
+        help_text='Wajib diisi. Contoh: "Koreksi tipo nama sesuai ijazah"'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='IP Address Operator'
+    )
+    tgl_edit = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Tanggal Edit'
+    )
+    
+    class Meta:
+        db_table = 'pmb\".\"log_edit_data_pendaftar'
+        ordering = ['-tgl_edit']
+        verbose_name = 'Log Edit Data Pendaftar'
+        verbose_name_plural = 'Log Edit Data Pendaftar'
+    
+    def __str__(self):
+        return f"{self.pendaftaran.no_pendaftaran} - {self.field_name} - {self.tgl_edit:%Y-%m-%d %H:%M}"

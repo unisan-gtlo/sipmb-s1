@@ -1,6 +1,6 @@
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
 
@@ -8,12 +8,13 @@ from datetime import date, timedelta
 from django.db.models import Sum, Count, Q
 from pembayaran.models import Tagihan, KonfirmasiPembayaran
 
-from pendaftaran.models import Pendaftaran, ProfilPendaftar
+from pendaftaran.models import Pendaftaran, ProfilPendaftar, LogEditDataPendaftar
 from dokumen.models import DokumenPendaftar
 from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem
 from chatbot.models import KnowledgeBase
 from accounts.views import WARNA_FAKULTAS, warna_fakultas
 logger = logging.getLogger(__name__)
+from .forms import OperatorEditDataDiriForm, OperatorEditDataOrtuForm
 
 
 def cek_admin(user):
@@ -2142,3 +2143,177 @@ def setup_prodi_clone(request, gelombang_id):
         messages.error(request, f"Gagal clone: {e}")
 
     return redirect('admin_pmb:setup_prodi_matrix', gelombang_id=gelombang_id)
+
+# ============================================================================
+# OPERATOR EDIT DATA PENDAFTAR (Mini-Deploy 2A)
+# ============================================================================
+# Operator/Admin PMB bisa edit data diri & data ortu pendaftar.
+# Setiap perubahan otomatis tercatat di LogEditDataPendaftar (audit trail).
+# 
+# Permission:
+#   ✅ admin_pmb (is_admin_pmb)
+#   ✅ operator_pmb (is_operator)
+#   ❌ pimpinan, panitia_seleksi, recruiter, calon_maba (akan dapat 403)
+# ============================================================================
+
+
+def is_admin_or_operator(user):
+    """Permission check helper: hanya admin_pmb & operator_pmb yang boleh."""
+    return user.is_authenticated and (user.is_admin_pmb or user.is_operator)
+
+
+def _get_client_ip(request):
+    """Ambil IP address client dari request, support reverse proxy (X-Forwarded-For)."""
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded:
+        return x_forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def _log_field_changes(pendaftaran, user, alasan, ip_address, old_data, new_data, field_labels):
+    """
+    Helper: bandingkan old vs new data, buat record LogEditDataPendaftar
+    untuk setiap field yang berubah.
+    
+    Args:
+        pendaftaran: instance Pendaftaran
+        user: User yang edit (operator/admin)
+        alasan: alasan edit dari form
+        ip_address: IP address client
+        old_data: dict {field_name: old_value} sebelum save
+        new_data: dict {field_name: new_value} sesudah save
+        field_labels: dict {field_name: label_display}
+    
+    Returns:
+        list LogEditDataPendaftar yang ter-create
+    """
+    logs = []
+    for field_name, new_value in new_data.items():
+        old_value = old_data.get(field_name)
+        # Skip kalau tidak berubah (handle None vs '' equivalence)
+        old_str = '' if old_value is None else str(old_value)
+        new_str = '' if new_value is None else str(new_value)
+        if old_str == new_str:
+            continue
+        log = LogEditDataPendaftar.objects.create(
+            pendaftaran=pendaftaran,
+            edited_by=user,
+            field_name=field_name,
+            field_label=field_labels.get(field_name, field_name),
+            old_value=old_str,
+            new_value=new_str,
+            alasan=alasan,
+            ip_address=ip_address,
+        )
+        logs.append(log)
+    return logs
+
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def edit_data_pendaftar(request, pk, kategori):
+    """
+    Edit data pendaftar oleh operator/admin.
+    
+    URL: /admin-pmb/pendaftar/<pk>/edit/<kategori>/
+    Kategori: 'diri' (data diri & alamat) atau 'ortu' (data orang tua)
+    """
+    pendaftaran = get_object_or_404(Pendaftaran, pk=pk)
+    
+    # Pastikan profil ada
+    try:
+        profil = pendaftaran.profil
+    except ProfilPendaftar.DoesNotExist:
+        # Auto-create profil kosong kalau belum ada
+        profil = ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
+    
+    # Pilih form sesuai kategori
+    if kategori == 'diri':
+        FormClass = OperatorEditDataDiriForm
+        kategori_label = 'Data Diri & Alamat'
+    elif kategori == 'ortu':
+        FormClass = OperatorEditDataOrtuForm
+        kategori_label = 'Data Orang Tua'
+    else:
+        messages.error(request, f'Kategori "{kategori}" tidak dikenali.')
+        return redirect('admin_pmb:detail_pendaftar', pk=pk)
+    
+    if request.method == 'POST':
+        # Snapshot data SEBELUM save (untuk audit log)
+        old_data = {}
+        for field_name in FormClass.Meta.fields:
+            old_data[field_name] = getattr(profil, field_name, None)
+        
+        form = FormClass(request.POST, instance=profil)
+        if form.is_valid():
+            alasan = form.cleaned_data.pop('alasan_edit', '').strip()
+            if not alasan:
+                messages.error(request, 'Alasan edit wajib diisi.')
+                return render(request, 'admin_pmb/edit_data_pendaftar.html', {
+                    'form': form, 'pendaftaran': pendaftaran, 'profil': profil,
+                    'kategori': kategori, 'kategori_label': kategori_label,
+                })
+            
+            # Save data baru
+            profil = form.save()
+            
+            # Snapshot data SESUDAH save
+            new_data = {}
+            for field_name in FormClass.Meta.fields:
+                new_data[field_name] = getattr(profil, field_name, None)
+            
+            # Build labels dict dari form
+            field_labels = {}
+            for field_name in FormClass.Meta.fields:
+                field_labels[field_name] = form.fields[field_name].label or field_name
+            
+            # Buat log untuk field yang berubah
+            logs = _log_field_changes(
+                pendaftaran=pendaftaran,
+                user=request.user,
+                alasan=alasan,
+                ip_address=_get_client_ip(request),
+                old_data=old_data,
+                new_data=new_data,
+                field_labels=field_labels,
+            )
+            
+            if logs:
+                messages.success(
+                    request,
+                    f'Data berhasil diperbarui. {len(logs)} field tercatat di audit log.'
+                )
+            else:
+                messages.info(request, 'Tidak ada perubahan data yang disimpan.')
+            
+            return redirect('admin_pmb:detail_pendaftar', pk=pk)
+    else:
+        form = FormClass(instance=profil)
+    
+    return render(request, 'admin_pmb/edit_data_pendaftar.html', {
+        'form': form,
+        'pendaftaran': pendaftaran,
+        'profil': profil,
+        'kategori': kategori,
+        'kategori_label': kategori_label,
+    })
+
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def riwayat_edit_pendaftar(request, pk):
+    """
+    Tampilkan riwayat edit data untuk satu pendaftar.
+    
+    URL: /admin-pmb/pendaftar/<pk>/riwayat-edit/
+    """
+    pendaftaran = get_object_or_404(Pendaftaran, pk=pk)
+    
+    log_list = LogEditDataPendaftar.objects.filter(
+        pendaftaran=pendaftaran
+    ).select_related('edited_by').order_by('-tgl_edit')
+    
+    return render(request, 'admin_pmb/riwayat_edit_pendaftar.html', {
+        'pendaftaran': pendaftaran,
+        'log_list': log_list,
+    })
