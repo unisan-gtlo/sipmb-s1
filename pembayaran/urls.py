@@ -13,4 +13,5 @@ urlpatterns = [
     path('<str:kode_bayar>/kwitansi/', views.kwitansi, name='kwitansi'),
     path('<str:kode_bayar>/duitku/', views.duitku_pilih_metode, name='duitku_pilih'),   # BARU
     path('<str:kode_bayar>/duitku/create/', views.duitku_create, name='duitku_create'), # BARU
+    path('<str:kode_bayar>/batalkan/', views.batalkan_pembayaran, name='batalkan'),
 ]
