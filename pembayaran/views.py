@@ -198,8 +198,10 @@ def duitku_create(request, kode_bayar):
         status='pending',
     )
 
-    # Update tagihan ke status menunggu_konfirmasi
-    tagihan.status = 'menunggu_konfirmasi'
+    # Update tagihan ke status menunggu_pembayaran (user akan bayar di gateway Duitku)
+    # Catatan: Status akan auto-update ke 'lunas' lewat duitku_callback,
+    # atau di-rollback ke 'belum_bayar' lewat cleanup job kalau user tidak menyelesaikan.
+    tagihan.status = 'menunggu_pembayaran'
     tagihan.save(update_fields=['status', 'updated_at'])
 
     # Simpan URL di session, render halaman transisi yang JS redirect
@@ -370,11 +372,13 @@ def duitku_callback(request):
         logger.info(f"Duitku callback FAILED: {merchant_order_id}")
         
         # Rollback tagihan ke belum_bayar kalau tidak ada transaksi lain aktif
+        # Catatan: rollback hanya dari status 'menunggu_pembayaran' (gateway pending)
+        # ATAU 'menunggu_konfirmasi' (kalau dulu sempat upload bukti manual)
         tagihan = transaksi.tagihan
         has_other_active = tagihan.transaksi_duitku.exclude(
             pk=transaksi.pk
         ).filter(status__in=('pending', 'paid')).exists()
-        if not has_other_active and tagihan.status == 'menunggu_konfirmasi':
+        if not has_other_active and tagihan.status in ('menunggu_pembayaran', 'menunggu_konfirmasi'):
             tagihan.status = 'belum_bayar'
             tagihan.save(update_fields=['status', 'updated_at'])
     else:
@@ -383,3 +387,56 @@ def duitku_callback(request):
         logger.info(f"Duitku callback unknown resultCode={result_code}: {merchant_order_id}")
     
     return HttpResponse("OK", status=200)
+
+@login_required
+def batalkan_pembayaran(request, kode_bayar):
+    """
+    Batalkan transaksi pembayaran yang sedang menunggu di gateway.
+    
+    Dipanggil saat maba klik tombol 'Batalkan & Pilih Metode Lain' di dashboard.
+    
+    Logika:
+    - Hanya bisa membatalkan tagihan dengan status 'menunggu_pembayaran'
+    - Mark TransaksiDuitku terkait sebagai 'failed'
+    - Reset Tagihan.status kembali ke 'belum_bayar'
+    - Maba bisa pilih metode pembayaran lain (transfer manual / Duitku method lain)
+    """
+    if request.method != 'POST':
+        return redirect('pembayaran:detail', kode_bayar=kode_bayar)
+    
+    from django.db import transaction
+    from .models import TransaksiDuitku
+    
+    tagihan = get_object_or_404(
+        Tagihan,
+        kode_bayar=kode_bayar,
+        pendaftaran__user=request.user,  # scoping: hanya milik user sendiri
+    )
+    
+    # Guard: hanya status 'menunggu_pembayaran' yang bisa dibatalkan
+    if tagihan.status != 'menunggu_pembayaran':
+        messages.warning(
+            request,
+            f"Tagihan tidak dapat dibatalkan (status saat ini: {tagihan.get_status_display()})."
+        )
+        return redirect('dashboard:calon_maba')
+    
+    # Atomic: batalkan semua transaksi pending sekaligus reset status tagihan
+    with transaction.atomic():
+        # Mark semua TransaksiDuitku yang masih pending sebagai 'failed'
+        pending_txs = TransaksiDuitku.objects.filter(
+            tagihan=tagihan,
+            status='pending',
+        )
+        canceled_count = pending_txs.update(status='failed')
+        
+        # Reset tagihan ke belum_bayar
+        tagihan.status = 'belum_bayar'
+        tagihan.save(update_fields=['status', 'updated_at'])
+    
+    messages.success(
+        request,
+        f"Transaksi pembayaran berhasil dibatalkan. "
+        f"Anda dapat memilih metode pembayaran lain sekarang."
+    )
+    return redirect('dashboard:calon_maba')

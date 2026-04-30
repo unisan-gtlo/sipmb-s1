@@ -48,7 +48,8 @@ class Tagihan(models.Model):
     ]
     STATUS_CHOICES = [
         ('belum_bayar', 'Belum Bayar'),
-        ('menunggu_konfirmasi', 'Menunggu Konfirmasi'),
+        ('menunggu_pembayaran', 'Menunggu Pembayaran (Gateway)'),
+        ('menunggu_konfirmasi', 'Menunggu Konfirmasi Admin'),
         ('lunas', 'Lunas'),
         ('expired', 'Expired'),
         ('dibatalkan', 'Dibatalkan'),

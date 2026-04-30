@@ -268,17 +268,25 @@
       <!-- PEMBAYARAN -->
       {% if tagihan_aktif %}
       <div class="card-modern p-3 mb-3">
+
+        <!-- HEADER CARD -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px">
             <i class="bi bi-credit-card"
                style="font-size:18px;
-                      color:{% if tagihan_aktif.status == 'lunas' %}#10b981{% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}#3b82f6{% else %}#f59e0b{% endif %}"></i>
+                      color:{% if tagihan_aktif.status == 'lunas' %}#10b981
+                            {% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}#3b82f6
+                            {% elif tagihan_aktif.status == 'menunggu_pembayaran' %}#f59e0b
+                            {% else %}#f59e0b{% endif %}"></i>
             <div style="font-size:.9rem;font-weight:600">Pembayaran</div>
           </div>
+
           {% if tagihan_aktif.status == 'lunas' %}
             <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.7rem">✓ Lunas</span>
           {% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}
-            <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:.7rem">Menunggu</span>
+            <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:.7rem">Menunggu Verifikasi</span>
+          {% elif tagihan_aktif.status == 'menunggu_pembayaran' %}
+            <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.7rem">⏱ Pembayaran Berlangsung</span>
           {% else %}
             <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.7rem">Belum Bayar</span>
           {% endif %}
@@ -289,6 +297,7 @@
           Rp {{ tagihan_aktif.jumlah|floatformat:0 }}
         </div>
 
+        <!-- AKSI BERDASARKAN STATUS -->
         {% if tagihan_aktif.status == 'lunas' %}
           <div style="font-size:.75rem;color:#10b981;margin-bottom:10px">
             <i class="bi bi-check-circle-fill"></i> Pembayaran telah dikonfirmasi.
@@ -301,6 +310,7 @@
                     text-decoration:none;font-size:.875rem;font-weight:600">
             <i class="bi bi-printer"></i> Cetak Kwitansi
           </a>
+
         {% elif tagihan_aktif.status == 'menunggu_konfirmasi' %}
           <div style="font-size:.75rem;color:#3b82f6;margin-bottom:10px">
             <i class="bi bi-hourglass-split"></i> Admin sedang memverifikasi bukti transfer.
@@ -312,6 +322,31 @@
                     text-decoration:none;font-size:.875rem;font-weight:600">
             <i class="bi bi-eye"></i> Lihat Status
           </a>
+
+        {% elif tagihan_aktif.status == 'menunggu_pembayaran' %}
+          <div style="font-size:.75rem;color:#92400e;margin-bottom:10px;line-height:1.5">
+            <i class="bi bi-info-circle-fill"></i>
+            Anda telah memilih metode pembayaran online. Silakan selesaikan pembayaran di halaman gateway. Status akan otomatis ter-update setelah bayar.
+          </div>
+          <a href="/pembayaran/{{ tagihan_aktif.kode_bayar }}/duitku/"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;
+                    background:linear-gradient(135deg,#f59e0b,#d97706);
+                    color:white;padding:10px;border-radius:8px;
+                    text-decoration:none;font-size:.875rem;font-weight:600;margin-bottom:8px">
+            <i class="bi bi-arrow-right-circle"></i> Lanjutkan Pembayaran
+          </a>
+          <form method="post" action="/pembayaran/{{ tagihan_aktif.kode_bayar }}/batalkan/" style="margin:0">
+            {% csrf_token %}
+            <button type="submit"
+              onclick="return confirm('Batalkan transaksi pembayaran online ini? Anda akan bisa pilih metode lain (transfer manual atau gateway lain).');"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;
+                      background:#fff;border:1.5px solid #e2e8f0;color:#64748b;
+                      padding:8px;border-radius:8px;
+                      font-size:.8rem;font-weight:500;cursor:pointer">
+              <i class="bi bi-x-circle"></i> Batalkan & Pilih Metode Lain
+            </button>
+          </form>
+
         {% else %}
           <div style="font-size:.75rem;color:#64748b;margin-bottom:10px">
             Jatuh tempo: <strong>{{ tagihan_aktif.tgl_jatuh_tempo|date:"d M Y" }}</strong>
