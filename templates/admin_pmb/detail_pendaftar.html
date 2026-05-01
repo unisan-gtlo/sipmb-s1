@@ -145,6 +145,18 @@
                 </span>
               </td>
               <td>
+                {% if request.user.is_admin_pmb or request.user.is_operator %}
+                  {% if dok.status_verifikasi != 'terverifikasi' %}
+                    <a href="{% url 'admin_pmb:upload_dokumen_operator' pendaftaran.pk dok.id %}"
+                       style="display:inline-block;padding:3px 8px;border-radius:6px;
+                              border:1px solid #2563eb;background:#2563eb;color:white;
+                              font-size:.75rem;text-decoration:none;margin-bottom:4px"
+                       title="{% if dok.file or dok.link_drive %}Ganti file dokumen{% else %}Upload dokumen baru{% endif %}">
+                      <i class="bi bi-cloud-upload"></i>
+                      {% if dok.file or dok.link_drive %}Ganti{% else %}Upload{% endif %}
+                    </a>
+                  {% endif %}
+                {% endif %}
                 {% if dok.status_verifikasi == 'menunggu' %}
                   <div style="display:flex;gap:4px">
                     <form method="post" action="{% url 'admin_pmb:verif_acc' dok.id %}">
@@ -334,11 +346,33 @@
 {% block extra_js %}
 <script>
 function showTolak(dokId) {
-  document.getElementById('form-tolak').action = `/admin-pmb/verifikasi/${dokId}/tolak/`;
-  document.getElementById('modal-tolak').style.display = 'flex';
-}
-function hideTolak() {
-  document.getElementById('modal-tolak').style.display = 'none';
+  var alasan = prompt('Alasan penolakan dokumen:');
+  if (!alasan || !alasan.trim()) return;
+
+  var csrfElem = document.querySelector('[name=csrfmiddlewaretoken]');
+  if (!csrfElem) {
+    alert('CSRF token tidak ditemukan. Silakan refresh halaman.');
+    return;
+  }
+
+  var f = document.createElement('form');
+  f.method = 'post';
+  f.action = '/admin-pmb/verifikasi/' + dokId + '/tolak/';
+
+  var csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = 'csrfmiddlewaretoken';
+  csrfInput.value = csrfElem.value;
+  f.appendChild(csrfInput);
+
+  var alasanInput = document.createElement('input');
+  alasanInput.type = 'hidden';
+  alasanInput.name = 'catatan';
+  alasanInput.value = alasan.trim();
+  f.appendChild(alasanInput);
+
+  document.body.appendChild(f);
+  f.submit();
 }
 </script>
 {% endblock %}

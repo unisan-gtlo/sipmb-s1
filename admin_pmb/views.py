@@ -10,6 +10,7 @@ from django.db.models import Sum, Count, Q
 from pembayaran.models import Tagihan, KonfirmasiPembayaran
 
 from pendaftaran.models import Pendaftaran, ProfilPendaftar, LogEditDataPendaftar
+from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem, PersyaratanJalur
 from dokumen.models import DokumenPendaftar
 from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem
 from chatbot.models import KnowledgeBase
@@ -194,9 +195,19 @@ def detail_pendaftar(request, pk):
     except:
         profil = None
 
-    dokumen_list = DokumenPendaftar.objects.filter(
-        pendaftaran=pendaftaran
-    ).select_related('persyaratan')
+    # Pastikan placeholder DokumenPendaftar untuk semua persyaratan jalur
+    # (mirror dengan logic di dokumen.views.daftar_dokumen)
+    persyaratan_list = PersyaratanJalur.objects.filter(
+        jalur=pendaftaran.jalur
+    ).order_by('urutan')
+    dokumen_list = []
+    for syarat in persyaratan_list:
+        dokumen, _ = DokumenPendaftar.objects.get_or_create(
+            pendaftaran=pendaftaran,
+            persyaratan=syarat,
+            defaults={'status_verifikasi': 'belum'},
+        )
+        dokumen_list.append(dokumen)
     # Tambahkan setelah query dokumen_list
     recruiter = None
     if pendaftaran.kode_referral:
@@ -2576,5 +2587,73 @@ def tambah_pendaftar_sukses(request):
 
     return render(request, 'admin_pmb/tambah_pendaftar_sukses.html', {
         'info': info,
+        **get_sidebar_counts(),
+    })
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def upload_dokumen_operator(request, pk, dokumen_id):
+    """
+    Operator/admin upload dokumen pendaftar (untuk pendaftar walk-in atau
+    yang minta bantuan upload).
+
+    Beda dari dokumen.views.upload_dokumen (yang dipakai pendaftar):
+    - Akses berdasarkan pk Pendaftaran (bukan request.user)
+    - Permission: admin_pmb / operator_pmb only
+    - Audit log: catat siapa operator yang upload (via logger)
+
+    Sama dengan versi pendaftar:
+    - Skip kalau dokumen sudah terverifikasi (operator pun tidak boleh override)
+    - Reset status ke 'menunggu' setiap upload (akan di-verify ulang)
+    """
+    from dokumen.forms import UploadDokumenForm
+    from dokumen.models import DokumenPendaftar
+
+    pendaftaran = get_object_or_404(Pendaftaran, pk=pk)
+    dokumen = get_object_or_404(
+        DokumenPendaftar,
+        id=dokumen_id,
+        pendaftaran=pendaftaran,
+    )
+
+    # Jangan izinkan upload ulang jika sudah terverifikasi
+    if dokumen.status_verifikasi == 'terverifikasi':
+        messages.info(
+            request,
+            f'Dokumen "{dokumen.persyaratan.nama_dokumen}" sudah terverifikasi, '
+            f'tidak bisa diubah lagi.'
+        )
+        return redirect('admin_pmb:detail_pendaftar', pk=pendaftaran.pk)
+
+    if request.method == 'POST':
+        form = UploadDokumenForm(request.POST, request.FILES, instance=dokumen)
+        if form.is_valid():
+            dok = form.save(commit=False)
+            # Reset status — perlu di-verify ulang
+            dok.status_verifikasi = 'menunggu'
+            dok.tgl_verifikasi = None
+            dok.diverifikasi_oleh = None
+            if request.FILES.get('file'):
+                dok.nama_file = request.FILES['file'].name
+            dok.save()
+
+            logger.info(
+                f'Operator {request.user.username} upload dokumen '
+                f'"{dokumen.persyaratan.nama_dokumen}" untuk pendaftar '
+                f'{pendaftaran.no_pendaftaran} ({pendaftaran.user.email})'
+            )
+
+            messages.success(
+                request,
+                f'Dokumen "{dokumen.persyaratan.nama_dokumen}" berhasil diunggah.'
+            )
+            return redirect('admin_pmb:detail_pendaftar', pk=pendaftaran.pk)
+    else:
+        form = UploadDokumenForm(instance=dokumen)
+
+    return render(request, 'admin_pmb/upload_dokumen.html', {
+        'form': form,
+        'dokumen': dokumen,
+        'pendaftaran': pendaftaran,
         **get_sidebar_counts(),
     })
