@@ -48,6 +48,9 @@ urlpatterns = [
    # Operator Edit Data Pendaftar (Mini-Deploy 2A)
     path('pendaftar/<int:pk>/edit/<str:kategori>/', views.edit_data_pendaftar, name='edit_data_pendaftar'),
     path('pendaftar/<int:pk>/riwayat-edit/',        views.riwayat_edit_pendaftar, name='riwayat_edit_pendaftar'),
+    path('pendaftar/<int:pk>/hapus/',               views.tandai_hapus_pendaftar, name='tandai_hapus_pendaftar'),
+    path('pendaftar-terhapus/',                     views.pendaftar_terhapus,     name='pendaftar_terhapus'),
+    path('pendaftar-terhapus/<int:pk>/restore/',    views.restore_pendaftar,      name='restore_pendaftar'),
 ]
 
 

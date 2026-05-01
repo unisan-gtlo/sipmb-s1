@@ -2346,3 +2346,118 @@ def riwayat_edit_pendaftar(request, pk):
         'pendaftaran': pendaftaran,
         'log_list': log_list,
     })
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def tandai_hapus_pendaftar(request, pk):
+    """
+    Soft delete pendaftar — set is_deleted=True dan catat audit info.
+    
+    Hard delete tidak dilakukan via UI; gunakan management command
+    `purge_deleted_pendaftar` (admin akses VPS) untuk pembersihan permanen.
+    
+    URL: /admin-pmb/pendaftar/<pk>/hapus/
+    Method: GET (confirmation page) atau POST (eksekusi)
+    """
+    # Pakai all_objects supaya kalau ada double-submit, tetap bisa load
+    pendaftaran = get_object_or_404(Pendaftaran.all_objects, pk=pk)
+    
+    if pendaftaran.is_deleted:
+        messages.warning(request, f'Pendaftar {pendaftaran.no_pendaftaran} sudah ditandai terhapus sebelumnya.')
+        return redirect('admin_pmb:detail_pendaftar', pk=pk)
+    
+    if request.method == 'POST':
+        # Validasi 1: alasan wajib
+        alasan = request.POST.get('alasan', '').strip()
+        if not alasan:
+            messages.error(request, 'Alasan penghapusan wajib diisi.')
+            return redirect('admin_pmb:tandai_hapus_pendaftar', pk=pk)
+        
+        # Validasi 2: ketik no_pendaftaran sebagai konfirmasi
+        konfirmasi_no = request.POST.get('konfirmasi_no_pendaftaran', '').strip()
+        if konfirmasi_no != pendaftaran.no_pendaftaran:
+            messages.error(
+                request,
+                f'Nomor konfirmasi tidak cocok. Anda mengetik "{konfirmasi_no}" '
+                f'sedangkan nomor pendaftaran adalah "{pendaftaran.no_pendaftaran}".'
+            )
+            return redirect('admin_pmb:tandai_hapus_pendaftar', pk=pk)
+        
+        # Eksekusi soft delete
+        from django.utils import timezone
+        with transaction.atomic():
+            pendaftaran.is_deleted = True
+            pendaftaran.deleted_at = timezone.now()
+            pendaftaran.deleted_by = request.user
+            pendaftaran.deleted_reason = alasan
+            pendaftaran.save(update_fields=[
+                'is_deleted', 'deleted_at', 'deleted_by', 'deleted_reason'
+            ])
+        
+        messages.success(
+            request,
+            f'Pendaftar {pendaftaran.no_pendaftaran} ({pendaftaran.user.first_name} '
+            f'{pendaftaran.user.last_name}) berhasil ditandai terhapus. '
+            f'Data masih tersimpan dan bisa di-restore via halaman Pendaftar Terhapus.'
+        )
+        return redirect('admin_pmb:pendaftar')
+    
+    # GET: render confirmation page
+    return render(request, 'admin_pmb/tandai_hapus_pendaftar.html', {
+        'pendaftaran': pendaftaran,
+    })
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def pendaftar_terhapus(request):
+    """
+    List pendaftar yang sudah di-soft-delete.
+    
+    URL: /admin-pmb/pendaftar-terhapus/
+    """
+    # Pakai all_objects agar bisa query yang is_deleted=True
+    pendaftar_list = Pendaftaran.all_objects.filter(
+        is_deleted=True
+    ).select_related('user', 'jalur', 'prodi_pilihan_1', 'deleted_by').order_by('-deleted_at')
+    
+    return render(request, 'admin_pmb/pendaftar_terhapus.html', {
+        'pendaftar_list': pendaftar_list,
+        'total': pendaftar_list.count(),
+    })
+
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def restore_pendaftar(request, pk):
+    """
+    Restore pendaftar yang sudah di-soft-delete (set is_deleted=False).
+    
+    URL: /admin-pmb/pendaftar-terhapus/<pk>/restore/
+    Method: POST only (untuk safety, harus via form)
+    """
+    pendaftaran = get_object_or_404(Pendaftaran.all_objects, pk=pk)
+    
+    if not pendaftaran.is_deleted:
+        messages.warning(request, f'Pendaftar {pendaftaran.no_pendaftaran} tidak dalam status terhapus.')
+        return redirect('admin_pmb:pendaftar_terhapus')
+    
+    if request.method != 'POST':
+        messages.error(request, 'Restore harus via tombol di halaman Pendaftar Terhapus.')
+        return redirect('admin_pmb:pendaftar_terhapus')
+    
+    # Eksekusi restore
+    with transaction.atomic():
+        pendaftaran.is_deleted = False
+        pendaftaran.deleted_at = None
+        pendaftaran.deleted_by = None
+        pendaftaran.deleted_reason = ''
+        pendaftaran.save(update_fields=[
+            'is_deleted', 'deleted_at', 'deleted_by', 'deleted_reason'
+        ])
+    
+    messages.success(
+        request,
+        f'Pendaftar {pendaftaran.no_pendaftaran} ({pendaftaran.user.first_name} '
+        f'{pendaftaran.user.last_name}) berhasil di-restore. Sekarang kembali tampil di list utama.'
+    )
+    return redirect('admin_pmb:pendaftar_terhapus')

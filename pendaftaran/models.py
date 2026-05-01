@@ -49,6 +49,19 @@ def generate_no_pendaftaran(status_masuk='PDB', tahun=None):
     
     return f'{prefix}{next_seq:04d}'
 
+class PendaftaranManager(models.Manager):
+    """Manager default Pendaftaran: exclude soft-deleted records."""
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class PendaftaranAllManager(models.Manager):
+    """Manager alternatif: include semua records (termasuk soft-deleted).
+    
+    Pakai untuk view 'Pendaftar Terhapus' atau audit/restore operations.
+    """
+    def get_queryset(self):
+        return super().get_queryset()
 
 class Pendaftaran(models.Model):
     STATUS_CHOICES = [
@@ -65,6 +78,10 @@ class Pendaftaran(models.Model):
         ('MENGUNDURKAN_DIRI','Mengundurkan Diri'),
     ]
 
+    # Custom managers — objects (default) exclude soft-deleted, all_objects include semua
+    objects     = PendaftaranManager()
+    all_objects = PendaftaranAllManager()
+    
     # Identitas pendaftaran
     no_pendaftaran  = models.CharField(max_length=30, unique=True, default=generate_no_pendaftaran)
     user            = models.OneToOneField(User, on_delete=models.CASCADE, related_name='pendaftaran')
@@ -74,6 +91,7 @@ class Pendaftaran(models.Model):
     prodi_pilihan_2 = models.ForeignKey(ProdiPMB, on_delete=models.PROTECT, related_name='pilihan_2', null=True, blank=True)
     status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
 
+
     # Kode referral & voucher
     kode_referral   = models.CharField(max_length=20, blank=True)
     kode_voucher    = models.CharField(max_length=20, blank=True)
@@ -81,6 +99,21 @@ class Pendaftaran(models.Model):
     # Timestamps
     tgl_daftar      = models.DateTimeField(auto_now_add=True)
     tgl_diupdate    = models.DateTimeField(auto_now=True)
+    
+    # Soft delete (hard delete dilakukan via management command)
+    is_deleted      = models.BooleanField(default=False, db_index=True)
+    deleted_at      = models.DateTimeField(null=True, blank=True)
+    deleted_by      = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pendaftar_dihapus',
+        verbose_name='Dihapus Oleh',
+    )
+    deleted_reason  = models.TextField(blank=True, default='', verbose_name='Alasan Penghapusan')
+
+    
 
     class Meta:
         db_table    = 'pmb\".\"pendaftaran'

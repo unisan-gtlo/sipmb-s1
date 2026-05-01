@@ -1,0 +1,102 @@
+{% extends 'admin_pmb/base_admin.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-trash3 me-2 text-secondary"></i>
+                Pendaftar Terhapus
+            </h2>
+            <p class="text-muted mb-0">
+                Daftar pendaftar yang sudah ditandai terhapus. Klik <strong>Restore</strong> untuk mengembalikan ke list utama.
+            </p>
+        </div>
+        <a href="{% url 'admin_pmb:pendaftar' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar Pendaftar
+        </a>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Total <strong>{{ total }} pendaftar</strong> dalam status terhapus.
+        Data masih tersimpan di database. Penghapusan permanen hanya dilakukan oleh admin via management command 
+        <code>purge_deleted_pendaftar</code>.
+    </div>
+
+    {% if pendaftar_list %}
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="font-size:.8rem">NO. PENDAFTARAN</th>
+                            <th style="font-size:.8rem">NAMA LENGKAP</th>
+                            <th style="font-size:.8rem">JALUR / GELOMBANG</th>
+                            <th style="font-size:.8rem">DIHAPUS OLEH</th>
+                            <th style="font-size:.8rem">TANGGAL HAPUS</th>
+                            <th style="font-size:.8rem">ALASAN</th>
+                            <th style="font-size:.8rem">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pendaftar_list %}
+                        <tr>
+                            <td><code>{{ p.no_pendaftaran }}</code></td>
+                            <td>
+                                <strong>{{ p.user.first_name }} {{ p.user.last_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ p.user.email|default:"-" }}</small>
+                            </td>
+                            <td>
+                                {{ p.jalur.nama|default:"-" }}<br>
+                                <small class="text-muted">{{ p.gelombang.nama|default:"-" }}</small>
+                            </td>
+                            <td>
+                                {% if p.deleted_by %}
+                                    {{ p.deleted_by.first_name }} {{ p.deleted_by.last_name }}
+                                    <br>
+                                    <small class="text-muted">{{ p.deleted_by.username }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size:.85rem">
+                                {{ p.deleted_at|date:"d M Y H:i" }}
+                            </td>
+                            <td style="font-size:.85rem;max-width:280px">
+                                {{ p.deleted_reason|truncatechars:120 }}
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'admin_pmb:restore_pendaftar' p.pk %}" 
+                                      style="display:inline" 
+                                      onsubmit="return confirm('Restore pendaftar {{ p.no_pendaftaran }}?\n\nData akan kembali tampil di list utama.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-trash3 text-muted" style="font-size:3rem"></i>
+            <h5 class="mt-3 text-muted">Tidak ada pendaftar dalam status terhapus</h5>
+            <p class="text-muted mb-0">Semua data pendaftar masih aktif.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
