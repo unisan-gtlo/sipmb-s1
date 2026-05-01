@@ -31,6 +31,7 @@ from django import forms
 from pendaftaran.models import ProfilPendaftar
 from pendaftaran.forms import PEKERJAAN_CHOICES
 from accounts.utils import normalisasi_nama
+from accounts.forms import RegistrasiAwalForm
 
 class OperatorEditDataDiriForm(forms.ModelForm):
     """
@@ -276,3 +277,20 @@ class OperatorEditDataOrtuForm(forms.ModelForm):
             'alamat_ortu': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Alamat ortu/wali'}),
         }
 
+class OperatorTambahPendaftarForm(RegistrasiAwalForm):
+    """
+    Form untuk operator/admin menambah pendaftar baru secara walk-in.
+
+    Menggunakan ulang RegistrasiAwalForm sepenuhnya, kecuali:
+    - Tidak ada field password / konfirmasi_password (auto-generate di view)
+    - Tidak ada field setuju_syarat (operator menjelaskan offline)
+
+    Validator email, no_hp, prodi 1 != prodi 2 tetap berlaku via parent class.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hapus field yang tidak relevan untuk flow operator
+        for field_name in ('password', 'konfirmasi_password', 'setuju_syarat'):
+            if field_name in self.fields:
+                del self.fields[field_name]

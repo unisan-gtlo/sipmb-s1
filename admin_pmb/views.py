@@ -2467,3 +2467,114 @@ def restore_pendaftar(request, pk):
         f'{pendaftaran.user.last_name}) berhasil di-restore. Sekarang kembali tampil di list utama.'
     )
     return redirect('admin_pmb:pendaftar_terhapus')
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def tambah_pendaftar(request):
+    """
+    Operator/admin tambah pendaftar baru secara walk-in.
+
+    Beda dari registrasi public (accounts.views.registrasi):
+    - Password auto-generate (operator beritahu pendaftar)
+    - User langsung is_active=True (skip email aktivasi)
+    - Profil & ortu kosong, bisa dilengkapi via edit_data_pendaftar
+
+    Tagihan biaya_pendaftaran auto-create via signal di pembayaran/signals.py
+    """
+    from .forms import OperatorTambahPendaftarForm
+    from accounts.utils import normalisasi_nama, generate_password
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+
+    if request.method == 'POST':
+        form = OperatorTambahPendaftarForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            try:
+                with transaction.atomic():
+                    # Generate password random (one-time display ke operator)
+                    password_plain = generate_password(10)
+
+                    # Generate username dari email, dengan suffix kalau bentrok
+                    username_base = data['email'].split('@')[0]
+                    username = username_base
+                    suffix = 1
+                    while User.objects.filter(username=username).exists():
+                        username = f"{username_base}{suffix}"
+                        suffix += 1
+
+                    # Pisah nama lengkap (logic sama dengan registrasi public)
+                    nama = data['nama_lengkap'].strip()
+                    parts = nama.split(' ', 1)
+                    first = parts[0]
+                    last = parts[1] if len(parts) > 1 else ''
+
+                    # Buat user — LANGSUNG aktif (operator sudah verify identitas)
+                    user = User.objects.create_user(
+                        username=username,
+                        email=data['email'],
+                        password=password_plain,
+                        first_name=normalisasi_nama(first),
+                        last_name=normalisasi_nama(last),
+                        no_hp=data['no_hp'],
+                        role='calon_maba',
+                        is_active=True,
+                    )
+
+                    # Buat pendaftaran (Tagihan auto via signal)
+                    pendaftaran = Pendaftaran.objects.create(
+                        user=user,
+                        jalur=data['jalur'],
+                        gelombang=data['gelombang'],
+                        prodi_pilihan_1=data['prodi_pilihan_1'],
+                        prodi_pilihan_2=data.get('prodi_pilihan_2'),
+                        kode_referral=data.get('kode_referral', ''),
+                        kode_voucher=data.get('kode_voucher', ''),
+                        status='DRAFT',
+                    )
+
+                    # Profil kosong (sama seperti flow public)
+                    ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
+
+                logger.info(
+                    f'Operator {request.user.username} membuat pendaftar baru: '
+                    f'{pendaftaran.no_pendaftaran} ({data["email"]})'
+                )
+
+                # Simpan password di session untuk one-time display di halaman sukses
+                request.session['tambah_pendaftar_info'] = {
+                    'no_pendaftaran': pendaftaran.no_pendaftaran,
+                    'username': username,
+                    'password': password_plain,
+                    'email': data['email'],
+                    'nama': normalisasi_nama(nama),
+                    'pendaftaran_id': pendaftaran.id,
+                }
+                return redirect('admin_pmb:tambah_pendaftar_sukses')
+
+            except Exception as e:
+                logger.error(f'Error tambah pendaftar oleh {request.user.username}: {e}')
+                messages.error(request, f'Terjadi kesalahan: {e}')
+    else:
+        form = OperatorTambahPendaftarForm()
+
+    return render(request, 'admin_pmb/tambah_pendaftar.html', {
+        'form': form,
+        **get_sidebar_counts(),
+    })
+
+
+@login_required
+@user_passes_test(is_admin_or_operator)
+def tambah_pendaftar_sukses(request):
+    """Halaman sukses tambah pendaftar — tampilkan password one-time, hapus dari session."""
+    info = request.session.pop('tambah_pendaftar_info', None)
+    if not info:
+        # Akses langsung tanpa session = redirect ke list (mencegah re-display)
+        return redirect('admin_pmb:pendaftar')
+
+    return render(request, 'admin_pmb/tambah_pendaftar_sukses.html', {
+        'info': info,
+        **get_sidebar_counts(),
+    })

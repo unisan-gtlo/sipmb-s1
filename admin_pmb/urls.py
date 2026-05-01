@@ -51,6 +51,9 @@ urlpatterns = [
     path('pendaftar/<int:pk>/hapus/',               views.tandai_hapus_pendaftar, name='tandai_hapus_pendaftar'),
     path('pendaftar-terhapus/',                     views.pendaftar_terhapus,     name='pendaftar_terhapus'),
     path('pendaftar-terhapus/<int:pk>/restore/',    views.restore_pendaftar,      name='restore_pendaftar'),
+    path('pendaftar/tambah/',                       views.tambah_pendaftar,        name='tambah_pendaftar'),
+    path('pendaftar/tambah/sukses/',                views.tambah_pendaftar_sukses, name='tambah_pendaftar_sukses'),
+    
 ]
 
 
