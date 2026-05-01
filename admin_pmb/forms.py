@@ -173,14 +173,12 @@ class OperatorEditDataDiriForm(forms.ModelForm):
                 pass
 
     def clean_first_name(self):
-        """Auto-uppercase nama depan untuk konsistensi data."""
-        first_name = self.cleaned_data.get('first_name', '')
-        return first_name.upper() if first_name else first_name
+        """Normalisasi nama depan (uppercase + trim) via helper terpusat."""
+        return normalisasi_nama(self.cleaned_data.get('first_name', ''))
     
     def clean_last_name(self):
-        """Auto-uppercase nama belakang untuk konsistensi data."""
-        last_name = self.cleaned_data.get('last_name', '')
-        return last_name.upper() if last_name else last_name
+        """Normalisasi nama belakang (uppercase + trim) via helper terpusat."""
+        return normalisasi_nama(self.cleaned_data.get('last_name', ''))
 
 
 class OperatorEditDataOrtuForm(forms.ModelForm):
