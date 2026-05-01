@@ -52,6 +52,28 @@ class OperatorEditDataDiriForm(forms.ModelForm):
     
     
     
+    # Field nama (tersimpan di model User, bukan ProfilPendaftar)
+    first_name = forms.CharField(
+        required=True,
+        label='Nama Depan',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Sesuai ijazah (huruf kapital di awal kata)',
+        }),
+        help_text='Tersimpan di akun User. Pastikan sesuai ijazah/akta.',
+    )
+    last_name = forms.CharField(
+        required=False,
+        label='Nama Belakang',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Kosongkan jika hanya satu kata',
+        }),
+        help_text='Boleh dikosongkan jika nama hanya terdiri dari satu kata.',
+    )
+    
     # Field WAJIB ada (operator harus isi alasan kenapa edit)
     alasan_edit = forms.CharField(
         required=True,
@@ -137,6 +159,18 @@ class OperatorEditDataDiriForm(forms.ModelForm):
             'kelurahan': 'Kelurahan / Desa',
             'kode_pos': 'Kode Pos',
         }
+    def __init__(self, *args, **kwargs):
+        """Populate first_name & last_name dari User yang terkait dengan Pendaftaran."""
+        super().__init__(*args, **kwargs)
+        # ProfilPendaftar -> pendaftaran (FK) -> user (OneToOne)
+        if self.instance and self.instance.pk:
+            try:
+                user = self.instance.pendaftaran.user
+                self.fields['first_name'].initial = user.first_name
+                self.fields['last_name'].initial = user.last_name
+            except AttributeError:
+                # Fallback aman jika instance belum punya pendaftaran.user
+                pass
 
 
 class OperatorEditDataOrtuForm(forms.ModelForm):
