@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 
 from datetime import date, timedelta
+from django.db import transaction
 from django.db.models import Sum, Count, Q
 from pembayaran.models import Tagihan, KonfirmasiPembayaran
 
@@ -2244,6 +2245,11 @@ def edit_data_pendaftar(request, pk, kategori):
         for field_name in FormClass.Meta.fields:
             old_data[field_name] = getattr(profil, field_name, None)
         
+        # Snapshot nama dari User (khusus kategori 'diri' yang punya field ini)
+        if kategori == 'diri':
+            old_data['first_name'] = pendaftaran.user.first_name
+            old_data['last_name'] = pendaftaran.user.last_name
+        
         form = FormClass(request.POST, instance=profil)
         if form.is_valid():
             alasan = form.cleaned_data.pop('alasan_edit', '').strip()
@@ -2254,18 +2260,41 @@ def edit_data_pendaftar(request, pk, kategori):
                     'kategori': kategori, 'kategori_label': kategori_label,
                 })
             
-            # Save data baru
-            profil = form.save()
+            # Pop nama dari cleaned_data (khusus kategori 'diri') — disimpan ke User, bukan ProfilPendaftar
+            new_first_name = form.cleaned_data.pop('first_name', None) if kategori == 'diri' else None
+            new_last_name = form.cleaned_data.pop('last_name', None) if kategori == 'diri' else None
+            
+            # Save data baru — atomic agar User + Profil sukses bersamaan atau rollback bersama
+            with transaction.atomic():
+                profil = form.save()
+                
+                # Update User.first_name & last_name (hanya kategori 'diri')
+                if kategori == 'diri':
+                    user = pendaftaran.user
+                    user.first_name = new_first_name or ''
+                    user.last_name = new_last_name or ''
+                    user.save(update_fields=['first_name', 'last_name'])
             
             # Snapshot data SESUDAH save
             new_data = {}
             for field_name in FormClass.Meta.fields:
                 new_data[field_name] = getattr(profil, field_name, None)
             
+            # Snapshot nama dari User (refresh dari DB untuk pastikan konsisten)
+            if kategori == 'diri':
+                pendaftaran.user.refresh_from_db()
+                new_data['first_name'] = pendaftaran.user.first_name
+                new_data['last_name'] = pendaftaran.user.last_name
+            
             # Build labels dict dari form
             field_labels = {}
             for field_name in FormClass.Meta.fields:
                 field_labels[field_name] = form.fields[field_name].label or field_name
+            
+            # Tambah label untuk pseudo-field nama (khusus kategori 'diri')
+            if kategori == 'diri':
+                field_labels['first_name'] = form.fields['first_name'].label or 'Nama Depan'
+                field_labels['last_name'] = form.fields['last_name'].label or 'Nama Belakang'
             
             # Buat log untuk field yang berubah
             logs = _log_field_changes(
