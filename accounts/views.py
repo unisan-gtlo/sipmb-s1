@@ -10,6 +10,7 @@ from django_ratelimit.decorators import ratelimit
 
 from .models import User
 from .forms import RegistrasiAwalForm, LoginForm
+from .utils import normalisasi_nama
 from master.models import GelombangPenerimaan, ProdiPMB
 from pendaftaran.models import Pendaftaran, ProfilPendaftar, TokenAktivasi
 from konten.models import Pengumuman, Testimoni, MitraKerjasama, MediaSosial, DokumenDownload, BrosurFakultas, FAQ
@@ -108,8 +109,8 @@ def registrasi(request):
                     username   = username,
                     email      = email,
                     password   = data['password'],
-                    first_name = first,
-                    last_name  = last,
+                    first_name = normalisasi_nama(first),
+                    last_name  = normalisasi_nama(last),
                     no_hp      = data['no_hp'],
                     role       = 'calon_maba',
                     is_active  = False,  # belum aktif sampai verifikasi email
@@ -413,8 +414,8 @@ def registrasi_recruiter(request):
             username   = email,
             email      = email,
             password   = password,
-            first_name = nama_parts[0],
-            last_name  = nama_parts[1] if len(nama_parts) > 1 else '',
+            first_name = normalisasi_nama(nama_parts[0]),
+            last_name  = normalisasi_nama(nama_parts[1]) if len(nama_parts) > 1 else '',
             no_hp      = no_hp,
             role       = 'recruiter',
             is_active  = False,

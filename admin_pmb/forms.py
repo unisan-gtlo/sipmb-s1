@@ -30,7 +30,7 @@ STATUS_NIKAH_CHOICES = [
 from django import forms
 from pendaftaran.models import ProfilPendaftar
 from pendaftaran.forms import PEKERJAAN_CHOICES
-
+from accounts.utils import normalisasi_nama
 
 class OperatorEditDataDiriForm(forms.ModelForm):
     """
@@ -172,6 +172,16 @@ class OperatorEditDataDiriForm(forms.ModelForm):
                 # Fallback aman jika instance belum punya pendaftaran.user
                 pass
 
+    def clean_first_name(self):
+        """Auto-uppercase nama depan untuk konsistensi data."""
+        first_name = self.cleaned_data.get('first_name', '')
+        return first_name.upper() if first_name else first_name
+    
+    def clean_last_name(self):
+        """Auto-uppercase nama belakang untuk konsistensi data."""
+        last_name = self.cleaned_data.get('last_name', '')
+        return last_name.upper() if last_name else last_name
+
 
 class OperatorEditDataOrtuForm(forms.ModelForm):
     """
@@ -267,3 +277,4 @@ class OperatorEditDataOrtuForm(forms.ModelForm):
             'no_hp_ortu': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'No HP ortu/wali yang dihubungi'}),
             'alamat_ortu': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Alamat ortu/wali'}),
         }
+
