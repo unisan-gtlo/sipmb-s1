@@ -22,6 +22,29 @@
           <strong style="color:#667eea">{{ email }}</strong>
         </p>
         {% endif %}
+        {% if voucher_info %}
+        <div class="p-3 mb-3" style="background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;color:white;text-align:left">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-tag-fill" style="font-size:18px"></i>
+            <h6 class="mb-0 fw-600" style="font-weight:600;color:white">
+              {% if voucher_info.is_gratis %}
+                Selamat! Pendaftaran Anda GRATIS
+              {% else %}
+                Voucher Berhasil Diterapkan
+              {% endif %}
+            </h6>
+          </div>
+          <div style="font-size:.85rem;opacity:.95">
+            Kode <strong>{{ voucher_info.kode }}</strong>
+            {% if voucher_info.is_gratis %}
+              telah diterapkan. Anda tidak perlu membayar biaya pendaftaran.
+            {% else %}
+              memberikan potongan Rp {{ voucher_info.potongan }}.
+              <br>Sisa biaya: <strong>Rp {{ voucher_info.biaya_final }}</strong>.
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
         <div class="alert-gradient p-3 mb-4 text-start" style="font-size:.85rem">
           <i class="bi bi-info-circle-fill me-2"></i>
           Link aktivasi berlaku selama <strong>24 jam</strong>. Cek folder <strong>Spam/Junk</strong> jika tidak ada di inbox.

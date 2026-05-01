@@ -66,6 +66,7 @@ class PendaftaranAllManager(models.Manager):
 class Pendaftaran(models.Model):
     STATUS_CHOICES = [
         ('DRAFT',            'Draft'),
+        ('GRATIS_VOUCHER',   'Gratis dengan Voucher'),
         ('LENGKAP',          'Lengkap'),
         ('DIVERIFIKASI',     'Diverifikasi'),
         ('LULUS_ADM',        'Lulus Administrasi'),

@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from .models import User
 from master.models import JalurPenerimaan, GelombangPenerimaan, ProdiPMB
+from pembayaran.utils import validasi_voucher
 
 
 class RegistrasiAwalForm(forms.Form):
@@ -104,12 +105,25 @@ class RegistrasiAwalForm(forms.Form):
         konfirmasi       = cleaned.get('konfirmasi_password')
         prodi_1          = cleaned.get('prodi_pilihan_1')
         prodi_2          = cleaned.get('prodi_pilihan_2')
+        kode_voucher     = cleaned.get('kode_voucher', '').strip()
+        jalur            = cleaned.get('jalur')
 
         if password and konfirmasi and password != konfirmasi:
             self.add_error('konfirmasi_password', 'Password tidak cocok.')
 
         if prodi_1 and prodi_2 and prodi_1 == prodi_2:
             self.add_error('prodi_pilihan_2', 'Pilihan 2 tidak boleh sama dengan pilihan 1.')
+
+        # Validasi kode voucher (jika diisi)
+        if kode_voucher:
+            voucher_obj, err = validasi_voucher(kode_voucher, jalur=jalur)
+            if err:
+                self.add_error('kode_voucher', err)
+            else:
+                # Simpan instance voucher untuk dipakai di view
+                cleaned['voucher_obj'] = voucher_obj
+                # Normalisasi: kode tersimpan dalam huruf besar
+                cleaned['kode_voucher'] = voucher_obj.kode_voucher
 
         return cleaned
 

@@ -128,6 +128,21 @@ def registrasi(request):
                     status          = 'DRAFT',
                 )
 
+               
+               # Apply voucher ke tagihan (jika ada voucher valid)
+                voucher_obj = data.get('voucher_obj')
+                if voucher_obj:
+                    from pembayaran.utils import apply_voucher_ke_tagihan
+                    voucher_result = apply_voucher_ke_tagihan(pendaftaran, voucher_obj)
+                    if voucher_result:
+                        request.session['voucher_info'] = {
+                            'kode':        voucher_obj.kode_voucher,
+                            'jenis':       voucher_obj.get_jenis_diskon_display(),
+                            'nilai':       str(voucher_obj.nilai_diskon),
+                            'potongan':    str(voucher_result['potongan']),
+                            'biaya_final': str(voucher_result['biaya_final']),
+                            'is_gratis':   voucher_result['biaya_final'] == 0,
+                        }
                 # Buat profil kosong
                 ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
 
@@ -164,9 +179,12 @@ def registrasi(request):
 
 
 def registrasi_sukses(request):
-    """Halaman sukses setelah registrasi"""
     email = request.session.get('email_registrasi', '')
-    return render(request, 'publik/registrasi_sukses.html', {'email': email})
+    voucher_info = request.session.pop('voucher_info', None)  # one-time display
+    return render(request, 'publik/registrasi_sukses.html', {
+        'email':        email,
+        'voucher_info': voucher_info,
+    })
 
 
 def aktivasi(request, token):
