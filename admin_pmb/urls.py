@@ -53,7 +53,7 @@ urlpatterns = [
     path('pendaftar-terhapus/<int:pk>/restore/',    views.restore_pendaftar,      name='restore_pendaftar'),
     path('pendaftar/tambah/',                       views.tambah_pendaftar,        name='tambah_pendaftar'),
     path('pendaftar/tambah/sukses/',                views.tambah_pendaftar_sukses, name='tambah_pendaftar_sukses'),
-    
+    path('pendaftar/<int:pk>/dokumen/<int:dokumen_id>/upload/', views.upload_dokumen_operator, name='upload_dokumen_operator'),
 ]
 
 
