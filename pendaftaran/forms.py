@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from .models import ProfilPendaftar
 from utils.simda_reader import get_provinsi, get_jurusan_sekolah, get_agama
 from master.models import JalurPenerimaan, GelombangPenerimaan, ProdiPMB
-
+from accounts.utils import normalisasi_nama
 
 # =============================================================
 # CONSTANTS — Choices untuk dropdown form
@@ -240,6 +240,10 @@ class ProfilDiriForm(forms.ModelForm):
             if self.instance.agama_id:
                 self.fields['agama_id'].initial = str(self.instance.agama_id)
 
+    def clean_nama_lengkap(self):
+        """Normalisasi nama lengkap (uppercase + trim) via helper terpusat."""
+        return normalisasi_nama(self.cleaned_data.get('nama_lengkap', ''))
+        
     def clean_nik(self):
         nik = self.cleaned_data.get('nik', '').strip()
         if nik and len(nik) != 16:

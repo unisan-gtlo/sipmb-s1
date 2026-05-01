@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Pendaftaran, ProfilPendaftar
 from .forms import ProfilDiriForm, ProfilOrtuForm, ProfilPendidikanForm, ProfilFotoForm
+from accounts.utils import normalisasi_nama
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,9 @@ def profil_diri(request):
         form = ProfilDiriForm(request.POST, instance=profil)
         if form.is_valid():
             # Sync nama_lengkap ke User (first_name + last_name)
-            nama_baru = form.cleaned_data.get('nama_lengkap', '').strip()
+            # nama_lengkap sudah ter-normalize (UPPERCASE + trim) di clean_nama_lengkap.
+            # Helper dipanggil lagi sebagai safety net (idempotent).
+            nama_baru = normalisasi_nama(form.cleaned_data.get('nama_lengkap', ''))
             if nama_baru and nama_baru != request.user.nama_lengkap:
                 # Split nama: kata pertama = first_name, sisanya = last_name
                 parts = nama_baru.split(' ', 1)
