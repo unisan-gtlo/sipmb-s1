@@ -79,7 +79,7 @@
 <div class="content-card">
   <div class="content-card-header">
     <div class="content-card-title">
-      {{ pendaftar_list.count }} pendaftar ditemukan
+      {{ page_obj.paginator.count }} pendaftar ditemukan
     </div>
   </div>
   <div style="overflow-x:auto">
@@ -161,6 +161,32 @@
       {% endfor %}
     </tbody>
   </table>
+
+{% if page_obj.has_other_pages %}
+<div style="padding:16px;border-top:1px solid #e5e7eb;">
+  <nav>
+    <ul class="pagination pagination-sm mb-0 justify-content-center" style="display:flex;gap:4px;justify-content:center;list-style:none;padding:0;margin:0;">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ filter_status }}&jalur={{ filter_jalur }}&gelombang={{ filter_gelombang }}&q={{ filter_cari }}">
+            Sebelumnya
+          </a>
+        </li>
+      {% endif %}
+      <li class="page-item active">
+        <span class="page-link">Hal {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      </li>
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ filter_status }}&jalur={{ filter_jalur }}&gelombang={{ filter_gelombang }}&q={{ filter_cari }}">
+            Berikutnya
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endif %}
 </div>
 </div>
 

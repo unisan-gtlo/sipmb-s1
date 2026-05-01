@@ -128,6 +128,8 @@ def pendaftar(request):
     if not cek_admin(request.user):
         return redirect('dashboard:index')
 
+    from django.core.paginator import Paginator
+
     status    = request.GET.get('status', '')
     jalur     = request.GET.get('jalur', '')
     gelombang = request.GET.get('gelombang', '')
@@ -144,24 +146,28 @@ def pendaftar(request):
         qs = qs.filter(
             Q(user__first_name__icontains=cari) |
             Q(user__last_name__icontains=cari)  |
-            Q(user__email__icontains=cari)       |
+            Q(user__email__icontains=cari)      |
             Q(no_pendaftaran__icontains=cari)
         )
 
-    # Ambil mapping kode_referral → nama recruiter
+    # Pagination (25 per halaman, konsisten dengan view pembayaran)
+    paginator = Paginator(qs, 25)
+    page_obj  = paginator.get_page(request.GET.get('page'))
+
+    # Mapping kode_referral -> nama recruiter
     from afiliasi.models import Recruiter
     recruiter_map = {
         r.kode_referral: r.user.get_full_name()
         for r in Recruiter.objects.select_related('user').all()
     }
 
-    # Tambahkan nama recruiter ke setiap pendaftar
-    pendaftar_list = list(qs)
-    for p in pendaftar_list:
+    # Inject nama_recruiter HANYA untuk pendaftar di halaman aktif
+    for p in page_obj.object_list:
         p.nama_recruiter = recruiter_map.get(p.kode_referral, '')
 
     context = {
-        'pendaftar_list':   pendaftar_list,
+        'pendaftar_list':   page_obj,   # backward compat: Page iterable seperti list
+        'page_obj':         page_obj,   # untuk pagination nav & total count
         'jalur_list':       JalurPenerimaan.objects.filter(status='aktif'),
         'gelombang_list':   GelombangPenerimaan.objects.all(),
         'status_choices':   Pendaftaran.STATUS_CHOICES,
