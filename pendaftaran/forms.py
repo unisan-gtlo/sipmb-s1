@@ -534,6 +534,10 @@ class ProfilPendidikanForm(forms.ModelForm):
             # Pre-fill jurusan_manual kalau jurusan_id == 'lainnya'
             if self.instance.jurusan_id == 'lainnya' and self.instance.jurusan_sekolah:
                 self.fields['jurusan_manual'].initial = self.instance.jurusan_sekolah
+            # Auto-prefill provinsi sekolah dari provinsi domisili
+            # (sekolah_provinsi_id adalah field UI filter, bukan field model)
+            if self.instance.provinsi_id:
+                self.fields['sekolah_provinsi_id'].initial = str(self.instance.provinsi_id)
 
 class ProfilFotoForm(forms.ModelForm):
     class Meta:

@@ -143,10 +143,24 @@
               <div class="col-md-6">
                 <label class="form-label">Kode Referral</label>
                 {{ form.kode_referral }}
+                {% if form.kode_referral.errors %}
+                  <div class="text-danger" style="font-size:.8rem;margin-top:4px">
+                    <i class="bi bi-exclamation-circle me-1"></i>{{ form.kode_referral.errors|first }}
+                  </div>
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Kode Voucher Diskon</label>
                 {{ form.kode_voucher }}
+                {% if form.kode_voucher.errors %}
+                  <div class="text-danger" style="font-size:.8rem;margin-top:4px">
+                    <i class="bi bi-exclamation-circle me-1"></i>{{ form.kode_voucher.errors|first }}
+                  </div>
+                {% else %}
+                  <small class="text-muted" style="font-size:.75rem">
+                    <i class="bi bi-info-circle me-1"></i>Kode voucher (jika ada) akan otomatis memberikan potongan biaya pendaftaran.
+                  </small>
+                {% endif %}
               </div>
             </div>
           </div>

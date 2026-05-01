@@ -107,8 +107,9 @@ class Tagihan(models.Model):
 class KonfirmasiPembayaran(models.Model):
     METODE_CHOICES = [
         ('transfer_bank', 'Transfer Bank'),
-        ('tunai', 'Tunai (Kasir PMB)'),
-        ('qris', 'QRIS'),
+        ('tunai',         'Tunai (Kasir PMB)'),
+        ('qris',          'QRIS'),
+        ('voucher',       'Voucher / Diskon'),
     ]
     STATUS_CHOICES = [
         ('menunggu', 'Menunggu Verifikasi'),
@@ -132,7 +133,7 @@ class KonfirmasiPembayaran(models.Model):
     atas_nama_pengirim = models.CharField(max_length=100, blank=True)
     jumlah_bayar = models.DecimalField(max_digits=12, decimal_places=0)
     tgl_bayar = models.DateField(help_text="Tanggal transfer dilakukan")
-    bukti_bayar = models.ImageField(upload_to='bukti_bayar/%Y/%m/')
+    bukti_bayar = models.ImageField(upload_to='bukti_bayar/%Y/%m/', blank=True, null=True)
     no_transaksi = models.CharField(max_length=100, blank=True, help_text="Nomor referensi bank (opsional)")
 
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='menunggu', db_index=True)
@@ -194,3 +195,103 @@ class TransaksiDuitku(models.Model):
 
     def __str__(self):
         return f"{self.merchant_order_id} — {self.get_status_display()}"
+
+# ============================================================================
+# KODE VOUCHER / DISKON BIAYA PENDAFTARAN
+# ============================================================================
+class KodeVoucher(models.Model):
+    """
+    Kode voucher untuk diskon biaya pendaftaran PMB.
+    Mendukung diskon persen (0-100%) atau nominal rupiah.
+    Bisa dibatasi per jalur, per periode, dan per kuota pemakaian.
+    """
+    JENIS_DISKON_CHOICES = [
+        ('persen',  'Persen (%)'),
+        ('nominal', 'Nominal (Rp)'),
+    ]
+    STATUS_CHOICES = [
+        ('aktif',    'Aktif'),
+        ('nonaktif', 'Nonaktif'),
+    ]
+
+    kode_voucher    = models.CharField(
+        max_length=20,
+        unique=True,
+        help_text="Kode unik voucher (huruf besar). Contoh: MERDEKA100, EARLY50, ALUMNI25",
+    )
+    jenis_diskon    = models.CharField(
+        max_length=10,
+        choices=JENIS_DISKON_CHOICES,
+        default='persen',
+    )
+    nilai_diskon    = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Untuk persen: 0-100. Untuk nominal: rupiah (mis. 50000)",
+    )
+    berlaku_dari    = models.DateField(help_text="Tanggal mulai voucher berlaku")
+    berlaku_sampai  = models.DateField(help_text="Tanggal terakhir voucher berlaku")
+    max_penggunaan  = models.PositiveIntegerField(
+        default=0,
+        help_text="Batas total pemakaian (0 = tidak terbatas)",
+    )
+    sudah_dipakai   = models.PositiveIntegerField(
+        default=0,
+        help_text="Counter otomatis. Jangan diubah manual.",
+    )
+    jalur           = models.ForeignKey(
+        'master.JalurPenerimaan',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='voucher_list',
+        help_text="Kosongkan = berlaku untuk semua jalur",
+    )
+    status          = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='aktif',
+    )
+    keterangan      = models.TextField(blank=True, help_text="Catatan internal (opsional)")
+
+    # Audit
+    dibuat_oleh     = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='voucher_dibuat',
+    )
+    tgl_dibuat      = models.DateTimeField(auto_now_add=True)
+    tgl_diupdate    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name        = 'Kode Voucher'
+        verbose_name_plural = 'Kode Voucher'
+        ordering            = ['-tgl_dibuat']
+
+    def __str__(self):
+        return f"{self.kode_voucher} ({self.get_jenis_diskon_display()} {self.nilai_diskon})"
+
+    def save(self, *args, **kwargs):
+        # Selalu simpan kode dalam huruf besar (UPPERCASE) tanpa spasi
+        self.kode_voucher = self.kode_voucher.strip().upper()
+        super().save(*args, **kwargs)
+
+    @property
+    def kuota_tersisa(self):
+        """Sisa kuota voucher. Return None kalau unlimited."""
+        if self.max_penggunaan == 0:
+            return None
+        return max(0, self.max_penggunaan - self.sudah_dipakai)
+
+    @property
+    def is_kuota_habis(self):
+        if self.max_penggunaan == 0:
+            return False
+        return self.sudah_dipakai >= self.max_penggunaan
+
+    @property
+    def is_kadaluarsa(self):
+        today = timezone.now().date()
+        return today < self.berlaku_dari or today > self.berlaku_sampai
