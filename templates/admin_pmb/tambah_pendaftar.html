@@ -1,0 +1,268 @@
+{% extends 'admin_pmb/base_admin.html' %}
+
+{% block title %}Tambah Pendaftar Baru{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_pmb:pendaftar' %}">Daftar Pendaftar</a></li>
+            <li class="breadcrumb-item active">Tambah Pendaftar Baru</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-4">
+        <div class="flex-grow-1">
+            <h3 class="mb-1">
+                <i class="bi bi-person-plus-fill me-2"></i>
+                Tambah Pendaftar Baru
+            </h3>
+            <p class="text-muted mb-0">
+                Untuk pendaftar walk-in atau via telepon yang belum bisa daftar online sendiri.
+            </p>
+        </div>
+        <a href="{% url 'admin_pmb:pendaftar' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Kembali
+        </a>
+    </div>
+
+    <!-- Info -->
+    <div class="alert alert-info border-0 shadow-sm mb-4">
+        <div class="d-flex">
+            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+            <div>
+                <strong>Cara kerja:</strong>
+                Setelah submit, sistem akan generate <strong>password random</strong> untuk pendaftar.
+                Password hanya ditampilkan <strong>satu kali</strong> di halaman berikutnya — pastikan
+                Anda mencatat dan menyampaikan ke pendaftar. Akun langsung aktif tanpa email aktivasi.
+                Data profil & ortu bisa dilengkapi via tombol <em>Edit Data Pendaftar</em> di detail.
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+                    </div>
+                {% endif %}
+
+                <h5 class="mb-3 text-primary"><i class="bi bi-person me-1"></i> Data Identitas</h5>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <label for="{{ form.nama_lengkap.id_for_label }}" class="form-label">
+                            Nama Lengkap <span class="text-danger">*</span>
+                        </label>
+                        {{ form.nama_lengkap }}
+                        {% if form.nama_lengkap.errors %}
+                            <div class="text-danger small mt-1">{{ form.nama_lengkap.errors|join:" " }}</div>
+                        {% endif %}
+                        <div class="form-text">Nama akan otomatis diubah ke HURUF KAPITAL.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            Email <span class="text-danger">*</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">{{ form.email.errors|join:" " }}</div>
+                        {% endif %}
+                        <div class="form-text">Username akan di-generate otomatis dari email.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.no_hp.id_for_label }}" class="form-label">
+                            No HP / WhatsApp <span class="text-danger">*</span>
+                        </label>
+                        {{ form.no_hp }}
+                        {% if form.no_hp.errors %}
+                            <div class="text-danger small mt-1">{{ form.no_hp.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h5 class="mb-3 text-primary"><i class="bi bi-mortarboard me-1"></i> Data Pendaftaran</h5>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.jalur.id_for_label }}" class="form-label">
+                            Jalur Penerimaan <span class="text-danger">*</span>
+                        </label>
+                        {{ form.jalur }}
+                        {% if form.jalur.errors %}
+                            <div class="text-danger small mt-1">{{ form.jalur.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.gelombang.id_for_label }}" class="form-label">
+                            Gelombang <span class="text-danger">*</span>
+                        </label>
+                        {{ form.gelombang }}
+                        {% if form.gelombang.errors %}
+                            <div class="text-danger small mt-1">{{ form.gelombang.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.prodi_pilihan_1.id_for_label }}" class="form-label">
+                            Program Studi Pilihan 1 <span class="text-danger">*</span>
+                        </label>
+                        {{ form.prodi_pilihan_1 }}
+                        {% if form.prodi_pilihan_1.errors %}
+                            <div class="text-danger small mt-1">{{ form.prodi_pilihan_1.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.prodi_pilihan_2.id_for_label }}" class="form-label">
+                            Program Studi Pilihan 2 <span class="text-muted">(opsional)</span>
+                        </label>
+                        {{ form.prodi_pilihan_2 }}
+                        {% if form.prodi_pilihan_2.errors %}
+                            <div class="text-danger small mt-1">{{ form.prodi_pilihan_2.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h5 class="mb-3 text-primary"><i class="bi bi-tag me-1"></i> Kode Tambahan (Opsional)</h5>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.kode_referral.id_for_label }}" class="form-label">
+                            Kode Referral
+                        </label>
+                        {{ form.kode_referral }}
+                        {% if form.kode_referral.errors %}
+                            <div class="text-danger small mt-1">{{ form.kode_referral.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.kode_voucher.id_for_label }}" class="form-label">
+                            Kode Voucher
+                        </label>
+                        {{ form.kode_voucher }}
+                        {% if form.kode_voucher.errors %}
+                            <div class="text-danger small mt-1">{{ form.kode_voucher.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'admin_pmb:pendaftar' %}" class="btn btn-light">
+                        Batal
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> Simpan & Generate Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- === JAVASCRIPT: FILTER DINAMIS JALUR → GELOMBANG → PRODI  === -->
+<!-- ============================================================ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selJalur     = document.getElementById('id_jalur');
+    const selGelombang = document.getElementById('id_gelombang');
+    const selProdi1    = document.getElementById('id_prodi_pilihan_1');
+    const selProdi2    = document.getElementById('id_prodi_pilihan_2');
+
+    if (!selJalur || !selGelombang || !selProdi1 || !selProdi2) {
+        console.warn('[Filter Tambah Pendaftar] Beberapa dropdown tidak ditemukan, cek ID element.');
+        return;
+    }
+
+    function resetSelect(sel, placeholder) {
+        sel.innerHTML = `<option value="">${placeholder}</option>`;
+    }
+
+    // 1. JALUR BERUBAH → Filter Gelombang + Reset Prodi
+    selJalur.addEventListener('change', function() {
+        const jalurId = this.value;
+        resetSelect(selGelombang, '-- Pilih Gelombang --');
+        resetSelect(selProdi1,    '-- Pilih Program Studi Pilihan 1 --');
+        resetSelect(selProdi2,    '-- Pilih Program Studi Pilihan 2 (Opsional) --');
+        if (!jalurId) return;
+
+        fetch(`/accounts/api/gelombang-by-jalur/?jalur_id=${jalurId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.gelombangs && data.gelombangs.length > 0) {
+                    data.gelombangs.forEach(g => selGelombang.add(new Option(g.label, g.id)));
+                } else {
+                    resetSelect(selGelombang, '-- Belum ada gelombang aktif --');
+                }
+            })
+            .catch(err => console.error('[Filter] Error fetch gelombang:', err));
+    });
+
+    // 2. GELOMBANG BERUBAH → Filter Prodi 1 & 2
+    selGelombang.addEventListener('change', function() {
+        const gelombangId = this.value;
+        resetSelect(selProdi1, '-- Pilih Program Studi Pilihan 1 --');
+        resetSelect(selProdi2, '-- Pilih Program Studi Pilihan 2 (Opsional) --');
+        if (!gelombangId) return;
+
+        fetch(`/accounts/api/prodi-by-gelombang/?gelombang_id=${gelombangId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.prodis && data.prodis.length > 0) {
+                    data.prodis.forEach(p => {
+                        selProdi1.add(new Option(p.label, p.id));
+                        selProdi2.add(new Option(p.label, p.id));
+                    });
+                } else {
+                    resetSelect(selProdi1, '-- Belum ada prodi aktif --');
+                    resetSelect(selProdi2, '-- Belum ada prodi aktif --');
+                }
+            })
+            .catch(err => console.error('[Filter] Error fetch prodi:', err));
+    });
+
+    // 3. PRODI 1 DIPILIH → Exclude Dari Prodi 2
+    selProdi1.addEventListener('change', function() {
+        const selectedProdi1 = this.value;
+
+        Array.from(selProdi2.options).forEach(opt => {
+            opt.disabled = false;
+            opt.hidden   = false;
+            opt.style.color = '';
+        });
+
+        if (selectedProdi1) {
+            Array.from(selProdi2.options).forEach(opt => {
+                if (opt.value === selectedProdi1) {
+                    opt.disabled = true;
+                    opt.hidden   = true;
+                    opt.style.color = '#ccc';
+                }
+            });
+            if (selProdi2.value === selectedProdi1) {
+                selProdi2.value = '';
+            }
+        }
+    });
+
+    // 4. ON LOAD: kalau jalur sudah pre-filled (mis. setelah validasi error),
+    //    trigger change agar gelombang & prodi ke-populate ulang
+    if (selJalur.value) {
+        selJalur.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+
+{% endblock %}

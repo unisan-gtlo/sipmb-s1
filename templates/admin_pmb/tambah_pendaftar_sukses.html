@@ -1,0 +1,156 @@
+{% extends 'admin_pmb/base_admin.html' %}
+
+{% block title %}Pendaftar Berhasil Ditambahkan{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_pmb:pendaftar' %}">Daftar Pendaftar</a></li>
+            <li class="breadcrumb-item active">Pendaftar Berhasil Ditambahkan</li>
+        </ol>
+    </nav>
+
+    <!-- Success header -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="mb-2">Pendaftar Berhasil Ditambahkan!</h3>
+            <p class="text-muted mb-0">
+                Akun atas nama <strong>{{ info.nama }}</strong> sudah aktif dan siap digunakan.
+            </p>
+        </div>
+    </div>
+
+    <!-- Warning: one-time display -->
+    <div class="alert alert-warning border-0 shadow-sm mb-4">
+        <div class="d-flex">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+            <div>
+                <strong>Penting:</strong>
+                Password di bawah ini hanya ditampilkan <strong>satu kali</strong>.
+                Pastikan Anda <strong>menyalin dan menyampaikan ke pendaftar</strong> sebelum
+                meninggalkan halaman ini. Jika halaman di-refresh atau ditinggalkan,
+                password tidak bisa dilihat lagi (harus reset password).
+            </div>
+        </div>
+    </div>
+
+    <!-- Credentials card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-key-fill me-2"></i> Informasi Login Pendaftar</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-borderless mb-0">
+                <tbody>
+                    <tr>
+                        <td class="text-muted" style="width: 200px;">No. Pendaftaran</td>
+                        <td>
+                            <code class="fs-5 text-dark" id="info-nopendaftaran">{{ info.no_pendaftaran }}</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Nama Lengkap</td>
+                        <td><strong>{{ info.nama }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Email</td>
+                        <td>{{ info.email }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Username</td>
+                        <td>
+                            <code class="fs-5 text-dark" id="info-username">{{ info.username }}</code>
+                        </td>
+                    </tr>
+                    <tr class="border-top">
+                        <td class="text-muted pt-3">Password</td>
+                        <td class="pt-3">
+                            <code class="fs-4 fw-bold text-danger px-3 py-2 bg-light rounded" id="info-password">{{ info.password }}</code>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-primary" onclick="copyLoginInfo()">
+                <i class="bi bi-clipboard me-1"></i> Salin Info Login
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="copyPassword()">
+                <i class="bi bi-key me-1"></i> Salin Password Saja
+            </button>
+            <span id="copy-feedback" class="ms-auto align-self-center text-success" style="display: none;">
+                <i class="bi bi-check-circle-fill me-1"></i> Berhasil disalin!
+            </span>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+        <a href="{% url 'admin_pmb:pendaftar' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar Pendaftar
+        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'admin_pmb:edit_data_pendaftar' info.pendaftaran_id 'diri' %}"
+               class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square me-1"></i> Lengkapi Data Diri
+            </a>
+            <a href="{% url 'admin_pmb:detail_pendaftar' info.pendaftaran_id %}"
+               class="btn btn-primary">
+                <i class="bi bi-eye me-1"></i> Lihat Detail Pendaftar
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFeedback() {
+    var fb = document.getElementById('copy-feedback');
+    fb.style.display = 'inline';
+    setTimeout(function() { fb.style.display = 'none'; }, 2500);
+}
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showFeedback, function() {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showFeedback(); }
+    catch (e) { alert('Gagal menyalin. Salin manual: ' + text); }
+    document.body.removeChild(ta);
+}
+
+function copyLoginInfo() {
+    var text =
+        'Halo {{ info.nama }},\n\n' +
+        'Akun pendaftaran UNISAN Anda sudah dibuat:\n\n' +
+        'No. Pendaftaran : {{ info.no_pendaftaran }}\n' +
+        'Username        : {{ info.username }}\n' +
+        'Password        : {{ info.password }}\n' +
+        'Email           : {{ info.email }}\n\n' +
+        'Login di: https://pmb.unisan-g.id\n' +
+        'Mohon segera ganti password setelah login pertama.';
+    copyToClipboard(text);
+}
+
+function copyPassword() {
+    copyToClipboard('{{ info.password }}');
+}
+</script>
+{% endblock %}

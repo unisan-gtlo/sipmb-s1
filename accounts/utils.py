@@ -37,3 +37,36 @@ def normalisasi_nama(nama):
     if not nama:
         return nama
     return nama.strip().upper()
+
+def generate_password(panjang=10):
+    """
+    Generate password random aman untuk pendaftar yang dibuat operator.
+
+    Karakteristik:
+    - Menggunakan modul secrets (cryptographically secure, BUKAN random.choice)
+    - Hanya pakai huruf besar, huruf kecil, dan angka — tidak pakai simbol
+      agar mudah dibacakan via telepon atau ditulis di kertas
+    - Hindari karakter ambigu: 0/O, 1/l/I, agar tidak salah ketik
+
+    Args:
+        panjang: Panjang password (default 10)
+
+    Returns:
+        String password random
+
+    Example:
+        >>> generate_password()
+        'k7nQpXr3fH'
+        >>> generate_password(8)
+        'a2BcD9eF'
+    """
+    import secrets
+    import string
+
+    # Karakter aman: alfanumerik tanpa karakter ambigu
+    karakter = (
+        string.ascii_uppercase.replace('O', '').replace('I', '') +
+        string.ascii_lowercase.replace('l', '').replace('o', '') +
+        string.digits.replace('0', '').replace('1', '')
+    )
+    return ''.join(secrets.choice(karakter) for _ in range(panjang))
