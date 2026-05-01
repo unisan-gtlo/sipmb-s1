@@ -243,7 +243,7 @@ class ProfilDiriForm(forms.ModelForm):
     def clean_nama_lengkap(self):
         """Normalisasi nama lengkap (uppercase + trim) via helper terpusat."""
         return normalisasi_nama(self.cleaned_data.get('nama_lengkap', ''))
-        
+
     def clean_nik(self):
         nik = self.cleaned_data.get('nik', '').strip()
         if nik and len(nik) != 16:
@@ -251,6 +251,7 @@ class ProfilDiriForm(forms.ModelForm):
         if nik and not nik.isdigit():
             raise forms.ValidationError('NIK hanya boleh angka.')
         return nik
+        
     def save(self, commit=True):
         """
         Override save: pastikan 4 field ID (provinsi, kab/kota, kecamatan, agama)

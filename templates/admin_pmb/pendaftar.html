@@ -6,6 +6,18 @@
 
 {% block content %}
 
+<!-- Action Bar (top-right) -->
+{% if request.user.is_admin_pmb or request.user.is_operator %}
+<div class="d-flex justify-content-end mb-3">
+  <a href="{% url 'admin_pmb:pendaftar_terhapus' %}" 
+     class="btn btn-sm" 
+     style="color:#64748b;border:1px solid #e2e8f0;background:#fff;font-size:.85rem;padding:6px 14px;border-radius:8px"
+     title="Lihat pendaftar yang sudah ditandai terhapus">
+    <i class="bi bi-trash3 me-1"></i> Pendaftar Terhapus
+  </a>
+</div>
+{% endif %}
+
 <!-- FILTER -->
 <div class="content-card mb-4">
   <div class="content-card-body">
@@ -124,10 +136,20 @@
           {{ p.tgl_daftar|date:"d M Y" }}
         </td>
         <td>
-          <a href="{% url 'admin_pmb:detail_pendaftar' p.pk %}"
-             class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
-            Detail
-          </a>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <a href="{% url 'admin_pmb:detail_pendaftar' p.pk %}"
+               class="btn-outline-custom" style="padding:4px 10px;font-size:.8rem">
+              Detail
+            </a>
+            {% if request.user.is_admin_pmb or request.user.is_operator %}
+            <a href="{% url 'admin_pmb:tandai_hapus_pendaftar' p.pk %}"
+               class="btn-outline-custom" 
+               style="padding:4px 10px;font-size:.8rem;color:#dc2626;border-color:#dc2626"
+               title="Hapus pendaftar (soft delete)">
+              <i class="bi bi-trash3"></i>
+            </a>
+            {% endif %}
+          </div>
         </td>
       </tr>
       {% empty %}

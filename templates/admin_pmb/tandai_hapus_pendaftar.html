@@ -1,0 +1,176 @@
+{% extends 'admin_pmb/base_admin.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_pmb:pendaftar' %}">Daftar Pendaftar</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin_pmb:detail_pendaftar' pendaftaran.pk %}">{{ pendaftaran.no_pendaftaran }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Hapus Pendaftar</li>
+        </ol>
+    </nav>
+
+    <!-- Page header -->
+    <div class="mb-4">
+        <h2 class="text-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Hapus Pendaftar
+        </h2>
+        <p class="text-muted">{{ pendaftaran.user.first_name }} {{ pendaftaran.user.last_name }} ({{ pendaftaran.no_pendaftaran }})</p>
+    </div>
+
+    <!-- Warning Banner -->
+    <div class="alert alert-danger border-2 border-danger mb-4">
+        <h5 class="alert-heading">
+            <i class="bi bi-shield-exclamation me-2"></i>
+            Anda akan menghapus pendaftar
+        </h5>
+        <p class="mb-2">
+            Data akan <strong>ditandai terhapus (soft delete)</strong> dan tidak akan tampil lagi di:
+        </p>
+        <ul class="mb-2">
+            <li>Daftar pendaftar utama</li>
+            <li>Dashboard statistik</li>
+            <li>Laporan dan export</li>
+        </ul>
+        <p class="mb-0">
+            Data <strong>masih tersimpan di database</strong> dan bisa di-restore via halaman 
+            <em>Pendaftar Terhapus</em>. Penghapusan permanen hanya dilakukan oleh admin via management command.
+        </p>
+    </div>
+
+    <!-- Info Pendaftar Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-person-circle me-2"></i>
+                Detail Pendaftar yang Akan Dihapus
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Nomor Pendaftaran</small>
+                    <strong class="text-danger">{{ pendaftaran.no_pendaftaran }}</strong>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Nama Lengkap</small>
+                    <strong>{{ pendaftaran.user.first_name }} {{ pendaftaran.user.last_name }}</strong>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Email / No HP</small>
+                    {{ pendaftaran.user.email }}<br>
+                    <small class="text-muted">{{ pendaftaran.user.no_hp|default:"-" }}</small>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Status Pendaftaran</small>
+                    <span class="badge bg-secondary">{{ pendaftaran.get_status_display }}</span>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Jalur</small>
+                    {{ pendaftaran.jalur.nama }}
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Gelombang</small>
+                    {{ pendaftaran.gelombang.nama }}
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Prodi Pilihan 1</small>
+                    {{ pendaftaran.prodi_pilihan_1.nama|default:"-" }}
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted d-block">Tanggal Daftar</small>
+                    {{ pendaftaran.tgl_daftar|date:"d M Y H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Konfirmasi -->
+    <form method="post" id="formHapusPendaftar">
+        {% csrf_token %}
+
+        <div class="card border-0 shadow-sm mb-4 border-start border-danger border-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-danger">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Form Konfirmasi Penghapusan
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Field 1: Alasan -->
+                <div class="mb-3">
+                    <label for="alasan" class="form-label">
+                        Alasan Penghapusan <span class="text-danger">*</span>
+                    </label>
+                    <textarea
+                        name="alasan"
+                        id="alasan"
+                        class="form-control"
+                        rows="3"
+                        required
+                        placeholder='Contoh: "Data dobel — pendaftar yang sama sudah terdaftar di nomor 2026-01-0035" atau "Pendaftar minta dihapus karena salah jalur"'></textarea>
+                    <small class="text-muted">
+                        Alasan akan tercatat di audit log bersama nama Anda dan timestamp.
+                    </small>
+                </div>
+
+                <!-- Field 2: Konfirmasi ketik nomor pendaftaran -->
+                <div class="mb-3">
+                    <label for="konfirmasi_no_pendaftaran" class="form-label">
+                        Ketik nomor pendaftaran <code class="text-danger">{{ pendaftaran.no_pendaftaran }}</code> untuk konfirmasi <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="konfirmasi_no_pendaftaran"
+                        id="konfirmasi_no_pendaftaran"
+                        class="form-control"
+                        autocomplete="off"
+                        required
+                        placeholder="Ketik persis nomor pendaftaran di atas">
+                    <small class="text-muted">
+                        Tombol Hapus akan aktif hanya jika Anda mengetik nomor pendaftaran yang benar.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 justify-content-end">
+            <a href="{% url 'admin_pmb:detail_pendaftar' pendaftaran.pk %}" class="btn btn-light">
+                <i class="bi bi-x-circle me-1"></i> Batal
+            </a>
+            <button type="submit" class="btn btn-danger" id="btnHapus" disabled>
+                <i class="bi bi-trash3-fill me-1"></i> Tandai Hapus
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Enable tombol Hapus hanya jika ketik no_pendaftaran benar
+    (function() {
+        const expected = '{{ pendaftaran.no_pendaftaran }}';
+        const input = document.getElementById('konfirmasi_no_pendaftaran');
+        const btn = document.getElementById('btnHapus');
+        const alasan = document.getElementById('alasan');
+        
+        function check() {
+            const matchNo = input.value.trim() === expected;
+            const hasAlasan = alasan.value.trim().length > 0;
+            btn.disabled = !(matchNo && hasAlasan);
+        }
+        
+        input.addEventListener('input', check);
+        alasan.addEventListener('input', check);
+        
+        // Confirm 1 lagi saat submit (extra safety)
+        document.getElementById('formHapusPendaftar').addEventListener('submit', function(e) {
+            if (!confirm(`Yakin ingin menghapus pendaftar ${expected}?\n\nTindakan ini akan menyembunyikan data dari semua list dan laporan. Data masih bisa di-restore.`)) {
+                e.preventDefault();
+            }
+        });
+    })();
+</script>
+{% endblock %}
