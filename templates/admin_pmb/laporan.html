@@ -376,6 +376,15 @@
 
 {% block extra_js %}
 <script>
+
+// Aktifkan plugin datalabels secara global untuk semua chart
+Chart.register(ChartDataLabels);
+
+
+// Default global: angka di dalam bar, posisi tengah relative ke bar
+// Default datalabels: disable, tiap chart akan opt-in dengan config sendiri
+Chart.defaults.plugins.datalabels = { display: false };
+  
 const WARNA = ['#667eea','#764ba2','#10b981','#f59e0b','#ef4444',
                '#3b82f6','#8b5cf6','#06b6d4','#ec4899','#84cc16',
                '#f97316','#14b8a6','#6366f1','#a855f7','#0ea5e9'];

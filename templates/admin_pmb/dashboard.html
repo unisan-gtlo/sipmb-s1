@@ -155,6 +155,7 @@
 
 {% block extra_js %}
 <script>
+Chart.register(ChartDataLabels);  
 // Chart per prodi (warna per fakultas)
 const prodiData = {
   labels: [{% for p in per_prodi %}'{{ p.prodi_pilihan_1__nama_prodi|default:"Lainnya"|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
@@ -169,8 +170,21 @@ new Chart(document.getElementById('chartProdi'), {
   type: 'bar',
   data: prodiData,
   options: {
-    responsive:true, plugins:{legend:{display:false}},
-    scales:{ y:{beginAtZero:true, ticks:{stepSize:1}} }
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        offset: 4,
+        color: '#1e293b',
+        font: { weight: 'bold', size: 13 },
+        formatter: (value) => value > 0 ? value : ''
+      }
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 }, grace: '15%' }
+    }
   }
 });
 
@@ -186,8 +200,20 @@ new Chart(document.getElementById('chartJalur'), {
   type: 'doughnut',
   data: jalurData,
   options: {
-    responsive:true,
-    plugins:{ legend:{ position:'bottom', labels:{font:{size:12}} } }
+    responsive: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 12 } } },
+      datalabels: {
+        color: '#ffffff',
+        font: { weight: 'bold', size: 14 },
+        formatter: (value, ctx) => {
+          const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+          const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+          return value > 0 ? value + '\n(' + pct + '%)' : '';
+        },
+        textAlign: 'center'
+      }
+    }
   }
 });
 </script>

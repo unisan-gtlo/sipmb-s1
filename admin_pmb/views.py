@@ -74,12 +74,35 @@ def dashboard(request):
         'jalur__nama_jalur'
     ).annotate(total=Count('id')).order_by('-total')
 
-    # Per prodi (+ warna per fakultas)
-    from accounts.views import warna_fakultas
-    per_prodi_qs = Pendaftaran.objects.values(
+    # Per prodi (+ warna per fakultas dengan variasi)
+    from accounts.views import warna_fakultas, variasi_warna_prodi
+    per_prodi_qs = list(Pendaftaran.objects.values(
         'prodi_pilihan_1__nama_prodi',
         'prodi_pilihan_1__kode_fakultas',
-    ).annotate(total=Count('id')).order_by('-total')[:8]
+    ).annotate(total=Count('id')).order_by('-total')[:8])
+
+    # Mapping prodi tua per fakultas (warna full di-prioritaskan)
+    PRODI_TUA = {
+        'FK': 'Teknik Informatika',
+        # Tambahkan prodi tua di fakultas lain jika diperlukan
+    }
+
+    # Sort: kelompokkan per fakultas, prodi tua dulu, sisanya descending total
+    def sort_key(p):
+        kode_fak = p['prodi_pilihan_1__kode_fakultas'] or ''
+        nama_prodi = p['prodi_pilihan_1__nama_prodi'] or ''
+        prodi_tua = PRODI_TUA.get(kode_fak)
+        is_tua = 0 if nama_prodi == prodi_tua else 1
+        return (kode_fak, is_tua, -(p['total'] or 0))
+
+    per_prodi_qs.sort(key=sort_key)
+
+    # Hitung dulu jumlah prodi per fakultas yang muncul (untuk variasi)
+    from collections import Counter
+    count_per_fak = Counter(
+        p['prodi_pilihan_1__kode_fakultas'] for p in per_prodi_qs
+    )
+    urutan_prodi_di_fak = {}
 
     # Siapkan data untuk chart + legend
     per_prodi = []
@@ -87,13 +110,21 @@ def dashboard(request):
     for p in per_prodi_qs:
         kode_fak = p['prodi_pilihan_1__kode_fakultas']
         w = warna_fakultas(kode_fak)
+        warna_dasar = w['text']
+
+        # Hitung index prodi ini di dalam fakultasnya
+        idx = urutan_prodi_di_fak.get(kode_fak, 0)
+        total_di_fak = count_per_fak.get(kode_fak, 1)
+        warna_variasi = variasi_warna_prodi(warna_dasar, idx, total_di_fak)
+        urutan_prodi_di_fak[kode_fak] = idx + 1
+
         per_prodi.append({
             'prodi_pilihan_1__nama_prodi': p['prodi_pilihan_1__nama_prodi'],
             'total': p['total'],
             'kode_fakultas': kode_fak,
-            'warna': w['text'],
+            'warna': warna_variasi,
         })
-        warna_prodi_list.append(w['text'])
+        warna_prodi_list.append(warna_variasi)
 
     # Legend fakultas — hanya yang muncul di chart
     from accounts.views import WARNA_FAKULTAS
@@ -668,25 +699,58 @@ def laporan(request):
     total_lulus     = Pendaftaran.objects.filter(status='LULUS_SELEKSI').count()
     total_daftar_ulang = Pendaftaran.objects.filter(status='DAFTAR_ULANG').count()
 
-    # Per prodi (+ warna per fakultas)
-    from accounts.views import warna_fakultas, WARNA_FAKULTAS
-    per_prodi_qs = Pendaftaran.objects.values(
+    # Per prodi (+ warna per fakultas dengan variasi)
+    from accounts.views import warna_fakultas, variasi_warna_prodi, WARNA_FAKULTAS
+    per_prodi_qs = list(Pendaftaran.objects.values(
         'prodi_pilihan_1__nama_prodi',
         'prodi_pilihan_1__kode_fakultas',
-    ).annotate(total=Count('id')).order_by('-total')
+    ).annotate(total=Count('id')).order_by('-total'))
+
+    # Mapping prodi tua per fakultas (warna full di-prioritaskan)
+    PRODI_TUA = {
+        'FK': 'Teknik Informatika',
+        'FS': 'Ilmu Pemerintahan'
+        # Tambahkan prodi tua di fakultas lain jika diperlukan
+    }
+
+    # Sort: kelompokkan per fakultas, prodi tua dulu, sisanya descending total
+    def sort_key(p):
+        kode_fak = p['prodi_pilihan_1__kode_fakultas'] or ''
+        nama_prodi = p['prodi_pilihan_1__nama_prodi'] or ''
+        prodi_tua = PRODI_TUA.get(kode_fak)
+        is_tua = 0 if nama_prodi == prodi_tua else 1
+        return (kode_fak, is_tua, -(p['total'] or 0))
+
+    per_prodi_qs.sort(key=sort_key)
+
+    # Hitung dulu jumlah prodi per fakultas yang muncul (untuk variasi)
+    from collections import Counter
+    count_per_fak = Counter(
+        p['prodi_pilihan_1__kode_fakultas'] for p in per_prodi_qs
+    )
+    urutan_prodi_di_fak = {}
 
     per_prodi = []
     warna_prodi_list = []
     for p in per_prodi_qs:
         kode_fak = p['prodi_pilihan_1__kode_fakultas']
         w = warna_fakultas(kode_fak)
+        warna_dasar = w['text']
+
+        idx = urutan_prodi_di_fak.get(kode_fak, 0)
+        total_di_fak = count_per_fak.get(kode_fak, 1)
+        warna_variasi = variasi_warna_prodi(warna_dasar, idx, total_di_fak)
+        urutan_prodi_di_fak[kode_fak] = idx + 1
+
+        nama_prodi = p['prodi_pilihan_1__nama_prodi'] or 'Lainnya'
+        nama_dengan_total = f"{nama_prodi} ({p['total']})"
         per_prodi.append({
-            'prodi_pilihan_1__nama_prodi': p['prodi_pilihan_1__nama_prodi'],
+            'prodi_pilihan_1__nama_prodi': nama_dengan_total,
             'total': p['total'],
             'kode_fakultas': kode_fak,
-            'warna': w['text'],
+            'warna': warna_variasi,
         })
-        warna_prodi_list.append(w['text'])
+        warna_prodi_list.append(warna_variasi)
 
     # Legend fakultas — hanya yang muncul di chart
     kode_fakultas_muncul = {p['kode_fakultas'] for p in per_prodi if p['kode_fakultas']}
@@ -803,39 +867,6 @@ def chatbot_kb(request):
         'kb_list': kb_list,
         **get_sidebar_counts()
     })
-
-@login_required
-def afiliasi(request):
-    if not cek_admin_operator(request.user):
-        return redirect('dashboard:index')
-
-    from afiliasi.models import Recruiter, KomisiReferral, PencairanKomisi
-    from django.db.models import Sum
-
-    status_filter = request.GET.get('status', 'menunggu')
-
-    recruiter_list = Recruiter.objects.filter(
-        status=status_filter
-    ).select_related('user').order_by('-tgl_bergabung')
-
-    # Statistik
-    total_menunggu  = Recruiter.objects.filter(status='menunggu').count()
-    total_aktif     = Recruiter.objects.filter(status='aktif').count()
-    total_komisi    = KomisiReferral.objects.filter(status='approved').aggregate(
-        total=Sum('jumlah_komisi'))['total'] or 0
-    total_pencairan = PencairanKomisi.objects.filter(status='pending').count()
-
-    context = {
-        'recruiter_list':  recruiter_list,
-        'status_filter':   status_filter,
-        'total_menunggu':  total_menunggu,
-        'total_aktif':     total_aktif,
-        'total_komisi':    total_komisi,
-        'total_pencairan': total_pencairan,
-        **get_sidebar_counts(),
-    }
-    return render(request, 'admin_pmb/afiliasi.html', context)
-
 
 @login_required
 def afiliasi_approve(request, pk):
