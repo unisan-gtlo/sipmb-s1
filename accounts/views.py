@@ -29,8 +29,8 @@ WARNA_FAKULTAS = {
         'icon': 'laptop'
     },
     'FE':    {
-        'gradient': 'linear-gradient(135deg,#b45309,#f59e0b)',
-        'light': '#fef3c7', 'text': '#b45309',
+        'gradient': 'linear-gradient(135deg,#ca8a04,#eab308)',
+        'light': '#fef9c3', 'text': '#ca8a04',
         'icon': 'graph-up-arrow'
     },
     'FP':    {
@@ -177,6 +177,37 @@ def registrasi(request):
         'kode_ref': kode_ref,
     })
 
+def variasi_warna_prodi(hex_dasar, index_dalam_fakultas, total_prodi_di_fakultas):
+    """
+    Beri variasi shade pada warna fakultas untuk membedakan prodi.
+    Prodi pertama: warna full (100%)
+    Prodi berikutnya: shade lebih terang (lighten via lerp ke putih)
+
+    Args:
+        hex_dasar (str): warna fakultas, mis. '#1d4ed8'
+        index_dalam_fakultas (int): urutan prodi di fakultas (0-indexed)
+        total_prodi_di_fakultas (int): total prodi yang muncul dari fakultas itu
+
+    Returns:
+        str: hex color dengan variasi
+    """
+    if total_prodi_di_fakultas <= 1 or index_dalam_fakultas == 0:
+        return hex_dasar
+
+    # Parse hex
+    h = hex_dasar.lstrip('#')
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+    # Lighten step: 0%, 18%, 36%, 54% (max 4 prodi sebelum terlalu pucat)
+    step = min(index_dalam_fakultas, 3)  # cap di 3
+    factor = step * 0.18
+
+    # Lerp ke putih (255, 255, 255)
+    r = int(r + (255 - r) * factor)
+    g = int(g + (255 - g) * factor)
+    b = int(b + (255 - b) * factor)
+
+    return f'#{r:02x}{g:02x}{b:02x}'
 
 def registrasi_sukses(request):
     email = request.session.get('email_registrasi', '')
