@@ -449,8 +449,11 @@ def registrasi_recruiter(request):
         if len(password) < 8: errors.append('Password minimal 8 karakter.')
         if password != konfirmasi: errors.append('Konfirmasi password tidak cocok.')
         if not foto_selfie:  errors.append('Foto selfie wajib diupload.')
+        elif foto_selfie.size > 2 * 1024 * 1024:
+            errors.append('Foto selfie maksimal 2 MB. Silakan kompres dulu.')
         if not foto_ktp:     errors.append('Foto KTP wajib diupload.')
-
+        elif foto_ktp.size > 2 * 1024 * 1024:
+            errors.append('Foto KTP maksimal 2 MB. Silakan kompres dulu.')
         if errors:
             for e in errors:
                 messages.error(request, e)
@@ -489,18 +492,10 @@ def registrasi_recruiter(request):
         if foto_ktp:    rec.foto_ktp    = foto_ktp;    rec.save()
 
         # Kirim email aktivasi
-        from accounts.models import TokenAktivasi
-        token = TokenAktivasi.objects.create(user=user, token=uuid.uuid4())
-        aktivasi_url = f"{request.scheme}://{request.get_host()}/accounts/aktivasi/{token.token}/"
-        from django.core.mail import send_mail
-        from django.conf import settings
-        send_mail(
-            subject    = 'Aktivasi Akun Recruiter PMB UNISAN',
-            message    = f'Halo {nama_parts[0]},\n\nKlik link berikut untuk mengaktifkan akun Anda:\n\n{aktivasi_url}\n\nSetelah aktif, login dan lengkapi data rekening Anda.',
-            from_email = settings.DEFAULT_FROM_EMAIL,
-            recipient_list = [email],
-            fail_silently  = True,
-        )
+       # Kirim email aktivasi (pakai helper yang sama dengan registrasi maba)
+        from pendaftaran.models import TokenAktivasi
+        token = TokenAktivasi.objects.create(user=user)
+        _kirim_email_aktivasi(request, user, token)
 
         messages.success(request, f'Akun berhasil dibuat! Cek email {email} untuk aktivasi.')
         return redirect('accounts:registrasi_sukses')
