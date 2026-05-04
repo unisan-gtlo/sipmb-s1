@@ -65,6 +65,16 @@
           {% endfor %}
         </select>
       </div>
+      <div class="col-md-2">
+        <label style="font-size:.8rem;font-weight:500;color:#64748b;margin-bottom:4px;display:block">Prodi</label>
+        <select name="prodi" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;
+                padding:8px 12px;font-size:.875rem;outline:none">
+          <option value="">Semua Prodi</option>
+          {% for p in prodi_list %}
+            <option value="{{ p.kode_prodi }}" {% if filter_prodi == p.kode_prodi %}selected{% endif %}>{{ p.nama_prodi }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="col-md-3 d-flex gap-2">
         <button type="submit" class="btn-primary-custom">
           <i class="bi bi-search"></i> Filter
@@ -174,7 +184,7 @@
     <ul class="pagination pagination-sm mb-0 justify-content-center" style="display:flex;gap:4px;justify-content:center;list-style:none;padding:0;margin:0;">
       {% if page_obj.has_previous %}
         <li class="page-item">
-          <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ filter_status }}&jalur={{ filter_jalur }}&gelombang={{ filter_gelombang }}&q={{ filter_cari }}">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ filter_status }}&jalur={{ filter_jalur }}&gelombang={{ filter_gelombang }}&prodi={{ filter_prodi }}&q={{ filter_cari }}">
             Sebelumnya
           </a>
         </li>
@@ -184,7 +194,7 @@
       </li>
       {% if page_obj.has_next %}
         <li class="page-item">
-          <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ filter_status }}&jalur={{ filter_jalur }}&gelombang={{ filter_gelombang }}&q={{ filter_cari }}">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ filter_status }}&jalur={{ filter_jalur }}&gelombang={{ filter_gelombang }}&prodi={{ filter_prodi }}&q={{ filter_cari }}">
             Berikutnya
           </a>
         </li>

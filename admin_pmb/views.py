@@ -10,9 +10,8 @@ from django.db.models import Sum, Count, Q
 from pembayaran.models import Tagihan, KonfirmasiPembayaran
 
 from pendaftaran.models import Pendaftaran, ProfilPendaftar, LogEditDataPendaftar
-from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem, PersyaratanJalur
+from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem, PersyaratanJalur, ProdiPMB
 from dokumen.models import DokumenPendaftar
-from master.models import JalurPenerimaan, GelombangPenerimaan, PengaturanSistem
 from chatbot.models import KnowledgeBase
 from accounts.views import WARNA_FAKULTAS, warna_fakultas
 logger = logging.getLogger(__name__)
@@ -166,6 +165,7 @@ def pendaftar(request):
     jalur     = request.GET.get('jalur', '')
     gelombang = request.GET.get('gelombang', '')
     cari      = request.GET.get('q', '')
+    prodi     = request.GET.get('prodi', '')
 
     qs = Pendaftaran.objects.select_related(
         'user', 'jalur', 'prodi_pilihan_1', 'gelombang'
@@ -174,6 +174,7 @@ def pendaftar(request):
     if status:    qs = qs.filter(status=status)
     if jalur:     qs = qs.filter(jalur_id=jalur)
     if gelombang: qs = qs.filter(gelombang_id=gelombang)
+    if prodi:     qs = qs.filter(prodi_pilihan_1__kode_prodi=prodi)
     if cari:
         qs = qs.filter(
             Q(user__first_name__icontains=cari) |
@@ -202,10 +203,12 @@ def pendaftar(request):
         'page_obj':         page_obj,   # untuk pagination nav & total count
         'jalur_list':       JalurPenerimaan.objects.filter(status='aktif'),
         'gelombang_list':   GelombangPenerimaan.objects.all(),
+        'prodi_list':       ProdiPMB.objects.filter(status='aktif').values('kode_prodi', 'nama_prodi', 'nama_fakultas').distinct().order_by('nama_fakultas', 'nama_prodi'),
         'status_choices':   Pendaftaran.STATUS_CHOICES,
         'filter_status':    status,
         'filter_jalur':     jalur,
         'filter_gelombang': gelombang,
+        'filter_prodi':     prodi,
         'filter_cari':      cari,
         **get_sidebar_counts(),
     }
@@ -1143,6 +1146,221 @@ def export_pendaftar(request):
     wb.save(response)
     return response
 
+def export_rekap_fakultas_prodi(request):
+    """Export Excel rekap pendaftar per Fakultas & Prodi (berdasarkan Prodi Pilihan 1)."""
+    if not cek_admin(request.user):
+        return redirect('dashboard:index')
+
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from django.http import HttpResponse
+    from collections import defaultdict
+
+    # Status yang ditampilkan (Opsi C — status penting)
+    STATUS_TAMPIL = [
+        ('LULUS_ADM',     'Lulus Adm'),
+        ('LULUS_SELEKSI', 'Lulus Seleksi'),
+        ('DAFTAR_ULANG',  'Daftar Ulang'),
+        ('AKTIF',         'Aktif'),
+        ('TIDAK_LULUS',   'Tidak Lulus'),
+    ]
+
+    # Ambil semua jalur aktif (urut by id supaya konsisten)
+    jalur_aktif = list(JalurPenerimaan.objects.filter(status='aktif').order_by('id'))
+
+    # Ambil semua prodi unik (kode_prodi, nama_prodi, kode_fakultas, nama_fakultas)
+    # distinct() di .values() memastikan tidak duplikat antar gelombang
+    prodi_unique = ProdiPMB.objects.values(
+        'kode_prodi', 'nama_prodi', 'kode_fakultas', 'nama_fakultas'
+    ).distinct().order_by('nama_fakultas', 'nama_prodi')
+
+    # Query semua Pendaftaran dengan select_related supaya tidak N+1
+    qs = Pendaftaran.objects.select_related('prodi_pilihan_1', 'jalur').all()
+
+    # Build counter: rekap[kode_prodi][key] = count
+    rekap = defaultdict(lambda: defaultdict(int))
+    for p in qs:
+        if not p.prodi_pilihan_1:
+            continue
+        kode = p.prodi_pilihan_1.kode_prodi
+        rekap[kode]['_total'] += 1
+        rekap[kode][f'_status_{p.status}'] += 1
+        rekap[kode][f'_jalur_{p.jalur_id}'] += 1
+
+    # ==================== Build Excel ====================
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Rekap Fakultas & Prodi'
+
+    # Style
+    title_font   = Font(bold=True, size=14, color='1E293B')
+    sub_font     = Font(italic=True, size=10, color='64748B')
+    header_font  = Font(bold=True, color='FFFFFF', size=11)
+    header_fill  = PatternFill(fill_type='solid', fgColor='667EEA')
+    subtotal_font = Font(bold=True, color='1E293B')
+    subtotal_fill = PatternFill(fill_type='solid', fgColor='FEF3C7')
+    grand_font   = Font(bold=True, color='FFFFFF', size=11)
+    grand_fill   = PatternFill(fill_type='solid', fgColor='10B981')
+    center       = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    left         = Alignment(horizontal='left', vertical='center')
+    thin_side    = Side(style='thin', color='CBD5E1')
+    border       = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+
+    # Title rows
+    total_kolom = 3 + len(STATUS_TAMPIL) + len(jalur_aktif)
+    ws.cell(row=1, column=1, value='REKAP PENDAFTAR PER FAKULTAS & PRODI').font = title_font
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_kolom)
+    ws.cell(row=2, column=1, value=f'Berdasarkan Prodi Pilihan 1 — Generated: {timezone.now().strftime("%d %B %Y %H:%M")}').font = sub_font
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=total_kolom)
+
+    # Header row (row 4)
+    HEADER_ROW = 4
+    headers = ['No', 'Fakultas', 'Prodi', 'Total']
+    for _, label in STATUS_TAMPIL:
+        headers.append(label)
+    for j in jalur_aktif:
+        headers.append(j.nama_jalur)
+
+    for col_idx, h in enumerate(headers, start=1):
+        cell = ws.cell(row=HEADER_ROW, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+
+    # Data rows — group by fakultas
+    row = HEADER_ROW + 1
+    no_urut = 0
+    fakultas_aktif = None
+    fakultas_subtotal = defaultdict(int)
+    grand_total = defaultdict(int)
+    fakultas_start_row = row
+
+    def write_subtotal(target_row, fakultas_name, totals):
+        """Tulis baris subtotal untuk fakultas."""
+        ws.cell(row=target_row, column=1, value='').fill = subtotal_fill
+        c = ws.cell(row=target_row, column=2, value=f'Subtotal {fakultas_name}')
+        c.font = subtotal_font
+        c.fill = subtotal_fill
+        c.alignment = left
+        c.border = border
+        ws.cell(row=target_row, column=3, value='').fill = subtotal_fill
+        # Total
+        col = 4
+        c = ws.cell(row=target_row, column=col, value=totals['_total'])
+        c.font = subtotal_font
+        c.fill = subtotal_fill
+        c.alignment = center
+        c.border = border
+        col += 1
+        # Status
+        for status_key, _ in STATUS_TAMPIL:
+            c = ws.cell(row=target_row, column=col, value=totals.get(f'_status_{status_key}', 0))
+            c.font = subtotal_font
+            c.fill = subtotal_fill
+            c.alignment = center
+            c.border = border
+            col += 1
+        # Jalur
+        for j in jalur_aktif:
+            c = ws.cell(row=target_row, column=col, value=totals.get(f'_jalur_{j.id}', 0))
+            c.font = subtotal_font
+            c.fill = subtotal_fill
+            c.alignment = center
+            c.border = border
+            col += 1
+        # Border untuk kolom 1 dan 3 (yang di-skip)
+        ws.cell(row=target_row, column=1).border = border
+        ws.cell(row=target_row, column=3).border = border
+
+    for p in prodi_unique:
+        kode_fak = p['kode_fakultas']
+        nama_fak = p['nama_fakultas']
+        kode_pro = p['kode_prodi']
+        nama_pro = p['nama_prodi']
+
+        # Detect ganti fakultas — tulis subtotal fakultas sebelumnya
+        if fakultas_aktif is not None and fakultas_aktif != kode_fak:
+            write_subtotal(row, prev_nama_fak, fakultas_subtotal)
+            row += 1
+            fakultas_subtotal = defaultdict(int)
+
+        fakultas_aktif = kode_fak
+        prev_nama_fak = nama_fak
+        no_urut += 1
+        data = rekap.get(kode_pro, {})
+
+        # Tulis row prodi
+        col = 1
+        ws.cell(row=row, column=col, value=no_urut).alignment = center; col += 1
+        ws.cell(row=row, column=col, value=nama_fak).alignment = left; col += 1
+        ws.cell(row=row, column=col, value=nama_pro).alignment = left; col += 1
+        # Total
+        total_pro = data.get('_total', 0)
+        ws.cell(row=row, column=col, value=total_pro).alignment = center; col += 1
+        fakultas_subtotal['_total'] += total_pro
+        grand_total['_total'] += total_pro
+        # Status
+        for status_key, _ in STATUS_TAMPIL:
+            v = data.get(f'_status_{status_key}', 0)
+            ws.cell(row=row, column=col, value=v).alignment = center; col += 1
+            fakultas_subtotal[f'_status_{status_key}'] += v
+            grand_total[f'_status_{status_key}'] += v
+        # Jalur
+        for j in jalur_aktif:
+            v = data.get(f'_jalur_{j.id}', 0)
+            ws.cell(row=row, column=col, value=v).alignment = center; col += 1
+            fakultas_subtotal[f'_jalur_{j.id}'] += v
+            grand_total[f'_jalur_{j.id}'] += v
+        # Border semua sel
+        for c_idx in range(1, total_kolom + 1):
+            ws.cell(row=row, column=c_idx).border = border
+        row += 1
+
+    # Subtotal fakultas terakhir
+    if fakultas_aktif is not None:
+        write_subtotal(row, prev_nama_fak, fakultas_subtotal)
+        row += 1
+
+    # Grand Total
+    c = ws.cell(row=row, column=1, value='')
+    c.fill = grand_fill; c.border = border
+    c = ws.cell(row=row, column=2, value='GRAND TOTAL')
+    c.font = grand_font; c.fill = grand_fill; c.alignment = left; c.border = border
+    ws.cell(row=row, column=3, value='').fill = grand_fill
+    ws.cell(row=row, column=3).border = border
+    col = 4
+    c = ws.cell(row=row, column=col, value=grand_total['_total'])
+    c.font = grand_font; c.fill = grand_fill; c.alignment = center; c.border = border
+    col += 1
+    for status_key, _ in STATUS_TAMPIL:
+        c = ws.cell(row=row, column=col, value=grand_total.get(f'_status_{status_key}', 0))
+        c.font = grand_font; c.fill = grand_fill; c.alignment = center; c.border = border
+        col += 1
+    for j in jalur_aktif:
+        c = ws.cell(row=row, column=col, value=grand_total.get(f'_jalur_{j.id}', 0))
+        c.font = grand_font; c.fill = grand_fill; c.alignment = center; c.border = border
+        col += 1
+
+    # Column widths
+    ws.column_dimensions['A'].width = 5
+    ws.column_dimensions['B'].width = 35
+    ws.column_dimensions['C'].width = 35
+    for c_idx in range(4, total_kolom + 1):
+        ws.column_dimensions[get_column_letter(c_idx)].width = 14
+
+    # Freeze pane
+    ws.freeze_panes = 'D5'
+
+    # Response
+    filename = f'rekap_fakultas_prodi_{timezone.now().strftime("%Y%m%d_%H%M")}.xlsx'
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
 
 @login_required
 def export_ukuran_baju(request):
