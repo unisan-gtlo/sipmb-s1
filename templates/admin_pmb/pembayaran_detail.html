@@ -183,8 +183,9 @@
         </div>
       </div>
 
-      <!-- Action Form (hanya kalau status menunggu) -->
+      <!-- Action Form (hanya kalau status menunggu DAN user adalah admin/operator) -->
       {% if konfirmasi.status == 'menunggu' %}
+      {% if request.user.is_admin_pmb or request.user.is_operator %}
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-white border-0 pt-3">
           <h6 class="mb-0"><i class="bi bi-check2-square"></i> Verifikasi</h6>
@@ -209,14 +210,13 @@
               <a href="{% url 'admin_pmb:pembayaran' %}" class="btn btn-outline-secondary ms-auto">
                 Kembali
               </a>
-            </div>
+            <</div>
           </form>
         </div>
       </div>
       {% endif %}
-
+      {% endif %}
     </div>
   </div>
-
 </div>
 {% endblock %}
