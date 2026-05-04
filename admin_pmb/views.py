@@ -252,6 +252,13 @@ def detail_pendaftar(request, pk):
    
     log_list = pendaftaran.log_status.all().order_by('-tgl_perubahan')
 
+    # Konfirmasi pembayaran yang LUNAS (untuk cetak kwitansi)
+    from pembayaran.models import KonfirmasiPembayaran
+    konfirmasi_lunas_list = KonfirmasiPembayaran.objects.filter(
+        tagihan__pendaftaran=pendaftaran,
+        status='dikonfirmasi',
+    ).select_related('tagihan').order_by('-tgl_konfirmasi')
+
     context = {
         'pendaftaran': pendaftaran,
         'profil': profil,
@@ -259,6 +266,7 @@ def detail_pendaftar(request, pk):
         'log_list': log_list,
         'recruiter': recruiter,
         'status_choices': Pendaftaran.STATUS_CHOICES,
+        'konfirmasi_lunas_list': konfirmasi_lunas_list,
         **get_sidebar_counts(),
     }
     return render(request, 'admin_pmb/detail_pendaftar.html', context)
