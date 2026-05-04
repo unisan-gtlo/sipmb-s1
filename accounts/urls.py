@@ -9,6 +9,7 @@ urlpatterns = [
     path('aktivasi/<uuid:token>/',     views.aktivasi,          name='aktivasi'),
     path('aktivasi/sukses/',           views.aktivasi_sukses,   name='aktivasi_sukses'),
     path('login/',                     views.login_view,        name='login'),
+    path('resend-aktivasi/',           views.resend_aktivasi,   name='resend_aktivasi'),
     path('logout/',                    views.logout_view,       name='logout'),
 
     # API dynamic dropdown

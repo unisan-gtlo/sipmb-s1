@@ -266,6 +266,8 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard:index')
 
+    email_belum_aktif = None  # Track email user yang belum aktif (untuk tombol resend)
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -273,14 +275,16 @@ def login_view(request):
             password = form.cleaned_data['password']
 
             try:
-                user_obj = User.objects.get(email=email)
-                user     = authenticate(request, username=user_obj.username, password=password)
 
-                if user:
-                    if not user.is_active:
-                        messages.warning(request, 'Akun belum diaktifkan. Cek email untuk link aktivasi.')
+                user_obj = User.objects.get(email=email)
+                # Cek password manual supaya bisa detect user dengan is_active=False
+                # (Django authenticate() reject user non-aktif by default)
+                if user_obj.check_password(password):
+                    if not user_obj.is_active:
+                        # Password benar tapi belum aktif — tampilkan flow resend
+                        email_belum_aktif = email
                     else:
-                        login(request, user,
+                        login(request, user_obj,
                               backend='django.contrib.auth.backends.ModelBackend')
                         return redirect('dashboard:index')
                 else:
@@ -290,8 +294,77 @@ def login_view(request):
     else:
         form = LoginForm()
 
-    return render(request, 'accounts/login.html', {'form': form})
+    # Ambil pengaturan untuk kontak admin di alert "akun belum aktif"
+    from master.models import PengaturanSistem
+    pengaturan = PengaturanSistem.get()
 
+    return render(request, 'accounts/login.html', {
+        'form': form,
+        'email_belum_aktif': email_belum_aktif,
+        'pengaturan': pengaturan,
+    })
+
+def resend_aktivasi(request):
+    """Kirim ulang email aktivasi untuk user yang belum aktif.
+    
+    Dipanggil dari tombol 'Kirim Ulang Email Aktivasi' di halaman login.
+    Rate limit: 1x per 60 detik per email (anti-abuse).
+    """
+    if request.method != 'POST':
+        return redirect('accounts:login')
+
+    email = request.POST.get('email', '').strip().lower()
+    if not email:
+        messages.error(request, 'Email tidak boleh kosong.')
+        return redirect('accounts:login')
+
+    # Cari user
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        # Untuk security, jangan reveal apakah email terdaftar atau tidak
+        messages.success(request, f'Jika email {email} terdaftar dan belum aktif, email aktivasi akan dikirim dalam 1-2 menit.')
+        return redirect('accounts:login')
+
+    # Validasi: user sudah aktif? (tidak perlu kirim ulang)
+    if user.is_active:
+        messages.info(request, 'Akun Anda sudah aktif. Silakan login dengan email & password Anda.')
+        return redirect('accounts:login')
+
+    # Rate limit: cek apakah sudah pernah kirim ulang dalam 60 detik terakhir
+    from pendaftaran.models import TokenAktivasi
+    from django.utils import timezone
+    from datetime import timedelta
+    token_terakhir = TokenAktivasi.objects.filter(
+        user=user,
+        sudah_aktif=False,
+    ).order_by('-tgl_dibuat').first()
+    if token_terakhir:
+        selisih = timezone.now() - token_terakhir.tgl_dibuat
+        if selisih < timedelta(seconds=60):
+            sisa = 60 - int(selisih.total_seconds())
+            messages.warning(request, f'Mohon tunggu {sisa} detik sebelum kirim ulang email aktivasi.')
+            return redirect('accounts:login')
+
+    # Invalidate token lama (tandai sudah expired) lalu generate baru
+    # Generate token baru (replace token lama karena OneToOneField user)
+    import uuid
+    token_baru, created = TokenAktivasi.objects.update_or_create(
+        user=user,
+        defaults={
+            'token':       uuid.uuid4(),
+            'sudah_aktif': False,
+            'tgl_dibuat':  timezone.now(),
+            'tgl_aktif':   None,
+        }
+    )
+
+    # Kirim email pakai helper yang sama dengan flow registrasi
+    _kirim_email_aktivasi(request, user, token_baru)
+
+    logger.info(f'Resend aktivasi email: {email}')
+    messages.success(request, f'Email aktivasi sudah dikirim ulang ke {email}. Silakan cek inbox (atau folder Spam).')
+    return redirect('accounts:login')
 
 def logout_view(request):
     """Logout"""

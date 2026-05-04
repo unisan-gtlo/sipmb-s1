@@ -19,6 +19,43 @@
     <div class="col-lg-5 col-md-7">
       <div class="card-modern login-card">
 
+        {% if email_belum_aktif %}
+        <!-- Alert: Akun belum aktif + tombol resend email -->
+        <div class="alert-belum-aktif mb-4">
+          <div class="d-flex align-items-start gap-2 mb-2">
+            <i class="bi bi-exclamation-triangle-fill" style="color:#d97706;font-size:1.4rem;flex-shrink:0;margin-top:2px"></i>
+            <div>
+              <div style="font-weight:700;color:#92400e;font-size:.95rem;margin-bottom:4px">
+                Akun Sudah Terdaftar Tapi Belum Aktif
+              </div>
+              <div style="font-size:.85rem;color:#78350f;line-height:1.5">
+                Silakan cek email <strong>{{ email_belum_aktif }}</strong>
+                (termasuk folder <strong>Spam</strong>) untuk link aktivasi yang sudah kami kirim.
+              </div>
+            </div>
+          </div>
+
+          <!-- Form kirim ulang email aktivasi -->
+          <form method="post" action="{% url 'accounts:resend_aktivasi' %}" style="margin-top:12px">
+            {% csrf_token %}
+            <input type="hidden" name="email" value="{{ email_belum_aktif }}">
+            <button type="submit" class="btn-resend-aktivasi">
+              <i class="bi bi-envelope-arrow-up me-1"></i>
+              Kirim Ulang Email Aktivasi
+            </button>
+          </form>
+
+          {% if pengaturan.whatsapp_pmb %}
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #fde68a;font-size:.8rem;color:#78350f">
+            Masih bermasalah? Hubungi admin PMB UNISAN Gorontalo:<br>
+            <a href="https://wa.me/{{ pengaturan.whatsapp_pmb|cut:'+'|cut:' '|cut:'-' }}" target="_blank" style="color:#92400e;font-weight:600;text-decoration:none">
+              <i class="bi bi-whatsapp"></i> {{ pengaturan.whatsapp_pmb }} (WhatsApp)
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
         <form method="post" novalidate id="loginForm">
           {% csrf_token %}
 
@@ -176,6 +213,32 @@
     font-size: 1rem !important;
     font-weight: 600 !important;
     border-radius: 12px !important;
+  }
+
+  /* Alert: Akun Belum Aktif (kuning/amber) */
+  .alert-belum-aktif {
+    background: #fffbeb;
+    border: 1.5px solid #fcd34d;
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .btn-resend-aktivasi {
+    width: 100%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: .875rem;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .btn-resend-aktivasi:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
   }
 
   /* Responsive — di HP hero lebih compact */
