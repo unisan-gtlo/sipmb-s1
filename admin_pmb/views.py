@@ -1860,7 +1860,7 @@ def laporan_pembayaran_excel(request):
         ws2.cell(row=row, column=6, value=p.jalur.nama_jalur if p.jalur else '-')
         ws2.cell(row=row, column=7, value=p.gelombang.nama_gelombang if p.gelombang else '-')
         ws2.cell(row=row, column=8, value=p.prodi_pilihan_1.nama_prodi if p.prodi_pilihan_1 else '-')
-        jalur_gel = f"{p.jalur.nama_jalur[:8] if p.jalur else '-'} / {p.gelombang.nama_gelombang[:14] if p.gelombang else '-'}"
+        ws2.cell(row=row, column=9, value=METODE_DISPLAY.get(k.metode_bayar, k.metode_bayar))
         ws2.cell(row=row, column=10, value=k.bank_asal or '-')
         ws2.cell(row=row, column=11, value=k.atas_nama_pengirim or '-')
         ws2.cell(row=row, column=12, value=k.no_transaksi or '-')
@@ -1980,7 +1980,7 @@ def laporan_pembayaran_pdf(request):
     for i, k in enumerate(qs, start=1):
         p = k.tagihan.pendaftaran
         nama = (p.user.get_full_name() or p.user.username)[:28]
-        jalur_gel = f"{p.jalur.nama[:8] if p.jalur else '-'} / {p.gelombang.nama[:14] if p.gelombang else '-'}"
+        jalur_gel = f"{p.jalur.nama_jalur[:8] if p.jalur else '-'} / {p.gelombang.nama_gelombang[:14] if p.gelombang else '-'}"
         data.append([
             str(i),
             k.tgl_bayar.strftime('%d-%m-%Y') if k.tgl_bayar else '-',
