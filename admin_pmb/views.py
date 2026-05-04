@@ -266,7 +266,7 @@ def detail_pendaftar(request, pk):
 
 @login_required
 def ubah_status(request, pk):
-    if not cek_admin(request.user):
+    if not cek_admin_only(request.user):
         return redirect('dashboard:index')
 
     if request.method == 'POST':
@@ -416,12 +416,15 @@ def pembayaran(request):
 def pembayaran_detail(request, pk):
     if not cek_pembayaran(request.user):
         return redirect('dashboard:index')
-
+    # Pimpinan boleh lihat (GET), tapi tidak boleh approve/reject (POST)
+    if request.method == 'POST' and not cek_admin_operator(request.user):
+        from django.contrib import messages
+        messages.error(request, "Anda tidak memiliki akses untuk verifikasi pembayaran.")
+        return redirect('admin_pmb:pembayaran_detail', pk=pk)
     from django.contrib import messages
     from django.shortcuts import get_object_or_404
     from django.utils import timezone
     from pembayaran.models import KonfirmasiPembayaran
-
     konfirmasi = get_object_or_404(
         KonfirmasiPembayaran.objects.select_related(
             'tagihan',
