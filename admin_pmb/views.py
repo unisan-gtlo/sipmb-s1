@@ -2544,57 +2544,66 @@ def tambah_pendaftar(request):
         form = OperatorTambahPendaftarForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
+            from django.db import IntegrityError
+            pendaftaran = None
+            password_plain = None
+            username = None
+            nama = None
             try:
-                with transaction.atomic():
-                    # Generate password random (one-time display ke operator)
-                    password_plain = generate_password(10)
-
-                    # Generate username dari email, dengan suffix kalau bentrok
-                    username_base = data['email'].split('@')[0]
-                    username = username_base
-                    suffix = 1
-                    while User.objects.filter(username=username).exists():
-                        username = f"{username_base}{suffix}"
-                        suffix += 1
-
-                    # Pisah nama lengkap (logic sama dengan registrasi public)
-                    nama = data['nama_lengkap'].strip()
-                    parts = nama.split(' ', 1)
-                    first = parts[0]
-                    last = parts[1] if len(parts) > 1 else ''
-
-                    # Buat user — LANGSUNG aktif (operator sudah verify identitas)
-                    user = User.objects.create_user(
-                        username=username,
-                        email=data['email'],
-                        password=password_plain,
-                        first_name=normalisasi_nama(first),
-                        last_name=normalisasi_nama(last),
-                        no_hp=data['no_hp'],
-                        role='calon_maba',
-                        is_active=True,
-                    )
-
-                    # Buat pendaftaran (Tagihan auto via signal)
-                    pendaftaran = Pendaftaran.objects.create(
-                        user=user,
-                        jalur=data['jalur'],
-                        gelombang=data['gelombang'],
-                        prodi_pilihan_1=data['prodi_pilihan_1'],
-                        prodi_pilihan_2=data.get('prodi_pilihan_2'),
-                        kode_referral=data.get('kode_referral', ''),
-                        kode_voucher=data.get('kode_voucher', ''),
-                        status='DRAFT',
-                    )
-
-                    # Profil kosong (sama seperti flow public)
-                    ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
-
+                # Retry up to 5 kali kalau ada conflict no_pendaftaran (race condition)
+                for attempt in range(5):
+                    try:
+                        with transaction.atomic():
+                            # Generate password random (one-time display ke operator)
+                            password_plain = generate_password(10)
+                            # Generate username dari email, dengan suffix kalau bentrok
+                            username_base = data['email'].split('@')[0]
+                            username = username_base
+                            suffix = 1
+                            while User.objects.filter(username=username).exists():
+                                username = f"{username_base}{suffix}"
+                                suffix += 1
+                            # Pisah nama lengkap (logic sama dengan registrasi public)
+                            nama = data['nama_lengkap'].strip()
+                            parts = nama.split(' ', 1)
+                            first = parts[0]
+                            last = parts[1] if len(parts) > 1 else ''
+                            # Buat user — LANGSUNG aktif (operator sudah verify identitas)
+                            user = User.objects.create_user(
+                                username=username,
+                                email=data['email'],
+                                password=password_plain,
+                                first_name=normalisasi_nama(first),
+                                last_name=normalisasi_nama(last),
+                                no_hp=data['no_hp'],
+                                role='calon_maba',
+                                is_active=True,
+                            )
+                            # Buat pendaftaran (Tagihan auto via signal)
+                            pendaftaran = Pendaftaran.objects.create(
+                                user=user,
+                                jalur=data['jalur'],
+                                gelombang=data['gelombang'],
+                                prodi_pilihan_1=data['prodi_pilihan_1'],
+                                prodi_pilihan_2=data.get('prodi_pilihan_2'),
+                                kode_referral=data.get('kode_referral', ''),
+                                kode_voucher=data.get('kode_voucher', ''),
+                                status='DRAFT',
+                            )
+                            # Profil kosong (sama seperti flow public)
+                            ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
+                        break  # sukses, keluar dari retry loop
+                    except IntegrityError as e:
+                        if 'no_pendaftaran' in str(e) and attempt < 4:
+                            logger.warning(
+                                f'Retry ke-{attempt + 1} tambah pendaftar (race no_pendaftaran)'
+                            )
+                            continue  # retry dengan no_pendaftaran baru
+                        raise  # error lain atau sudah 5x retry — propagate
                 logger.info(
                     f'Operator {request.user.username} membuat pendaftar baru: '
                     f'{pendaftaran.no_pendaftaran} ({data["email"]})'
                 )
-
                 # Simpan password di session untuk one-time display di halaman sukses
                 request.session['tambah_pendaftar_info'] = {
                     'no_pendaftaran': pendaftaran.no_pendaftaran,
@@ -2605,7 +2614,6 @@ def tambah_pendaftar(request):
                     'pendaftaran_id': pendaftaran.id,
                 }
                 return redirect('admin_pmb:tambah_pendaftar_sukses')
-
             except Exception as e:
                 logger.error(f'Error tambah pendaftar oleh {request.user.username}: {e}')
                 messages.error(request, f'Terjadi kesalahan: {e}')

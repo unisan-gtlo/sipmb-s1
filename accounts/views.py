@@ -84,52 +84,62 @@ def registrasi(request):
     if request.method == 'POST':
         form = RegistrasiAwalForm(request.POST)
         if form.is_valid():
+            from django.db import IntegrityError, transaction
             try:
                 data = form.cleaned_data
-
                 # Buat username dari email
                 email    = data['email']
                 username = email.split('@')[0]
-
                 # Pastikan username unik
                 base_username = username
                 counter = 1
                 while User.objects.filter(username=username).exists():
                     username = f'{base_username}{counter}'
                     counter += 1
-
                 # Pisah nama lengkap
                 nama    = data['nama_lengkap'].strip()
                 parts   = nama.split(' ', 1)
                 first   = parts[0]
                 last    = parts[1] if len(parts) > 1 else ''
-
-                # Buat user baru (belum aktif)
-                user = User.objects.create_user(
-                    username   = username,
-                    email      = email,
-                    password   = data['password'],
-                    first_name = normalisasi_nama(first),
-                    last_name  = normalisasi_nama(last),
-                    no_hp      = data['no_hp'],
-                    role       = 'calon_maba',
-                    is_active  = False,  # belum aktif sampai verifikasi email
-                )
-
-                # Buat pendaftaran
-                pendaftaran = Pendaftaran.objects.create(
-                    user            = user,
-                    jalur           = data['jalur'],
-                    gelombang       = data['gelombang'],
-                    prodi_pilihan_1 = data['prodi_pilihan_1'],
-                    prodi_pilihan_2 = data.get('prodi_pilihan_2'),
-                    kode_referral   = data.get('kode_referral', ''),
-                    kode_voucher    = data.get('kode_voucher', ''),
-                    status          = 'DRAFT',
-                )
-
-               
-               # Apply voucher ke tagihan (jika ada voucher valid)
+                # Retry up to 5 kali kalau ada conflict no_pendaftaran (race condition)
+                user = None
+                pendaftaran = None
+                for attempt in range(5):
+                    try:
+                        with transaction.atomic():
+                            # Buat user baru (belum aktif)
+                            user = User.objects.create_user(
+                                username   = username,
+                                email      = email,
+                                password   = data['password'],
+                                first_name = normalisasi_nama(first),
+                                last_name  = normalisasi_nama(last),
+                                no_hp      = data['no_hp'],
+                                role       = 'calon_maba',
+                                is_active  = False,  # belum aktif sampai verifikasi email
+                            )
+                            # Buat pendaftaran
+                            pendaftaran = Pendaftaran.objects.create(
+                                user            = user,
+                                jalur           = data['jalur'],
+                                gelombang       = data['gelombang'],
+                                prodi_pilihan_1 = data['prodi_pilihan_1'],
+                                prodi_pilihan_2 = data.get('prodi_pilihan_2'),
+                                kode_referral   = data.get('kode_referral', ''),
+                                kode_voucher    = data.get('kode_voucher', ''),
+                                status          = 'DRAFT',
+                            )
+                            # Buat profil kosong
+                            ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
+                        break  # sukses, keluar dari retry loop
+                    except IntegrityError as e:
+                        if 'no_pendaftaran' in str(e) and attempt < 4:
+                            logger.warning(
+                                f'Retry ke-{attempt + 1} registrasi (race no_pendaftaran)'
+                            )
+                            continue  # retry dengan no_pendaftaran baru
+                        raise  # error lain atau sudah 5x retry — propagate
+                # Apply voucher ke tagihan (jika ada voucher valid) — di luar atomic
                 voucher_obj = data.get('voucher_obj')
                 if voucher_obj:
                     from pembayaran.utils import apply_voucher_ke_tagihan
@@ -143,21 +153,14 @@ def registrasi(request):
                             'biaya_final': str(voucher_result['biaya_final']),
                             'is_gratis':   voucher_result['biaya_final'] == 0,
                         }
-                # Buat profil kosong
-                ProfilPendaftar.objects.create(pendaftaran=pendaftaran)
-
-                # Buat token aktivasi
+                # Buat token aktivasi (di luar atomic supaya kalau retry, token tidak ke-create 2x)
                 token_obj = TokenAktivasi.objects.create(user=user)
-
                 # Kirim email aktivasi
                 _kirim_email_aktivasi(request, user, token_obj)
-
                 logger.info(f'Registrasi baru: {email} — {pendaftaran.no_pendaftaran}')
-
                 # Redirect ke halaman sukses
                 request.session['email_registrasi'] = email
                 return redirect('accounts:registrasi_sukses')
-
             except Exception as e:
                 logger.error(f'Error registrasi: {e}')
                 messages.error(request, 'Terjadi kesalahan. Silakan coba lagi.')
