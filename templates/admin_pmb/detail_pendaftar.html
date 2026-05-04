@@ -289,6 +289,26 @@
                   text-decoration:none;font-size:.875rem;font-weight:600">
           <i class="bi bi-printer"></i> Cetak Kartu Peserta
         </a>
+
+        {% if konfirmasi_lunas_list %}
+          {% for konfirmasi in konfirmasi_lunas_list %}
+          <a href="{% url 'admin_pmb:pembayaran_kwitansi' konfirmasi.pk %}"
+            target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;
+                    width:100%;background:linear-gradient(135deg,#f59e0b,#d97706);
+                    color:white;padding:10px;border-radius:8px;
+                    text-decoration:none;font-size:.875rem;font-weight:600;
+                    margin-top:8px">
+            <i class="bi bi-receipt"></i> Cetak Kwitansi
+            {% if konfirmasi_lunas_list|length > 1 %}
+              <small style="opacity:.85;font-weight:500">
+                ({{ konfirmasi.tagihan.kode_bayar }})
+              </small>
+            {% endif %}
+          </a>
+          {% endfor %}
+        {% endif %}
+
         {% if pendaftaran.kartu %}
         <div style="margin-top:8px;font-size:.75rem;color:#94a3b8;text-align:center">
           No. Kartu: {{ pendaftaran.kartu.no_kartu }}<br>
