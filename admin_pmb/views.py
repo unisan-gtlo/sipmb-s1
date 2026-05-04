@@ -1857,10 +1857,10 @@ def laporan_pembayaran_excel(request):
         ws2.cell(row=row, column=3, value=k.tagihan.kode_bayar)
         ws2.cell(row=row, column=4, value=p.user.get_full_name() or p.user.username)
         ws2.cell(row=row, column=5, value=p.no_pendaftaran)
-        ws2.cell(row=row, column=6, value=p.jalur.nama if p.jalur else '-')
-        ws2.cell(row=row, column=7, value=p.gelombang.nama if p.gelombang else '-')
+        ws2.cell(row=row, column=6, value=p.jalur.nama_jalur if p.jalur else '-')
+        ws2.cell(row=row, column=7, value=p.gelombang.nama_gelombang if p.gelombang else '-')
         ws2.cell(row=row, column=8, value=p.prodi_pilihan_1.nama_prodi if p.prodi_pilihan_1 else '-')
-        ws2.cell(row=row, column=9, value=METODE_DISPLAY.get(k.metode_bayar, k.metode_bayar))
+        jalur_gel = f"{p.jalur.nama_jalur[:8] if p.jalur else '-'} / {p.gelombang.nama_gelombang[:14] if p.gelombang else '-'}"
         ws2.cell(row=row, column=10, value=k.bank_asal or '-')
         ws2.cell(row=row, column=11, value=k.atas_nama_pengirim or '-')
         ws2.cell(row=row, column=12, value=k.no_transaksi or '-')
