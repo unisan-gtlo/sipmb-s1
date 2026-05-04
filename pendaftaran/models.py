@@ -32,9 +32,10 @@ def generate_no_pendaftaran(status_masuk='PDB', tahun=None):
     
     # Lookup model via apps (avoid circular import)
     Pendaftaran = apps.get_model('pendaftaran', 'Pendaftaran')
-    
     # Cari nomor terakhir untuk prefix ini
-    last = Pendaftaran.objects.filter(
+    # PAKAI objects_all (manager yang INCLUDE soft-deleted) supaya nomor
+    # yang sudah dihapus tidak ke-reuse — mencegah duplicate key violation
+    last = Pendaftaran.all_objects.filter(
         no_pendaftaran__startswith=prefix
     ).order_by('-no_pendaftaran').first()
     
