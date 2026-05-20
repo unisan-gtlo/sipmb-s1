@@ -43,7 +43,7 @@ WARNA_FAKULTAS = {
         'light': '#fee2e2', 'text': '#b91c1c',
         'icon': 'briefcase'
     },
-    'FISIP': {
+    'FS': {
         'gradient': 'linear-gradient(135deg,#6d28d9,#a78bfa)',
         'light': '#ede9fe', 'text': '#6d28d9',
         'icon': 'people'
