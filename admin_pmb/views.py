@@ -78,7 +78,7 @@ def dashboard(request):
     per_prodi_qs = list(Pendaftaran.objects.values(
         'prodi_pilihan_1__nama_prodi',
         'prodi_pilihan_1__kode_fakultas',
-    ).annotate(total=Count('id')).order_by('-total')[:8])
+    ).annotate(total=Count('id')).order_by('-total'))
 
     # Mapping prodi tua per fakultas (warna full di-prioritaskan)
     PRODI_TUA = {
